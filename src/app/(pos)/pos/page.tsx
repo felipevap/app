@@ -55,6 +55,7 @@ export default function POSPage() {
     const [showProductSuggestions, setShowProductSuggestions] = useState(false);
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
     const [discountPercent, setDiscountPercent] = useState<number>(0);
+    const [pendingOrders, setPendingOrders] = useState<any[]>([]);
 
     const [productFilters, setProductFilters] = useState({
         search: "",
@@ -98,6 +99,17 @@ export default function POSPage() {
         }
     }, []);
 
+    useEffect(() => {
+        const loadPendingOrders = () => {
+            const orders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
+            setPendingOrders(orders.filter((order: any) => order.garageSaleId === selectedGarageSaleId));
+        };
+
+        loadPendingOrders();
+        const interval = setInterval(loadPendingOrders, 2000);
+        return () => clearInterval(interval);
+    }, [selectedGarageSaleId]);
+
     const currentSaleSubtotal = currentSale.items?.reduce((acc, item) => acc + (item.price * item.qty), 0) || 0;
     const currentSaleDiscount = (currentSaleSubtotal * discountPercent) / 100;
     const currentSaleTotal = currentSaleSubtotal - currentSaleDiscount;
@@ -136,6 +148,22 @@ export default function POSPage() {
     const validateEmail = (email: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
+    };
+
+    const loadPendingOrder = (order: any) => {
+        setCurrentSale({
+            items: order.items,
+            payments: [],
+            buyerName: order.customerInfo.nome,
+            buyerPhone: order.customerInfo.telefone,
+            buyerEmail: order.customerInfo.email,
+        });
+        setIsCheckoutMode(true);
+
+        const allOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
+        const updatedOrders = allOrders.filter((o: any) => o.id !== order.id);
+        localStorage.setItem('pending_orders', JSON.stringify(updatedOrders));
+        setPendingOrders(updatedOrders.filter((o: any) => o.garageSaleId === selectedGarageSaleId));
     };
 
     const generateReceiptText = (sale: Sale) => {
@@ -575,6 +603,36 @@ export default function POSPage() {
                 {currentView === 'sales' && (
                     <div className="flex h-full w-full gap-4 p-4">
                         <div className="flex w-full flex-col gap-4 overflow-y-auto lg:w-2/3">
+                            {pendingOrders.length > 0 && (
+                                <div className="rounded-xl border border-orange-200 bg-orange-50 shadow-sm p-4">
+                                    <h3 className="font-bold text-orange-800 mb-3 flex items-center gap-2">
+                                        <span className="text-xl">📱</span> Pedidos do App ({pendingOrders.length})
+                                    </h3>
+                                    <div className="space-y-2">
+                                        {pendingOrders.map((order: any) => (
+                                            <div key={order.id} className="bg-white rounded-lg p-3 border border-orange-200">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <div>
+                                                        <div className="font-bold text-gray-800">{order.customerInfo.nome}</div>
+                                                        <div className="text-sm text-gray-600">{order.customerInfo.telefone}</div>
+                                                        <div className="text-xs text-gray-500">{order.customerInfo.email}</div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="font-bold text-orange-600">{formatCurrency(order.total)}</div>
+                                                        <div className="text-xs text-gray-500">{order.items.length} {order.items.length === 1 ? 'item' : 'itens'}</div>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={() => loadPendingOrder(order)}
+                                                    className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition-colors font-medium text-sm"
+                                                >
+                                                    Processar Pagamento
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                             <div className="flex flex-grow flex-col rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
                                 <div className="flex items-center justify-between border-b bg-gray-50 p-4 rounded-t-xl">
                                     <h2 className="font-bold text-gray-700">{isCheckoutMode ? 'Pagamento' : 'Novo Pedido'}</h2>

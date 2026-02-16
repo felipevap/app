@@ -72,6 +72,24 @@ export default function CapturePage() {
 
     const addToCart = () => {
         if (foundProduct) {
+            const isAlreadyInCart = cart.some(item => item.id === foundProduct.id);
+            if (isAlreadyInCart) {
+                alert('Este produto já está no seu carrinho!');
+                setFoundProduct(null);
+                return;
+            }
+
+            const pendingOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
+            const isReserved = pendingOrders.some((order: any) =>
+                order.items.some((item: any) => item.productId === foundProduct.id)
+            );
+
+            if (isReserved) {
+                alert('Este produto já está no carrinho de outro cliente!');
+                setFoundProduct(null);
+                return;
+            }
+
             setCart([...cart, { ...foundProduct, qty: 1 }]);
             setFoundProduct(null);
             setIsCartOpen(true);
@@ -90,14 +108,24 @@ export default function CapturePage() {
             return;
         }
 
-        const posItems = cart.map(item => ({
-            desc: item.nome,
-            qty: 1,
-            price: item.preco
-        }));
+        const pendingOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
 
-        localStorage.setItem('pending_cart', JSON.stringify(posItems));
-        localStorage.setItem('pending_customer', JSON.stringify(customerInfo));
+        const newOrder = {
+            id: Date.now().toString(),
+            customerInfo,
+            items: cart.map(item => ({
+                productId: item.id,
+                desc: item.nome,
+                qty: 1,
+                price: item.preco
+            })),
+            total: cart.reduce((acc, item) => acc + item.preco, 0),
+            createdAt: new Date().toISOString(),
+            garageSaleId: selectedGarageSaleId
+        };
+
+        pendingOrders.push(newOrder);
+        localStorage.setItem('pending_orders', JSON.stringify(pendingOrders));
 
         setShowSuccessMessage(true);
         setTimeout(() => {
@@ -106,6 +134,14 @@ export default function CapturePage() {
             setCustomerInfo({ nome: '', telefone: '', email: '' });
             setIsCartOpen(false);
         }, 3000);
+    };
+
+    const maskPhone = (value: string) => {
+        return value
+            .replace(/\D/g, '')
+            .replace(/(\d{2})(\d)/, '($1) $2')
+            .replace(/(\d{4})(\d)/, '$1-$2')
+            .replace(/(-\d{4})\d+?$/, '$1');
     };
 
     const [cameraError, setCameraError] = useState<string | null>(null);
@@ -227,7 +263,12 @@ export default function CapturePage() {
                         className="absolute bottom-0 left-0 right-0 z-30 bg-neutral-900 rounded-t-3xl p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-neutral-700 pointer-events-auto max-h-[70vh] overflow-y-auto"
                     >
                         <div className="w-12 h-1.5 bg-neutral-700 rounded-full mx-auto mb-6"></div>
-                        <div className="flex gap-4 mb-4">
+
+                        <button onClick={addToCart} className="w-full bg-green-600 py-4 rounded-xl font-bold text-white hover:bg-green-500 transition-colors text-lg mb-6">
+                            ✓ Adicionar ao Carrinho
+                        </button>
+
+                        <div className="flex gap-4">
                             {foundProduct.imagens[0] && (
                                 <img src={foundProduct.imagens[0]} alt={foundProduct.nome} className="w-24 h-24 rounded-xl object-cover bg-neutral-800" />
                             )}
@@ -246,9 +287,6 @@ export default function CapturePage() {
                                 <p className="text-blue-400 font-bold text-lg mb-2">{formatBRL(foundProduct.preco)}</p>
                             </div>
                         </div>
-                        <button onClick={addToCart} className="w-full bg-green-600 py-4 rounded-xl font-bold text-white hover:bg-green-500 transition-colors text-lg">
-                            ✓ Adicionar ao Carrinho
-                        </button>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -321,7 +359,8 @@ export default function CapturePage() {
                                     type="tel"
                                     placeholder="Telefone *"
                                     value={customerInfo.telefone}
-                                    onChange={(e) => setCustomerInfo({ ...customerInfo, telefone: e.target.value })}
+                                    onChange={(e) => setCustomerInfo({ ...customerInfo, telefone: maskPhone(e.target.value) })}
+                                    maxLength={15}
                                     className="w-full bg-neutral-800 text-white px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                                 <input
