@@ -3,6 +3,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import Webcam from 'react-webcam';
 import { useProducts, type Product } from '@/contexts/ProductContext';
+import { useGarageSales } from '@/contexts/GarageSaleContext';
 import { findMatchingProduct } from '@/utils/imageMatching';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,8 +11,9 @@ import { useRouter } from 'next/navigation';
 
 export default function CapturePage() {
     const webcamRef = useRef<Webcam>(null);
-    // Cast context to any to avoid strict type issues if context definition slightly mismatches
-    const { products, currentGarageSale } = useProducts() as any;
+    const { products } = useProducts() as any;
+    const { garageSales, getProductsByGarageSale } = useGarageSales();
+    const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("");
     const [isScanning, setIsScanning] = useState(false);
     const [foundProduct, setFoundProduct] = useState<Product | null>(null);
     const [showNotFound, setShowNotFound] = useState(false);
@@ -19,8 +21,17 @@ export default function CapturePage() {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const router = useRouter();
 
-    const currentProducts = currentGarageSale
-        ? products.filter((p: any) => p.garageSaleId === currentGarageSale.id)
+    useEffect(() => {
+        if (garageSales.length > 0 && !selectedGarageSaleId) {
+            const mostRecent = garageSales.reduce((latest, gs) =>
+                gs.criadoEm > latest.criadoEm ? gs : latest
+            );
+            setSelectedGarageSaleId(mostRecent.id);
+        }
+    }, [garageSales, selectedGarageSaleId]);
+
+    const currentProducts = selectedGarageSaleId
+        ? getProductsByGarageSale(selectedGarageSaleId)
         : products; // Fallback to all products if no GS selected
 
     const formatBRL = (value: number): string => {
@@ -117,6 +128,17 @@ export default function CapturePage() {
                     <Link href="/" className="bg-black/40 backdrop-blur-md p-3 rounded-full text-white hover:bg-black/60 transition-colors">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
                     </Link>
+                    {garageSales.length > 0 && (
+                        <select
+                            value={selectedGarageSaleId}
+                            onChange={(e) => setSelectedGarageSaleId(e.target.value)}
+                            className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-white border border-white/20 focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            {garageSales.map(gs => (
+                                <option key={gs.id} value={gs.id} className="bg-black">{gs.nome}</option>
+                            ))}
+                        </select>
+                    )}
                     <div className="flex gap-2">
                         <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-medium">
                             {currentProducts.length} Produtos Carregados

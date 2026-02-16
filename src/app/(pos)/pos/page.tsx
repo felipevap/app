@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useGarageSales } from "@/contexts/GarageSaleContext";
 
 interface Item {
     desc: string;
@@ -24,9 +25,13 @@ interface Sale {
     buyerName?: string;
     buyerPhone?: string;
     buyerEmail?: string;
+    garageSaleId?: string;
 }
 
 export default function POSPage() {
+    const { garageSales, products, getProductsByGarageSale } = useGarageSales();
+
+    const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("");
     const [currentView, setCurrentView] = useState<'sales' | 'products' | 'report'>('sales');
     const [isCheckoutMode, setIsCheckoutMode] = useState(false);
     const [currentSale, setCurrentSale] = useState<Partial<Sale>>({
@@ -44,9 +49,27 @@ export default function POSPage() {
     const [editingSale, setEditingSale] = useState<Sale | null>(null);
     const [showSignaturePad, setShowSignaturePad] = useState(false);
     const [signature, setSignature] = useState<string | null>(null);
+    const [emailError, setEmailError] = useState<string>("");
+
+    const [productFilters, setProductFilters] = useState({
+        search: "",
+        category: "",
+        condition: "",
+        minPrice: "",
+        maxPrice: ""
+    });
 
     const signatureCanvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
+
+    useEffect(() => {
+        if (garageSales.length > 0 && !selectedGarageSaleId) {
+            const mostRecent = garageSales.reduce((latest, gs) =>
+                gs.criadoEm > latest.criadoEm ? gs : latest
+            );
+            setSelectedGarageSaleId(mostRecent.id);
+        }
+    }, [garageSales, selectedGarageSaleId]);
 
     useEffect(() => {
         const savedSales = localStorage.getItem('pos_sales_history');
@@ -88,6 +111,10 @@ export default function POSPage() {
     const currentPaymentsTotal = currentSale.payments?.reduce((acc, p) => acc + p.amount, 0) || 0;
     const remainingAmount = currentSaleTotal - currentPaymentsTotal;
 
+    const filteredSalesHistory = salesHistory.filter(sale =>
+        !selectedGarageSaleId || sale.garageSaleId === selectedGarageSaleId
+    );
+
     const formatCurrency = (val: number) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
     };
@@ -100,6 +127,19 @@ export default function POSPage() {
             'card_garage': 'Cartão (Loja)'
         };
         return labels[method] || method;
+    };
+
+    const maskPhone = (value: string) => {
+        return value
+            .replace(/\D/g, '')
+            .replace(/(\d{2})(\d)/, '($1) $2')
+            .replace(/(\d{5})(\d)/, '$1-$2')
+            .replace(/(-\d{4})\d+?$/, '$1');
+    };
+
+    const validateEmail = (email: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
     };
 
     const generateReceiptText = (sale: Sale) => {
@@ -148,7 +188,7 @@ export default function POSPage() {
         html += `<tr style="font-weight:bold;"><td>TOTAL</td><td>${formatCurrency(summary.grandTotal)}</td><td>${formatCurrency(summary.totalCommission)}</td><td>${formatCurrency(summary.grandTotal - summary.totalCommission)}</td></tr>`;
         html += `</table>`;
         html += `<h2>Lista de Vendas</h2>`;
-        salesHistory.forEach(sale => {
+        filteredSalesHistory.forEach(sale => {
             html += `<div style="border:1px solid #ddd;padding:10px;margin:10px 0;">`;
             html += `<strong>Venda #${sale.id}</strong> - ${new Date(sale.timestamp).toLocaleString('pt-BR')}<br>`;
             html += `Cliente: ${sale.buyerName || 'Balcão'}<br>`;
@@ -199,7 +239,7 @@ export default function POSPage() {
             totalCommission: 0,
         };
 
-        salesHistory.forEach(sale => {
+        filteredSalesHistory.forEach(sale => {
             sale.payments.forEach(p => {
                 const commission = p.amount * 0.20;
                 const net = p.amount - commission;
@@ -253,6 +293,11 @@ export default function POSPage() {
         setCurrentSale({ ...currentSale, payments: updatedPayments });
     };
 
+    const goToCheckout = () => {
+        setIsCheckoutMode(true);
+        setTempPayment({ method: "pix", amount: currentSaleTotal });
+    };
+
     const finalizeSale = () => {
         const newSale: Sale = {
             id: salesHistory.length > 0 ? Math.max(...salesHistory.map(s => s.id)) + 1 : 1,
@@ -264,6 +309,7 @@ export default function POSPage() {
             buyerName: currentSale.buyerName,
             buyerPhone: currentSale.buyerPhone,
             buyerEmail: currentSale.buyerEmail,
+            garageSaleId: selectedGarageSaleId,
         };
 
         const updatedHistory = [...salesHistory, newSale];
@@ -285,14 +331,22 @@ export default function POSPage() {
 
     const startEditSale = (sale: Sale) => {
         setEditingSale({ ...sale });
+        setEmailError("");
     };
 
     const saveEditedSale = () => {
         if (!editingSale) return;
+
+        if (editingSale.buyerEmail && !validateEmail(editingSale.buyerEmail)) {
+            setEmailError("Email inválido");
+            return;
+        }
+
         const updatedHistory = salesHistory.map(s => s.id === editingSale.id ? editingSale : s);
         setSalesHistory(updatedHistory);
         saveSalesToLocal(updatedHistory);
         setEditingSale(null);
+        setEmailError("");
         alert("Venda atualizada!");
     };
 
@@ -360,16 +414,45 @@ export default function POSPage() {
         }
     }, [showSignaturePad]);
 
+    const filteredProducts = getProductsByGarageSale(selectedGarageSaleId).filter(product => {
+        const matchesSearch = !productFilters.search ||
+            product.nome.toLowerCase().includes(productFilters.search.toLowerCase()) ||
+            product.descricao.toLowerCase().includes(productFilters.search.toLowerCase());
+
+        const matchesCategory = !productFilters.category || product.categoria === productFilters.category;
+        const matchesCondition = !productFilters.condition || product.condicao === productFilters.condition;
+
+        const matchesMinPrice = !productFilters.minPrice || product.preco >= parseFloat(productFilters.minPrice);
+        const matchesMaxPrice = !productFilters.maxPrice || product.preco <= parseFloat(productFilters.maxPrice);
+
+        return matchesSearch && matchesCategory && matchesCondition && matchesMinPrice && matchesMaxPrice;
+    });
+
+    const uniqueCategories = Array.from(new Set(products.map(p => p.categoria)));
+    const uniqueConditions = Array.from(new Set(products.map(p => p.condicao)));
+
     return (
         <div className="flex h-screen flex-col bg-gray-100 text-slate-800 font-sans">
             <header className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-4">
                     <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                         <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-sm font-bold text-white">
                             GS
                         </div>
                         <span className="hidden font-bold sm:block">Garage Sale</span>
                     </Link>
+
+                    {garageSales.length > 0 && (
+                        <select
+                            value={selectedGarageSaleId}
+                            onChange={(e) => setSelectedGarageSaleId(e.target.value)}
+                            className="rounded border border-gray-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            {garageSales.map(gs => (
+                                <option key={gs.id} value={gs.id}>{gs.nome}</option>
+                            ))}
+                        </select>
+                    )}
                 </div>
 
                 <div className="flex rounded-lg bg-gray-100 p-1">
@@ -419,7 +502,7 @@ export default function POSPage() {
                                     />
                                     <input
                                         value={currentSale.buyerPhone}
-                                        onChange={e => setCurrentSale({ ...currentSale, buyerPhone: e.target.value })}
+                                        onChange={e => setCurrentSale({ ...currentSale, buyerPhone: maskPhone(e.target.value) })}
                                         className="rounded border p-2 focus:ring-2 focus:ring-blue-500 outline-none"
                                         placeholder="Telefone"
                                     />
@@ -486,7 +569,7 @@ export default function POSPage() {
                                             <div className="flex items-center justify-between">
                                                 <div className="text-xl font-bold text-gray-700">Total: {formatCurrency(currentSaleTotal)}</div>
                                                 <button
-                                                    onClick={() => setIsCheckoutMode(true)}
+                                                    onClick={goToCheckout}
                                                     disabled={currentSale.items!.length === 0}
                                                     className="rounded bg-blue-600 px-6 py-3 font-bold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-md hover:shadow-lg disabled:shadow-none"
                                                 >
@@ -547,10 +630,10 @@ export default function POSPage() {
 
                         <div className="hidden h-full flex-col gap-4 overflow-y-auto rounded-xl border bg-white p-4 lg:flex lg:w-1/3 shadow-sm">
                             <h3 className="border-b pb-2 font-bold text-brand-900 text-lg">Histórico de Vendas</h3>
-                            {salesHistory.length === 0 ? (
+                            {filteredSalesHistory.length === 0 ? (
                                 <div className="text-center text-sm text-gray-400 py-10">Nenhuma venda registrada ainda.</div>
                             ) : (
-                                salesHistory.map(sale => (
+                                filteredSalesHistory.map(sale => (
                                     <div key={sale.id} className="rounded border-b p-3 hover:bg-gray-50 transition-colors">
                                         <div className="flex items-center justify-between mb-1">
                                             <span className="text-sm font-bold text-gray-800">{sale.buyerName || 'Cliente Balcão'}</span>
@@ -561,7 +644,7 @@ export default function POSPage() {
                                         <div className="flex gap-1 mt-2">
                                             <button onClick={() => sendReceiptToWhatsApp(sale)} className="flex-1 bg-green-500 text-white text-xs py-1 rounded hover:bg-green-600">📱 WhatsApp</button>
                                             <button onClick={() => startEditSale(sale)} className="flex-1 bg-blue-500 text-white text-xs py-1 rounded hover:bg-blue-600">✏️ Editar</button>
-                                            <button onClick={() => deleteSale(sale.id)} className="bg-red-500 text-white text-xs py-1 px-2 rounded hover:bg-red-600">🗑️</button>
+                                            <button onClick={() => deleteSale(sale.id)} className="bg-red-500 text-white text-xs py-1 px-2 rounded hover:bg-red-600" title="Excluir">❌</button>
                                         </div>
                                     </div>
                                 ))
@@ -571,10 +654,82 @@ export default function POSPage() {
                 )}
 
                 {currentView === 'products' && (
-                    <div className="w-full h-full p-8 flex items-center justify-center text-gray-500">
-                        <div className="text-center">
-                            <h2 className="text-2xl font-bold mb-2">Base de Produtos</h2>
-                            <p>Interface de gerenciamento de produtos similar ao GS.html ficaria aqui.</p>
+                    <div className="w-full h-full p-8 overflow-y-auto">
+                        <div className="max-w-6xl mx-auto">
+                            <h1 className="text-3xl font-bold mb-6">Produtos Cadastrados</h1>
+
+                            <div className="bg-white rounded-xl shadow p-4 mb-6">
+                                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar por nome ou descrição..."
+                                        value={productFilters.search}
+                                        onChange={e => setProductFilters({ ...productFilters, search: e.target.value })}
+                                        className="md:col-span-2 rounded border p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                    />
+                                    <select
+                                        value={productFilters.category}
+                                        onChange={e => setProductFilters({ ...productFilters, category: e.target.value })}
+                                        className="rounded border p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                    >
+                                        <option value="">Todas Categorias</option>
+                                        {uniqueCategories.map(cat => (
+                                            <option key={cat} value={cat}>{cat}</option>
+                                        ))}
+                                    </select>
+                                    <select
+                                        value={productFilters.condition}
+                                        onChange={e => setProductFilters({ ...productFilters, condition: e.target.value })}
+                                        className="rounded border p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                    >
+                                        <option value="">Todas Condições</option>
+                                        {uniqueConditions.map(cond => (
+                                            <option key={cond} value={cond}>{cond}</option>
+                                        ))}
+                                    </select>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="number"
+                                            placeholder="Preço mín"
+                                            value={productFilters.minPrice}
+                                            onChange={e => setProductFilters({ ...productFilters, minPrice: e.target.value })}
+                                            className="w-1/2 rounded border p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                        />
+                                        <input
+                                            type="number"
+                                            placeholder="Preço máx"
+                                            value={productFilters.maxPrice}
+                                            onChange={e => setProductFilters({ ...productFilters, maxPrice: e.target.value })}
+                                            className="w-1/2 rounded border p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {filteredProducts.length === 0 ? (
+                                <div className="text-center text-gray-500 py-10">
+                                    <p className="text-lg">Nenhum produto encontrado</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {filteredProducts.map(product => (
+                                        <div key={product.id} className="bg-white rounded-xl shadow hover:shadow-lg transition-shadow overflow-hidden">
+                                            {product.imagens && product.imagens.length > 0 && (
+                                                <img src={product.imagens[0]} alt={product.nome} className="w-full h-48 object-cover" />
+                                            )}
+                                            <div className="p-4">
+                                                <h3 className="font-bold text-lg mb-2">{product.nome}</h3>
+                                                <p className="text-sm text-gray-600 mb-2 line-clamp-2">{product.descricao}</p>
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{product.categoria}</span>
+                                                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">{product.condicao}</span>
+                                                </div>
+                                                <div className="text-xl font-bold text-green-600">{formatCurrency(product.preco)}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -679,6 +834,31 @@ export default function POSPage() {
                                 onChange={e => setEditingSale({ ...editingSale, buyerName: e.target.value })}
                                 className="w-full rounded border p-2"
                             />
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-bold mb-2">Telefone</label>
+                            <input
+                                value={editingSale.buyerPhone || ''}
+                                onChange={e => setEditingSale({ ...editingSale, buyerPhone: maskPhone(e.target.value) })}
+                                className="w-full rounded border p-2"
+                                placeholder="(00) 00000-0000"
+                            />
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-bold mb-2">Email</label>
+                            <input
+                                type="email"
+                                value={editingSale.buyerEmail || ''}
+                                onChange={e => {
+                                    setEditingSale({ ...editingSale, buyerEmail: e.target.value });
+                                    setEmailError("");
+                                }}
+                                className={`w-full rounded border p-2 ${emailError ? 'border-red-500' : ''}`}
+                                placeholder="email@exemplo.com"
+                            />
+                            {emailError && <p className="text-red-500 text-sm mt-1">{emailError}</p>}
                         </div>
 
                         <div className="mb-4">
