@@ -13,10 +13,11 @@ export default function AdminLayout({
     const [isSidebarOpen, setSidebarOpen] = useState(true);
 
     const navItems = [
-        { name: "Dashboard", href: "/admin", icon: "📊" },
-        { name: "Products", href: "/admin/products", icon: "📦" },
-        { name: "Sales", href: "/admin/sales", icon: "💰" },
-        { name: "Settings", href: "/admin/settings", icon: "⚙️" },
+        { name: "Painel", href: "/admin", icon: "📊" },
+        { name: "Garage Sales", href: "/admin/garage-sales", icon: "🏪" },
+        { name: "Produtos", href: "/admin/products", icon: "📦" },
+        { name: "Vendas", href: "/admin/sales", icon: "💰" },
+        { name: "Configurações", href: "/admin/settings", icon: "⚙️" },
     ];
 
     return (
@@ -48,8 +49,8 @@ export default function AdminLayout({
                                 key={item.href}
                                 href={item.href}
                                 className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${isActive
-                                        ? "bg-purple-600 text-white"
-                                        : "text-neutral-400 hover:bg-neutral-800 hover:text-white"
+                                    ? "bg-purple-600 text-white"
+                                    : "text-neutral-400 hover:bg-neutral-800 hover:text-white"
                                     }`}
                             >
                                 <span className="text-xl">{item.icon}</span>
@@ -65,7 +66,7 @@ export default function AdminLayout({
                         className="flex items-center gap-3 text-red-400 hover:text-red-300"
                     >
                         <span className="text-xl">🚪</span>
-                        {isSidebarOpen && <span>Logout</span>}
+                        {isSidebarOpen && <span>Sair</span>}
                     </Link>
                 </div>
             </aside>

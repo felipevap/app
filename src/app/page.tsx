@@ -6,7 +6,7 @@ export default function Home() {
       <h1 className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-6xl font-bold text-transparent">
         Garage Sale
       </h1>
-      <p className="mt-4 text-xl text-gray-400">Premium Management System</p>
+      <p className="mt-4 text-xl text-gray-400">Sistema de Gerenciamento Premium</p>
 
       <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-3">
         <Link
@@ -16,8 +16,8 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
           <div className="relative z-10">
             <span className="text-4xl">📊</span>
-            <h2 className="mt-4 text-2xl font-bold text-white">Backoffice</h2>
-            <p className="mt-2 text-sm text-gray-400">Manage Products & Sales</p>
+            <h2 className="mt-4 text-2xl font-bold text-white">Gerenciador</h2>
+            <p className="mt-2 text-sm text-gray-400">Gerenciar Produtos e Vendas</p>
           </div>
         </Link>
 
@@ -28,8 +28,8 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
           <div className="relative z-10">
             <span className="text-4xl">📷</span>
-            <h2 className="mt-4 text-2xl font-bold text-white">Capture</h2>
-            <p className="mt-2 text-sm text-gray-400">Add New Items</p>
+            <h2 className="mt-4 text-2xl font-bold text-white">Captura</h2>
+            <p className="mt-2 text-sm text-gray-400">Adicionar Novos Itens</p>
           </div>
         </Link>
 
@@ -40,8 +40,8 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
           <div className="relative z-10">
             <span className="text-4xl">🛒</span>
-            <h2 className="mt-4 text-2xl font-bold text-white">POS</h2>
-            <p className="mt-2 text-sm text-gray-400">Process Transactions</p>
+            <h2 className="mt-4 text-2xl font-bold text-white">PDV</h2>
+            <p className="mt-2 text-sm text-gray-400">Processar Transações</p>
           </div>
         </Link>
       </div>

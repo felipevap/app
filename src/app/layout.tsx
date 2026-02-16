@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 };
 
 import { ProductProvider } from "@/contexts/ProductContext";
+import { GarageSaleProvider } from "@/contexts/GarageSaleContext";
 
 export default function RootLayout({
   children,
@@ -25,14 +26,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ProductProvider>
-          {children}
-        </ProductProvider>
+        <GarageSaleProvider>
+          <ProductProvider>
+            {children}
+          </ProductProvider>
+        </GarageSaleProvider>
       </body>
     </html>
   );
 }
+

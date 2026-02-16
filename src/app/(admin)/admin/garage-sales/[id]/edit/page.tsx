@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 
-export default function NewGarageSalePage() {
+export default function EditGarageSalePage() {
     const router = useRouter();
-    const { addGarageSale } = useGarageSales();
+    const params = useParams();
+    const id = params?.id as string;
+    const { getGarageSale, updateGarageSale } = useGarageSales();
+
     const [formData, setFormData] = useState({
         nome: "",
         dataInicio: "",
@@ -18,6 +21,24 @@ export default function NewGarageSalePage() {
         regras: "",
         banner: "",
     });
+
+    useEffect(() => {
+        if (id) {
+            const garageSale = getGarageSale(id);
+            if (garageSale) {
+                setFormData({
+                    nome: garageSale.nome,
+                    dataInicio: garageSale.dataInicio,
+                    dataFim: garageSale.dataFim,
+                    endereco: garageSale.endereco,
+                    responsavel: garageSale.responsavel,
+                    email: garageSale.email,
+                    regras: garageSale.regras,
+                    banner: garageSale.banner || "",
+                });
+            }
+        }
+    }, [id, getGarageSale]);
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -60,8 +81,8 @@ export default function NewGarageSalePage() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        addGarageSale(formData);
-        alert("Garage Sale criada com sucesso!");
+        updateGarageSale(id, formData);
+        alert("Garage Sale atualizada com sucesso!");
         router.push("/admin/garage-sales");
     };
 
@@ -69,8 +90,8 @@ export default function NewGarageSalePage() {
         <div className="max-w-4xl mx-auto">
             <header className="mb-8 flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Nova Garage Sale</h1>
-                    <p className="text-neutral-400">Crie um novo evento e atribua um responsável.</p>
+                    <h1 className="text-3xl font-bold text-white">Editar Garage Sale</h1>
+                    <p className="text-neutral-400">Atualize as informações do evento.</p>
                 </div>
                 <Link
                     href="/admin/garage-sales"
@@ -94,7 +115,6 @@ export default function NewGarageSalePage() {
                                 value={formData.nome}
                                 onChange={handleChange}
                                 className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                placeholder="Bazar de Verão 2026"
                                 required
                             />
                         </div>
@@ -134,7 +154,6 @@ export default function NewGarageSalePage() {
                                 value={formData.endereco}
                                 onChange={handleChange}
                                 className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                placeholder="Rua Exemplo, 123, Cidade, Estado"
                                 required
                             />
                         </div>
@@ -156,7 +175,6 @@ export default function NewGarageSalePage() {
                                 value={formData.responsavel}
                                 onChange={handleChange}
                                 className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-                                placeholder="João Silva"
                                 required
                             />
                         </div>
@@ -170,7 +188,6 @@ export default function NewGarageSalePage() {
                                 value={formData.email}
                                 onChange={handleChange}
                                 className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-                                placeholder="joao@exemplo.com"
                                 required
                             />
                         </div>
@@ -191,7 +208,6 @@ export default function NewGarageSalePage() {
                             onChange={handleChange}
                             rows={4}
                             className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
-                            placeholder="Digite as regras específicas para esta Garage Sale..."
                         />
                     </div>
 
@@ -256,7 +272,7 @@ export default function NewGarageSalePage() {
                         type="submit"
                         className="rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-4 font-bold text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-neutral-900"
                     >
-                        Criar Garage Sale
+                        Salvar Alterações
                     </button>
                 </div>
             </form>
