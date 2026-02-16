@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
+import { formatDate, formatCurrency } from "@/utils/formatters";
 
 interface Item {
     productId?: string;
@@ -112,19 +113,7 @@ export default function POSPage() {
         !selectedGarageSaleId || sale.garageSaleId === selectedGarageSaleId
     );
 
-    import { formatDate, formatCurrency } from "@/utils/formatters";
 
-    // ...
-    text += `Data: ${formatDate(sale.date)}\n\n`;
-
-    // ...
-    html += `<p><strong>Data:</strong> ${formatDate(new Date())}</p>`;
-
-    // ...
-    <p className="text-sm text-gray-500">
-        {formatDate(gs.dataInicio)}
-        {gs.dataFim && ` - ${formatDate(gs.dataFim)}`}
-    </p>
 
     const getPaymentLabel = (method: string) => {
         const labels: Record<string, string> = {
@@ -152,7 +141,7 @@ export default function POSPage() {
     const generateReceiptText = (sale: Sale) => {
         let text = `GARAGE SALE PREMIUM\n`;
         text += `Recibo #${String(sale.id).padStart(4, '0')}\n`;
-        text += `Data: ${new Date(sale.date).toLocaleDateString('pt-BR')}\n\n`;
+        text += `Data: ${formatDate(sale.date)}\n\n`;
         text += `ITENS:\n`;
         sale.items.forEach(item => {
             text += `${item.qty}x ${item.desc} - ${formatCurrency(item.price * item.qty)}\n`;
@@ -185,7 +174,7 @@ export default function POSPage() {
         html += `th,td{border:1px solid #ddd;padding:8px;text-align:left;}`;
         html += `th{background:#4CAF50;color:white;}</style></head><body>`;
         html += `<h1 style="text-align:center;">RELATÓRIO DE FECHAMENTO</h1>`;
-        html += `<p><strong>Data:</strong> ${new Date().toLocaleDateString('pt-BR')}</p>`;
+        html += `<p><strong>Data:</strong> ${formatDate(new Date())}</p>`;
         html += `<h2>Resumo Financeiro</h2>`;
         html += `<table><tr><th>Método</th><th>Total</th><th>Comissão (20%)</th><th>Líquido</th></tr>`;
         html += `<tr><td>PIX</td><td>${formatCurrency(summary.pix.total)}</td><td>${formatCurrency(summary.pix.commission)}</td><td>${formatCurrency(summary.pix.net)}</td></tr>`;
@@ -470,8 +459,8 @@ export default function POSPage() {
                                             <div className="flex-1">
                                                 <h3 className="font-bold text-xl text-gray-800 mb-1">{gs.nome}</h3>
                                                 <p className="text-sm text-gray-500">
-                                                    {new Date(gs.dataInicio).toLocaleDateString('pt-BR')}
-                                                    {gs.dataFim && ` - ${new Date(gs.dataFim).toLocaleDateString('pt-BR')}`}
+                                                    {formatDate(gs.dataInicio)}
+                                                    {gs.dataFim && ` - ${formatDate(gs.dataFim)}`}
                                                 </p>
                                             </div>
                                             <div className="text-3xl">🏪</div>
