@@ -260,31 +260,31 @@ export default function CapturePage() {
                         animate={{ y: 0 }}
                         exit={{ y: "100%" }}
                         transition={{ type: "spring", damping: 20 }}
-                        className="absolute bottom-0 left-0 right-0 z-30 bg-neutral-900 rounded-t-3xl p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-neutral-700 pointer-events-auto max-h-[70vh] overflow-y-auto"
+                        className="absolute bottom-0 left-0 right-0 z-30 bg-neutral-900 rounded-t-3xl p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-neutral-700 pointer-events-auto max-h-[85vh] overflow-y-auto"
                     >
                         <div className="w-12 h-1.5 bg-neutral-700 rounded-full mx-auto mb-6"></div>
 
-                        <button onClick={addToCart} className="w-full bg-green-600 py-4 rounded-xl font-bold text-white hover:bg-green-500 transition-colors text-lg mb-6">
+                        <button onClick={addToCart} className="w-full bg-green-600 py-5 rounded-xl font-bold text-white hover:bg-green-500 transition-colors text-xl mb-6 shadow-lg">
                             ✓ Adicionar ao Carrinho
                         </button>
 
                         <div className="flex gap-4">
                             {foundProduct.imagens[0] && (
-                                <img src={foundProduct.imagens[0]} alt={foundProduct.nome} className="w-24 h-24 rounded-xl object-cover bg-neutral-800" />
+                                <img src={foundProduct.imagens[0]} alt={foundProduct.nome} className="w-32 h-32 rounded-xl object-cover bg-neutral-800" />
                             )}
                             <div className="flex-1">
                                 <div className="flex justify-between items-start">
-                                    <h2 className="text-xl font-bold text-white mb-1">{foundProduct.nome}</h2>
-                                    <button onClick={() => setFoundProduct(null)} className="text-neutral-500 p-1">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    <h2 className="text-2xl font-bold text-white mb-2">{foundProduct.nome}</h2>
+                                    <button onClick={() => setFoundProduct(null)} className="text-neutral-500 p-1 hover:text-white transition-colors">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                     </button>
                                 </div>
-                                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                    <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full">
+                                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                                    <span className="px-3 py-1 bg-blue-500/20 text-blue-400 text-sm rounded-full">
                                         {foundProduct.categoria}
                                     </span>
                                 </div>
-                                <p className="text-blue-400 font-bold text-lg mb-2">{formatBRL(foundProduct.preco)}</p>
+                                <p className="text-blue-400 font-bold text-2xl mb-2">{formatBRL(foundProduct.preco)}</p>
                             </div>
                         </div>
                     </motion.div>
