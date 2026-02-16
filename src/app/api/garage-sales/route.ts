@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     try {
+        const { searchParams } = new URL(req.url);
+        const includeDeleted = searchParams.get('includeDeleted') === 'true';
+
+        const where: any = {};
+        if (!includeDeleted) {
+            where.deletedAt = null;
+        }
+
         const garageSales = await prisma.garageSale.findMany({
+            where,
             orderBy: { createdAt: 'desc' }
         });
         return NextResponse.json(garageSales);

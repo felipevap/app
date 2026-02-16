@@ -12,7 +12,8 @@ export interface GarageSale {
     email: string;
     regras: string;
     banner?: string;
-    criadoEm: number; // Mantido para compatibilidade
+    criadoEm: number;
+    deletedAt?: string | null;
 }
 
 export interface Product {
@@ -42,7 +43,7 @@ interface GarageSaleContextType {
     getProduct: (id: string) => Product | undefined;
     getProductsByGarageSale: (garageSaleId: string) => Product[];
     createSale: (sale: any) => Promise<any>;
-    refreshData: () => Promise<void>;
+    refreshData: (options?: { includeDeleted?: boolean }) => Promise<void>;
 }
 
 const GarageSaleContext = createContext<GarageSaleContextType | undefined>(undefined);
@@ -52,11 +53,12 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const fetchData = useCallback(async () => {
+    const fetchData = useCallback(async (options?: { includeDeleted?: boolean }) => {
         try {
             setLoading(true);
+            const query = options?.includeDeleted ? '?includeDeleted=true' : '';
             const [gsRes, prodRes] = await Promise.all([
-                fetch('/api/garage-sales'),
+                fetch(`/api/garage-sales${query}`),
                 fetch('/api/products')
             ]);
 
@@ -92,14 +94,29 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
     }, []);
 
     const updateGarageSale = useCallback(async (id: string, updated: Partial<GarageSale>) => {
-        // TODO: Implementar PUT
-        setGarageSales(prev => prev.map(gs => gs.id === id ? { ...gs, ...updated } : gs));
+        const res = await fetch(`/api/garage-sales/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updated)
+        });
+
+        if (!res.ok) throw new Error('Failed to update garage sale');
+
+        const updatedGS = await res.json();
+        setGarageSales(prev => prev.map(gs => gs.id === id ? updatedGS : gs));
     }, []);
 
     const deleteGarageSale = useCallback(async (id: string) => {
-        // TODO: Implementar DELETE
+        const res = await fetch(`/api/garage-sales/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (!res.ok) throw new Error('Failed to delete garage sale');
+
+        // Update local state: remove if we are not showing deleted, or mark as deleted if we are?
+        // Simpler to just remove from list for now, or trigger refresh. 
+        // Let's remove from list to be responsive.
         setGarageSales(prev => prev.filter(gs => gs.id !== id));
-        setProducts(prev => prev.filter(p => p.garageSaleId !== id));
     }, []);
 
     const getGarageSale = useCallback((id: string) => {

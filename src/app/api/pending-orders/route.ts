@@ -62,6 +62,33 @@ export async function POST(req: NextRequest) {
     }
 }
 
+export async function PUT(req: NextRequest) {
+    try {
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get('id');
+
+        if (!id) {
+            return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
+        }
+
+        const updatedOrder = await prisma.pendingOrder.update({
+            where: { id },
+            data: {
+                isPaid: true,
+                status: 'paid'
+            },
+            include: {
+                items: true,
+            },
+        });
+
+        return NextResponse.json(updatedOrder);
+    } catch (error) {
+        console.error('Error updating pending order:', error);
+        return NextResponse.json({ error: 'Failed to update pending order' }, { status: 500 });
+    }
+}
+
 export async function DELETE(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);

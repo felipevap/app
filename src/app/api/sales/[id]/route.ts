@@ -3,9 +3,10 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const id = parseInt(params.id);
+        const { id: paramId } = await params;
+        const id = parseInt(paramId);
         const body = await req.json();
         const { items, payments, totalValue, buyerName, buyerPhone, buyerEmail, garageSaleId } = body;
 
@@ -65,9 +66,10 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const id = parseInt(params.id);
+        const { id: paramId } = await params;
+        const id = parseInt(paramId);
         await prisma.sale.delete({ where: { id } });
         return NextResponse.json({ success: true });
     } catch (error) {

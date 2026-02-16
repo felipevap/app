@@ -93,7 +93,7 @@ export default function AdminDashboard() {
                 </select>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-6 shadow-sm">
                     <h3 className="text-sm font-medium text-neutral-400">
                         Vendas Totais
@@ -123,6 +123,39 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
+            {/* Sales by Garage Sale Chart */}
+            <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-6">
+                <h2 className="text-xl font-bold text-white mb-6">Vendas por Evento</h2>
+                <div className="space-y-4">
+                    {garageSales.map(gs => {
+                        const salesForGs = salesHistory.filter(s => s.garageSaleId === gs.id);
+                        const totalForGs = salesForGs.reduce((sum, s) => sum + s.totalValue, 0);
+                        const maxSales = Math.max(...garageSales.map(g =>
+                            salesHistory.filter(s => s.garageSaleId === g.id).reduce((sum, s) => sum + s.totalValue, 0)
+                        ), 1); // Avoid division by zero
+                        const percentage = (totalForGs / maxSales) * 100;
+
+                        return (
+                            <div key={gs.id} className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-white font-medium">{gs.nome}</span>
+                                    <span className="text-neutral-400">{formatCurrency(totalForGs)}</span>
+                                </div>
+                                <div className="h-3 w-full bg-neutral-900 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-gradient-to-r from-blue-600 to-purple-600 rounded-full transition-all duration-1000 ease-out"
+                                        style={{ width: `${percentage}%` }}
+                                    />
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {garageSales.length === 0 && (
+                        <p className="text-center text-neutral-500 py-4">Nenhum evento cadastrado</p>
+                    )}
+                </div>
+            </div>
+
             <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-6">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold text-white">Atividade Recente (PDV)</h2>
@@ -142,27 +175,31 @@ export default function AdminDashboard() {
                         recentSales.map((sale) => (
                             <div
                                 key={sale.id}
-                                className="flex items-center justify-between border-b border-neutral-800 pb-4 last:border-0 last:pb-0"
+                                className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-neutral-800 pb-4 last:border-0 last:pb-0 gap-4 sm:gap-0"
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
+                                    <div className="h-10 w-10 shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold">
                                         {sale.id}
                                     </div>
                                     <div>
                                         <p className="font-medium text-white">
-                                            {sale.buyerName || 'Cliente'} - {sale.items.length} item{sale.items.length !== 1 ? 's' : ''}
+                                            {sale.buyerName || 'Cliente'} <span className="text-neutral-500 text-sm">• {sale.items.length} item{sale.items.length !== 1 ? 's' : ''}</span>
                                         </p>
-                                        <p className="text-sm text-neutral-400">
+                                        <p className="text-xs sm:text-sm text-neutral-400 flex flex-wrap gap-1">
                                             {formatRelativeTime(sale.timestamp)}
                                             {sale.garageSaleId && garageSales.find(gs => gs.id === sale.garageSaleId) && (
-                                                <span className="ml-2">
-                                                    • {garageSales.find(gs => gs.id === sale.garageSaleId)?.nome}
-                                                </span>
+                                                <span className="hidden sm:inline">• {garageSales.find(gs => gs.id === sale.garageSaleId)?.nome}</span>
                                             )}
                                         </p>
+                                        {/* Mobile only garage sale name */}
+                                        {sale.garageSaleId && garageSales.find(gs => gs.id === sale.garageSaleId) && (
+                                            <p className="sm:hidden text-xs text-blue-400 mt-1">
+                                                {garageSales.find(gs => gs.id === sale.garageSaleId)?.nome}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
-                                <span className="text-sm font-medium text-green-400">
+                                <span className="text-lg font-bold text-green-400 sm:text-sm sm:font-medium text-right">
                                     {formatCurrency(sale.totalValue)}
                                 </span>
                             </div>

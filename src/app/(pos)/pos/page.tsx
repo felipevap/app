@@ -156,11 +156,18 @@ export default function POSPage() {
 
 
     const maskPhone = (value: string) => {
-        return value
-            .replace(/\D/g, '')
-            .replace(/(\d{2})(\d)/, '($1) $2')
-            .replace(/(\d{5})(\d)/, '$1-$2')
-            .replace(/(-\d{4})\d+?$/, '$1');
+        const cleaned = value.replace(/\D/g, '');
+        if (cleaned.length <= 10) {
+            return cleaned
+                .replace(/(\d{2})(\d)/, '($1) $2')
+                .replace(/(\d{4})(\d)/, '$1-$2')
+                .replace(/(-\d{4})\d+?$/, '$1');
+        } else {
+            return cleaned
+                .replace(/(\d{2})(\d)/, '($1) $2')
+                .replace(/(\d{5})(\d)/, '$1-$2')
+                .replace(/(-\d{4})\d+?$/, '$1');
+        }
     };
 
     useEffect(() => {
@@ -191,12 +198,12 @@ export default function POSPage() {
 
         try {
             await fetch(`/api/pending-orders?id=${order.id}`, {
-                method: 'DELETE',
+                method: 'PUT',
             });
 
             setPendingOrders(pendingOrders.filter((o: any) => o.id !== order.id));
         } catch (error) {
-            console.error('Erro ao remover pedido pendente:', error);
+            console.error('Erro ao marcar pedido como pago:', error);
         }
     };
 
