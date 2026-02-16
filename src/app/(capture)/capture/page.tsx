@@ -19,6 +19,8 @@ export default function CapturePage() {
     const [showNotFound, setShowNotFound] = useState(false);
     const [cart, setCart] = useState<any[]>([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const [customerInfo, setCustomerInfo] = useState({ nome: '', telefone: '', email: '' });
+    const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -32,7 +34,7 @@ export default function CapturePage() {
 
     const currentProducts = selectedGarageSaleId
         ? getProductsByGarageSale(selectedGarageSaleId)
-        : products; // Fallback to all products if no GS selected
+        : products;
 
     const formatBRL = (value: number): string => {
         return value.toLocaleString('pt-BR', {
@@ -53,7 +55,6 @@ export default function CapturePage() {
         setFoundProduct(null);
         setShowNotFound(false);
 
-        // Simulate scanning delay
         await new Promise(r => setTimeout(r, 600));
 
         const matchId = await findMatchingProduct(imageSrc, currentProducts);
@@ -84,8 +85,11 @@ export default function CapturePage() {
     };
 
     const checkout = () => {
-        // Save cart to pending state for POS
-        // We transpose the cart items to match the expected POS item format: { desc, qty, price }
+        if (!customerInfo.nome || !customerInfo.telefone || !customerInfo.email) {
+            alert('Por favor, preencha todos os campos (Nome, Telefone e Email)');
+            return;
+        }
+
         const posItems = cart.map(item => ({
             desc: item.nome,
             qty: 1,
@@ -93,7 +97,15 @@ export default function CapturePage() {
         }));
 
         localStorage.setItem('pending_cart', JSON.stringify(posItems));
-        router.push('/pos?import=true');
+        localStorage.setItem('pending_customer', JSON.stringify(customerInfo));
+
+        setShowSuccessMessage(true);
+        setTimeout(() => {
+            setShowSuccessMessage(false);
+            setCart([]);
+            setCustomerInfo({ nome: '', telefone: '', email: '' });
+            setIsCartOpen(false);
+        }, 3000);
     };
 
     const [cameraError, setCameraError] = useState<string | null>(null);
@@ -212,10 +224,10 @@ export default function CapturePage() {
                         animate={{ y: 0 }}
                         exit={{ y: "100%" }}
                         transition={{ type: "spring", damping: 20 }}
-                        className="absolute bottom-0 left-0 right-0 z-30 bg-neutral-900 rounded-t-3xl p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-neutral-700 pointer-events-auto"
+                        className="absolute bottom-0 left-0 right-0 z-30 bg-neutral-900 rounded-t-3xl p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-neutral-700 pointer-events-auto max-h-[70vh] overflow-y-auto"
                     >
                         <div className="w-12 h-1.5 bg-neutral-700 rounded-full mx-auto mb-6"></div>
-                        <div className="flex gap-4">
+                        <div className="flex gap-4 mb-4">
                             {foundProduct.imagens[0] && (
                                 <img src={foundProduct.imagens[0]} alt={foundProduct.nome} className="w-24 h-24 rounded-xl object-cover bg-neutral-800" />
                             )}
@@ -234,9 +246,27 @@ export default function CapturePage() {
                                 <p className="text-blue-400 font-bold text-lg mb-2">{formatBRL(foundProduct.preco)}</p>
                             </div>
                         </div>
-                        <button onClick={addToCart} className="w-full mt-6 bg-green-600 py-3 rounded-xl font-semibold text-white hover:bg-green-500 transition-colors">
-                            Adicionar ao Carrinho
+                        <button onClick={addToCart} className="w-full bg-green-600 py-4 rounded-xl font-bold text-white hover:bg-green-500 transition-colors text-lg">
+                            ✓ Adicionar ao Carrinho
                         </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Success Message */}
+            <AnimatePresence>
+                {showSuccessMessage && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto"
+                    >
+                        <div className="bg-green-600 text-white p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4">
+                            <div className="text-6xl mb-4">✓</div>
+                            <h3 className="text-2xl font-bold mb-2">Compra Registrada!</h3>
+                            <p className="text-lg">Por favor, dirija-se ao caixa para finalizar o pagamento.</p>
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -257,7 +287,7 @@ export default function CapturePage() {
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto space-y-4">
+                        <div className="flex-1 overflow-y-auto space-y-4 mb-6">
                             {cart.length === 0 ? (
                                 <div className="text-center text-neutral-500 mt-10">Carrinho vazio</div>
                             ) : (
@@ -278,17 +308,41 @@ export default function CapturePage() {
                             )}
                         </div>
 
-                        <div className="mt-6 pt-6 border-t border-neutral-800">
-                            <div className="flex justify-between mb-6 text-xl font-bold">
+                        <div className="border-t border-neutral-800 pt-4 space-y-4">
+                            <div className="space-y-3">
+                                <input
+                                    type="text"
+                                    placeholder="Nome completo *"
+                                    value={customerInfo.nome}
+                                    onChange={(e) => setCustomerInfo({ ...customerInfo, nome: e.target.value })}
+                                    className="w-full bg-neutral-800 text-white px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <input
+                                    type="tel"
+                                    placeholder="Telefone *"
+                                    value={customerInfo.telefone}
+                                    onChange={(e) => setCustomerInfo({ ...customerInfo, telefone: e.target.value })}
+                                    className="w-full bg-neutral-800 text-white px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <input
+                                    type="email"
+                                    placeholder="Email *"
+                                    value={customerInfo.email}
+                                    onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
+                                    className="w-full bg-neutral-800 text-white px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+
+                            <div className="flex justify-between text-xl font-bold pt-4 border-t border-neutral-800">
                                 <span>Total</span>
-                                <span>{formatBRL(cart.reduce((acc, item) => acc + item.price, 0))}</span>
+                                <span>{formatBRL(cart.reduce((acc, item) => acc + item.preco, 0))}</span>
                             </div>
                             <button
                                 onClick={checkout}
                                 disabled={cart.length === 0}
-                                className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                Enviar para PDV
+                                Realizar Compra
                             </button>
                         </div>
                     </motion.div>
