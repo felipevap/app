@@ -608,11 +608,15 @@ export default function POSPage() {
                 {currentView === 'sales' && (
                     <div className="flex h-full w-full gap-4 p-4">
                         <div className="flex w-full flex-col gap-4 overflow-y-auto lg:w-2/3">
-                            {pendingOrders.length > 0 && (
-                                <div className="rounded-xl border border-orange-200 bg-orange-50 shadow-sm p-4">
-                                    <h3 className="font-bold text-orange-800 mb-3 flex items-center gap-2">
-                                        <span className="text-xl">📱</span> Pedidos do App ({pendingOrders.length})
-                                    </h3>
+                            <div className="rounded-xl border border-orange-200 bg-orange-50 shadow-sm p-4">
+                                <h3 className="font-bold text-orange-800 mb-3 flex items-center gap-2">
+                                    <span className="text-xl">📱</span> Pedidos do App ({pendingOrders.length})
+                                </h3>
+                                {pendingOrders.length === 0 ? (
+                                    <div className="text-center text-orange-600 py-4 text-sm">
+                                        Nenhum pedido pendente. Os pedidos feitos pelo app de captura aparecerão aqui.
+                                    </div>
+                                ) : (
                                     <div className="space-y-2">
                                         {pendingOrders.map((order: any) => (
                                             <div key={order.id} className="bg-white rounded-lg p-3 border border-orange-200">
@@ -636,8 +640,8 @@ export default function POSPage() {
                                             </div>
                                         ))}
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
                             <div className="flex flex-grow flex-col rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
                                 <div className="flex items-center justify-between border-b bg-gray-50 p-4 rounded-t-xl">
                                     <h2 className="font-bold text-gray-700">{isCheckoutMode ? 'Pagamento' : 'Novo Pedido'}</h2>
