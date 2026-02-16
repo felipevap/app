@@ -1,17 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
+import Webcam from "react-webcam";
 
 export default function EditProductPage() {
     const router = useRouter();
     const params = useParams();
     const id = params?.id as string;
     const { garageSales, getProduct, updateProduct } = useGarageSales();
+    const webcamRef = useRef<Webcam>(null);
 
     const [currentTag, setCurrentTag] = useState("");
+    const [showCamera, setShowCamera] = useState(false);
     const [formData, setFormData] = useState({
         nome: "",
         descricao: "",
@@ -80,6 +83,42 @@ export default function EditProductPage() {
             };
             reader.readAsDataURL(file);
         });
+    };
+
+    const capturePhoto = () => {
+        if (!webcamRef.current) return;
+        const imageSrc = webcamRef.current.getScreenshot();
+        if (!imageSrc) return;
+
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const MAX_SIZE = 512;
+
+            if (width > height) {
+                if (width > MAX_SIZE) {
+                    height *= MAX_SIZE / width;
+                    width = MAX_SIZE;
+                }
+            } else {
+                if (height > MAX_SIZE) {
+                    width *= MAX_SIZE / height;
+                    height = MAX_SIZE;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(img, 0, 0, width, height);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                setFormData(prev => ({ ...prev, imagens: [...prev.imagens, dataUrl] }));
+            }
+        };
+        img.src = imageSrc;
     };
 
     const removeImage = (index: number) => {
@@ -163,26 +202,75 @@ export default function EditProductPage() {
                     </select>
                 </div>
 
-                <div className="flex flex-col items-center justify-center border-2 border-dashed border-neutral-600 rounded-xl p-8 hover:border-blue-500 transition-colors cursor-pointer relative">
-                    <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleImageUpload}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    {formData.imagens.length > 0 ? (
-                        <div className="w-full">
+                <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                        Imagens do Produto
+                    </label>
+
+                    <div className="flex gap-2 mb-4">
+                        <label className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-neutral-600 rounded-xl p-6 hover:border-blue-500 transition-colors cursor-pointer">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleImageUpload}
+                                className="hidden"
+                            />
+                            <div className="w-10 h-10 mb-2">
+                                <svg className="w-full h-full text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                            </div>
+                            <p className="text-center text-neutral-400 text-sm">Upload</p>
+                        </label>
+
+                        <button
+                            type="button"
+                            onClick={() => setShowCamera(!showCamera)}
+                            className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-neutral-600 rounded-xl p-6 hover:border-blue-500 transition-colors"
+                        >
+                            <div className="w-10 h-10 mb-2">
+                                <svg className="w-full h-full text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                            </div>
+                            <p className="text-center text-neutral-400 text-sm">
+                                {showCamera ? 'Fechar Câmera' : 'Usar Câmera'}
+                            </p>
+                        </button>
+                    </div>
+
+                    {showCamera && (
+                        <div className="mb-4 rounded-xl overflow-hidden border border-neutral-700">
+                            <Webcam
+                                ref={webcamRef}
+                                audio={false}
+                                screenshotFormat="image/jpeg"
+                                videoConstraints={{ facingMode: "environment" }}
+                                className="w-full"
+                            />
+                            <div className="bg-neutral-900 p-4 flex justify-center">
+                                <button
+                                    type="button"
+                                    onClick={capturePhoto}
+                                    className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-lg font-bold text-white transition-colors"
+                                >
+                                    📸 Capturar Foto
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {formData.imagens.length > 0 && (
+                        <div className="border border-neutral-700 rounded-xl p-4">
                             <div className="flex gap-2 overflow-x-auto pb-2">
                                 {formData.imagens.map((img, index) => (
                                     <div key={index} className="relative flex-shrink-0">
                                         <img src={img} alt={`Preview ${index + 1}`} className="h-32 w-32 object-cover rounded-lg" />
                                         <button
                                             type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                removeImage(index);
-                                            }}
+                                            onClick={() => removeImage(index)}
                                             className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
                                         >
                                             ✕
@@ -190,16 +278,9 @@ export default function EditProductPage() {
                                     </div>
                                 ))}
                             </div>
-                            <p className="text-center text-neutral-400 text-sm mt-4">Clique para adicionar mais imagens</p>
-                        </div>
-                    ) : (
-                        <div className="text-center text-neutral-400">
-                            <div className="w-12 h-12 mx-auto mb-2">
-                                <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                </svg>
-                            </div>
-                            <p>Clique para enviar imagens do produto (múltiplas)</p>
+                            <p className="text-center text-neutral-400 text-sm mt-2">
+                                {formData.imagens.length} imagem(ns) adicionada(s)
+                            </p>
                         </div>
                     )}
                 </div>
