@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+model GarageSale {
+  id            String    @id @default(uuid())
+  nome          String
+  dataInicio    DateTime
+  dataFim       DateTime?
+  endereco      String
+  discount       Float?   @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  products      Product[]
+  sales         Sale[]
+}
+
+model Product {
+  id            String    @id @default(uuid())
+  nome          String
+  descricao     String?
+  preco         Float
+  imagens       String[]
+  categoria     String?
+  condicao      String?
+  tags          String[]
+  status        String    @default("disponível") // disponível, vendido
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  garageSaleId  String
+  garageSale    GarageSale @relation(fields: [garageSaleId], references: [id])
+}
+
+model Sale {
+  id            Int       @id @default(autoincrement())
+  totalValue    Float
+  date          DateTime  @default(now())
+  buyerName     String?
+  buyerPhone    String?
+  buyerEmail    String?
+  createdAt     DateTime  @default(now())
+
+  garageSaleId  String?
+  garageSale    GarageSale? @relation(fields: [garageSaleId], references: [id])
+
+  items         SaleItem[]
+  payments      Payment[]
+}
+
+model SaleItem {
+  id            Int      @id @default(autoincrement())
+  description   String
+  price         Float
+  quantity      Int
+  
+  saleId        Int
+  sale          Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id            Int      @id @default(autoincrement())
+  method        String
+  amount        Float
+
+  saleId        Int
+  sale          Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+}

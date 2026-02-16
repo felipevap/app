@@ -58,9 +58,9 @@ export default function NewGarageSalePage() {
         reader.readAsDataURL(file);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        addGarageSale(formData);
+        await addGarageSale(formData);
         alert("Garage Sale criada com sucesso!");
         router.push("/admin/garage-sales");
     };

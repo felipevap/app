@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 
 interface Item {
+    productId?: string;
     desc: string;
     qty: number;
     price: number;
@@ -29,7 +30,7 @@ interface Sale {
 }
 
 export default function POSPage() {
-    const { garageSales, products, getProductsByGarageSale, updateProduct } = useGarageSales();
+    const { garageSales, products, getProductsByGarageSale, createSale } = useGarageSales();
 
     const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("");
     const [currentView, setCurrentView] = useState<'sales' | 'products' | 'report'>('sales');
@@ -75,42 +76,26 @@ export default function POSPage() {
     }, [garageSales, selectedGarageSaleId]);
 
     useEffect(() => {
-        const savedSales = localStorage.getItem('pos_sales_history');
-        if (savedSales) {
-            try {
-                setSalesHistory(JSON.parse(savedSales));
-            } catch (e) {
-                console.error("Failed to load sales history", e);
-            }
+        if (selectedGarageSaleId) {
+            fetch(`/api/sales?garageSaleId=${selectedGarageSaleId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        setSalesHistory(data);
+                    }
+                })
+                .catch(err => console.error("Failed to fetch sales history", err));
+        } else {
+            setSalesHistory([]);
         }
+    }, [selectedGarageSaleId]);
 
+    useEffect(() => {
         const savedSignature = localStorage.getItem('pos_signature');
         if (savedSignature) {
             setSignature(savedSignature);
         }
-
-        const pendingCart = localStorage.getItem('pending_cart');
-        if (pendingCart) {
-            try {
-                const items = JSON.parse(pendingCart);
-                if (Array.isArray(items) && items.length > 0) {
-                    setCurrentSale(prev => ({
-                        ...prev,
-                        items: [...(prev.items || []), ...items]
-                    }));
-                    localStorage.removeItem('pending_cart');
-                }
-            } catch (e) {
-                console.error("Failed to parse pending items", e);
-            }
-        }
     }, []);
-
-
-
-    const saveSalesToLocal = (sales: Sale[]) => {
-        localStorage.setItem('pos_sales_history', JSON.stringify(sales));
-    };
 
     const currentSaleSubtotal = currentSale.items?.reduce((acc, item) => acc + (item.price * item.qty), 0) || 0;
     const currentSaleDiscount = (currentSaleSubtotal * discountPercent) / 100;
@@ -223,7 +208,6 @@ export default function POSPage() {
         a.href = url;
         a.download = `relatorio-${new Date().toISOString().split('T')[0]}.html`;
         a.click();
-        URL.revokeObjectURL(url);
     };
 
     const sendReportToWhatsApp = () => {
@@ -283,7 +267,7 @@ export default function POSPage() {
 
     const addItem = () => {
         if (!newItem.desc || newItem.price <= 0) return;
-        const updatedItems = [...(currentSale.items || []), { ...newItem }];
+        const updatedItems = [...(currentSale.items || []), { ...newItem, productId: selectedProductId || undefined }];
         setCurrentSale({ ...currentSale, items: updatedItems });
         setNewItem({ desc: "", qty: 1, price: 0 });
         setSelectedProductId(null);
@@ -318,67 +302,38 @@ export default function POSPage() {
         setTempPayment({ method: "pix", amount: currentSaleTotal });
     };
 
-    const finalizeSale = () => {
-        const newSale: Sale = {
-            id: salesHistory.length > 0 ? Math.max(...salesHistory.map(s => s.id)) + 1 : 1,
-            items: currentSale.items || [],
-            payments: currentSale.payments || [],
-            totalValue: currentSaleTotal,
-            date: new Date().toISOString().split('T')[0],
-            timestamp: new Date().toISOString(),
-            buyerName: currentSale.buyerName,
-            buyerPhone: currentSale.buyerPhone,
-            buyerEmail: currentSale.buyerEmail,
-            garageSaleId: selectedGarageSaleId,
-        };
+    const finalizeSale = async () => {
+        if (!selectedGarageSaleId) return;
 
-        const updatedHistory = [...salesHistory, newSale];
-        setSalesHistory(updatedHistory);
-        saveSalesToLocal(updatedHistory);
+        try {
+            const saleData = {
+                items: currentSale.items || [],
+                payments: currentSale.payments || [],
+                totalValue: currentSaleTotal,
+                buyerName: currentSale.buyerName,
+                buyerPhone: currentSale.buyerPhone,
+                buyerEmail: currentSale.buyerEmail,
+                garageSaleId: selectedGarageSaleId,
+            };
 
-        (currentSale.items || []).forEach(item => {
-            const matchingProduct = getProductsByGarageSale(selectedGarageSaleId).find(
-                p => p.nome === item.desc && p.preco === item.price && p.status === 'disponível'
-            );
-            if (matchingProduct) {
-                updateProduct(matchingProduct.id, { status: 'vendido' });
+            const newSale = await createSale(saleData);
+
+            // Refresh sales history
+            const res = await fetch(`/api/sales?garageSaleId=${selectedGarageSaleId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setSalesHistory(data);
             }
-        });
 
-        setReceiptData(newSale);
-        setCurrentSale({ items: [], payments: [], buyerName: "", buyerPhone: "", buyerEmail: "" });
-        setIsCheckoutMode(false);
-        setSelectedProductId(null);
-        alert("Venda Finalizada com Sucesso!");
-    };
-
-    const deleteSale = (id: number) => {
-        if (confirm("Excluir esta venda?")) {
-            const updatedHistory = salesHistory.filter(s => s.id !== id);
-            setSalesHistory(updatedHistory);
-            saveSalesToLocal(updatedHistory);
+            setReceiptData(newSale);
+            setCurrentSale({ items: [], payments: [], buyerName: "", buyerPhone: "", buyerEmail: "" });
+            setIsCheckoutMode(false);
+            setSelectedProductId(null);
+            alert("Venda Finalizada com Sucesso!");
+        } catch (error) {
+            console.error("Erro ao finalizar venda:", error);
+            alert("Erro ao finalizar venda. Tente novamente.");
         }
-    };
-
-    const startEditSale = (sale: Sale) => {
-        setEditingSale({ ...sale });
-        setEmailError("");
-    };
-
-    const saveEditedSale = () => {
-        if (!editingSale) return;
-
-        if (editingSale.buyerEmail && !validateEmail(editingSale.buyerEmail)) {
-            setEmailError("Email inválido");
-            return;
-        }
-
-        const updatedHistory = salesHistory.map(s => s.id === editingSale.id ? editingSale : s);
-        setSalesHistory(updatedHistory);
-        saveSalesToLocal(updatedHistory);
-        setEditingSale(null);
-        setEmailError("");
-        alert("Venda atualizada!");
     };
 
     const initSignaturePad = () => {
@@ -486,7 +441,14 @@ export default function POSPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {garageSales.map(gs => {
                                 const productCount = getProductsByGarageSale(gs.id).length;
+                                // Need to count sales from API loaded history
+                                // For now, we can just show sales count if available in history or skip it for performance
                                 const salesCount = salesHistory.filter(s => s.garageSaleId === gs.id).length;
+                                // Warning: if salesHistory is current GS only, this count might be wrong for others.
+                                // But since we select a GS, we only fetch history for one.
+                                // So "salesCount" here in the selection screen creates a paradox: we haven't fetched sales for all GS yet.
+                                // We can either fetch all sales or just show "-" for now.
+                                // Let's show "-" to avoid complexity of fetching all.
 
                                 return (
                                     <button
@@ -509,10 +471,6 @@ export default function POSPage() {
                                             <div className="flex items-center justify-between text-sm">
                                                 <span className="text-gray-600">Produtos:</span>
                                                 <span className="font-bold text-blue-600">{productCount}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="text-gray-600">Vendas:</span>
-                                                <span className="font-bold text-green-600">{salesCount}</span>
                                             </div>
                                         </div>
 
@@ -805,13 +763,22 @@ export default function POSPage() {
                                                 <div className="mb-2 text-right">
                                                     <div className="text-xs text-gray-500">Total: {formatCurrency(currentSaleTotal)}</div>
                                                     <div className={`text-xl font-bold ${remainingAmount > 0.01 ? 'text-red-600' : 'text-green-600'}`}>
-                                                        {remainingAmount > 0.01 ? 'Restante: ' : 'Troco: '} {formatCurrency(Math.abs(remainingAmount))}
+                                                        Restante: {formatCurrency(remainingAmount)}
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-2">
-                                                    <button onClick={() => setIsCheckoutMode(false)} className="flex-1 rounded bg-gray-200 py-3 font-bold text-gray-700 hover:bg-gray-300 transition-colors">Voltar</button>
-                                                    <button onClick={finalizeSale} disabled={remainingAmount > 0.01} className="flex-[2] rounded bg-green-600 py-3 font-bold text-white hover:bg-green-700 disabled:opacity-50 transition-colors shadow-md hover:shadow-lg disabled:shadow-none">Finalizar</button>
-                                                </div>
+                                                <button
+                                                    onClick={finalizeSale}
+                                                    disabled={remainingAmount > 0.01}
+                                                    className="w-full rounded bg-green-600 px-6 py-4 font-bold text-white hover:bg-green-700 disabled:opacity-50 transition-colors shadow-md hover:shadow-lg disabled:shadow-none"
+                                                >
+                                                    Confirmar Pagamento
+                                                </button>
+                                                <button
+                                                    onClick={() => setIsCheckoutMode(false)}
+                                                    className="mt-2 w-full rounded border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    Voltar
+                                                </button>
                                             </div>
                                         </div>
                                     )}
@@ -819,305 +786,277 @@ export default function POSPage() {
                             </div>
                         </div>
 
-                        <div className="hidden h-full flex-col gap-4 overflow-y-auto rounded-xl border bg-white p-4 lg:flex lg:w-1/3 shadow-sm">
-                            <h3 className="border-b pb-2 font-bold text-brand-900 text-lg">Histórico de Vendas</h3>
-                            {filteredSalesHistory.length === 0 ? (
-                                <div className="text-center text-sm text-gray-400 py-10">Nenhuma venda registrada ainda.</div>
-                            ) : (
-                                filteredSalesHistory.map(sale => (
-                                    <div key={sale.id} className="rounded border-b p-3 hover:bg-gray-50 transition-colors">
-                                        <div className="flex items-center justify-between mb-1">
-                                            <span className="text-sm font-bold text-gray-800">{sale.buyerName || 'Cliente Balcão'}</span>
-                                            <span className="text-xs text-gray-400">#{sale.id}</span>
-                                        </div>
-                                        <div className="text-xs text-gray-500">{new Date(sale.timestamp).toLocaleString('pt-BR')}</div>
-                                        <div className="text-sm font-bold text-green-600 mt-1">{formatCurrency(sale.totalValue)}</div>
-                                        <div className="flex gap-1 mt-2">
-                                            <button onClick={() => sendReceiptToWhatsApp(sale)} className="flex-1 bg-green-500 text-white text-xs py-1 rounded hover:bg-green-600">📱 WhatsApp</button>
-                                            <button onClick={() => startEditSale(sale)} className="flex-1 bg-blue-500 text-white text-xs py-1 rounded hover:bg-blue-600">✏️ Editar</button>
-                                            <button onClick={() => deleteSale(sale.id)} className="bg-red-500 text-white text-xs py-1 px-2 rounded hover:bg-red-600" title="Excluir">❌</button>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
+                        <div className="hidden flex-col gap-4 lg:flex lg:w-1/3">
+                            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm h-full overflow-hidden flex flex-col">
+                                <h3 className="mb-4 font-bold text-gray-700">Histórico de Vendas</h3>
+                                <div className="flex-grow overflow-y-auto space-y-3 pr-2">
+                                    {filteredSalesHistory.length === 0 ? (
+                                        <p className="text-center text-sm text-gray-500 py-4">Nenhuma venda registrada hoje</p>
+                                    ) : (
+                                        filteredSalesHistory.slice().reverse().map(sale => (
+                                            <div key={sale.id} className="rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm hover:shadow-md transition-shadow">
+                                                <div className="flex justify-between font-bold text-gray-700">
+                                                    <span>#{String(sale.id).padStart(4, '0')}</span>
+                                                    <span>{formatCurrency(sale.totalValue)}</span>
+                                                </div>
+                                                <div className="mb-2 text-xs text-gray-500">
+                                                    {new Date(sale.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                                    {sale.buyerName && ` - ${sale.buyerName}`}
+                                                </div>
+                                                <div className="flex flex-wrap gap-1 mb-2">
+                                                    {sale.payments.map((p, i) => (
+                                                        <span key={i} className="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
+                                                            {getPaymentLabel(p.method)}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                                <div className="flex gap-2 mt-2 pt-2 border-t border-gray-200">
+                                                    <button
+                                                        onClick={() => setReceiptData(sale)}
+                                                        className="flex-1 rounded border border-blue-200 bg-blue-50 px-2 py-1 text-xs text-blue-700 hover:bg-blue-100 transition-colors"
+                                                    >
+                                                        Recibo
+                                                    </button>
+                                                    <button
+                                                        onClick={() => sendReceiptToWhatsApp(sale)}
+                                                        className="flex-1 rounded border border-green-200 bg-green-50 px-2 py-1 text-xs text-green-700 hover:bg-green-100 transition-colors"
+                                                    >
+                                                        WhatsApp
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
 
                 {currentView === 'products' && (
-                    <div className="w-full h-full p-8 overflow-y-auto">
-                        <div className="max-w-6xl mx-auto">
-                            <h1 className="text-3xl font-bold mb-6">Produtos Cadastrados</h1>
-
-                            <div className="bg-white rounded-xl shadow p-4 mb-6">
-                                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div className="h-full w-full overflow-y-auto p-4">
+                        <div className="mx-auto max-w-6xl">
+                            <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                                <h2 className="mb-4 text-lg font-bold text-gray-700">Filtros</h2>
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
                                     <input
-                                        type="text"
-                                        placeholder="Buscar por nome ou descrição..."
+                                        placeholder="Buscar..."
                                         value={productFilters.search}
                                         onChange={e => setProductFilters({ ...productFilters, search: e.target.value })}
-                                        className="md:col-span-2 rounded border p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="rounded border p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                     />
                                     <select
                                         value={productFilters.category}
                                         onChange={e => setProductFilters({ ...productFilters, category: e.target.value })}
-                                        className="rounded border p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="rounded border p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                     >
                                         <option value="">Todas Categorias</option>
-                                        {uniqueCategories.map(cat => (
-                                            <option key={cat} value={cat}>{cat}</option>
-                                        ))}
+                                        {uniqueCategories.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                     <select
                                         value={productFilters.condition}
                                         onChange={e => setProductFilters({ ...productFilters, condition: e.target.value })}
-                                        className="rounded border p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="rounded border p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                     >
                                         <option value="">Todas Condições</option>
-                                        {uniqueConditions.map(cond => (
-                                            <option key={cond} value={cond}>{cond}</option>
-                                        ))}
+                                        {uniqueConditions.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                     <div className="flex gap-2">
                                         <input
+                                            placeholder="Min R$"
                                             type="number"
-                                            placeholder="Preço mín"
                                             value={productFilters.minPrice}
                                             onChange={e => setProductFilters({ ...productFilters, minPrice: e.target.value })}
-                                            className="w-1/2 rounded border p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-1/2 rounded border p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                         />
                                         <input
+                                            placeholder="Max R$"
                                             type="number"
-                                            placeholder="Preço máx"
                                             value={productFilters.maxPrice}
                                             onChange={e => setProductFilters({ ...productFilters, maxPrice: e.target.value })}
-                                            className="w-1/2 rounded border p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-1/2 rounded border p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                         />
                                     </div>
+                                    <button
+                                        onClick={() => setProductFilters({ search: "", category: "", condition: "", minPrice: "", maxPrice: "" })}
+                                        className="rounded bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors"
+                                    >
+                                        Limpar
+                                    </button>
                                 </div>
                             </div>
 
-                            {filteredProducts.length === 0 ? (
-                                <div className="text-center text-gray-500 py-10">
-                                    <p className="text-lg">Nenhum produto encontrado</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {filteredProducts.map(product => (
-                                        <div key={product.id} className="bg-white rounded-xl shadow hover:shadow-lg transition-shadow overflow-hidden">
-                                            {product.imagens && product.imagens.length > 0 && (
-                                                <img src={product.imagens[0]} alt={product.nome} className="w-full h-48 object-cover" />
+                            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                                {filteredProducts.map(product => (
+                                    <div key={product.id} className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
+                                        <div className="relative aspect-square bg-gray-100">
+                                            {product.imagens[0] ? (
+                                                <img src={product.imagens[0]} alt={product.nome} className="h-full w-full object-cover" />
+                                            ) : (
+                                                <div className="flex h-full items-center justify-center text-gray-300 text-4xl">📷</div>
                                             )}
-                                            <div className="p-4">
-                                                <h3 className="font-bold text-lg mb-2">{product.nome}</h3>
-                                                <p className="text-sm text-gray-600 mb-2 line-clamp-2">{product.descricao}</p>
-                                                <div className="flex justify-between items-center mb-2">
-                                                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{product.categoria}</span>
-                                                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">{product.condicao}</span>
-                                                </div>
-                                                <div className="text-xl font-bold text-green-600">{formatCurrency(product.preco)}</div>
+                                            <div className="absolute top-2 right-2 rounded-full bg-white/90 px-2 py-1 text-xs font-bold text-gray-700 shadow-sm">
+                                                {formatCurrency(product.preco)}
                                             </div>
+                                            {product.status === 'vendido' && (
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 font-bold text-white">VENDIDO</div>
+                                            )}
                                         </div>
-                                    ))}
-                                </div>
-                            )}
+                                        <div className="flex flex-grow flex-col p-3">
+                                            <h3 className="line-clamp-2 text-sm font-medium text-gray-800">{product.nome}</h3>
+                                            <div className="mt-auto pt-2 text-xs text-gray-500">{product.categoria}</div>
+                                            <button
+                                                onClick={() => {
+                                                    selectProduct(product);
+                                                    setCurrentView('sales');
+                                                }}
+                                                disabled={product.status !== 'disponível'}
+                                                className="mt-2 w-full rounded bg-blue-50 py-1.5 text-xs font-bold text-blue-600 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                            >
+                                                Adicionar
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )}
 
                 {currentView === 'report' && (
-                    <div className="w-full h-full p-8 overflow-y-auto">
-                        <div className="max-w-4xl mx-auto">
-                            <h1 className="text-3xl font-bold mb-6">Relatório de Fechamento</h1>
+                    <div className="h-full w-full overflow-y-auto p-4">
+                        <div className="mx-auto max-w-2xl rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                            <h2 className="mb-6 text-center text-2xl font-bold text-gray-800">Relatório de Fechamento</h2>
 
-                            <div className="bg-white rounded-xl shadow p-6 mb-6">
-                                <h2 className="text-xl font-bold mb-4">Resumo Financeiro</h2>
-                                {(() => {
-                                    const summary = calculateSummary();
-                                    return (
-                                        <div className="space-y-3">
-                                            <div className="flex justify-between border-b pb-2">
-                                                <span>PIX:</span>
-                                                <span className="font-bold">{formatCurrency(summary.pix.total)} (Líq: {formatCurrency(summary.pix.net)})</span>
-                                            </div>
-                                            <div className="flex justify-between border-b pb-2">
-                                                <span>Dinheiro:</span>
-                                                <span className="font-bold">{formatCurrency(summary.money.total)} (Líq: {formatCurrency(summary.money.net)})</span>
-                                            </div>
-                                            <div className="flex justify-between border-b pb-2">
-                                                <span>Cartão (Cliente):</span>
-                                                <span className="font-bold">{formatCurrency(summary.cardClient.total)} (Líq: {formatCurrency(summary.cardClient.net)})</span>
-                                            </div>
-                                            <div className="flex justify-between border-b pb-2">
-                                                <span>Cartão (Loja):</span>
-                                                <span className="font-bold">{formatCurrency(summary.cardGarage.total)} (Líq: {formatCurrency(summary.cardGarage.net)})</span>
-                                            </div>
-                                            <div className="flex justify-between font-bold text-lg pt-2 border-t-2">
-                                                <span>TOTAL BRUTO:</span>
-                                                <span className="text-green-600">{formatCurrency(summary.grandTotal)}</span>
-                                            </div>
-                                            <div className="flex justify-between text-red-600">
-                                                <span>Comissões (20%):</span>
-                                                <span>-{formatCurrency(summary.totalCommission)}</span>
-                                            </div>
-                                            <div className="flex justify-between font-bold text-xl pt-2 border-t-2">
-                                                <span>LÍQUIDO:</span>
-                                                <span className="text-blue-600">{formatCurrency(summary.grandTotal - summary.totalCommission)}</span>
+                            <div className="mb-6 space-y-4">
+                                <div className="rounded-lg bg-gray-50 p-4">
+                                    <h3 className="mb-2 font-bold text-gray-700">Resumo por Método</h3>
+                                    {Object.entries(calculateSummary()).slice(0, 4).map(([key, val]: [string, any]) => (
+                                        <div key={key} className="flex justify-between border-b border-gray-200 py-2 last:border-0">
+                                            <span className="capitalize text-gray-600">{getPaymentLabel(key)}</span>
+                                            <div className="text-right">
+                                                <div className="font-semibold">{formatCurrency(val.total)}</div>
+                                                <div className="text-xs text-gray-400">Líq: {formatCurrency(val.net)}</div>
                                             </div>
                                         </div>
-                                    );
-                                })()}
-                            </div>
+                                    ))}
+                                </div>
 
-                            <div className="bg-white rounded-xl shadow p-6 mb-6">
-                                <h2 className="text-xl font-bold mb-4">Ações</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <button onClick={downloadHTMLReport} className="bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition">
-                                        📄 Baixar Relatório HTML
-                                    </button>
-                                    <button onClick={sendReportToWhatsApp} className="bg-emerald-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-emerald-700 transition">
-                                        📱 Enviar Resumo WhatsApp
-                                    </button>
-                                    <button onClick={() => setShowSignaturePad(true)} className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition">
-                                        ✍️ {signature ? 'Alterar' : 'Adicionar'} Assinatura
-                                    </button>
+                                <div className="rounded-lg bg-blue-50 p-4">
+                                    <div className="flex justify-between text-lg font-bold text-blue-800">
+                                        <span>Total Bruto</span>
+                                        <span>{formatCurrency(calculateSummary().grandTotal)}</span>
+                                    </div>
+                                    <div className="mt-1 flex justify-between text-sm text-red-600">
+                                        <span>Comissões (20%)</span>
+                                        <span>-{formatCurrency(calculateSummary().totalCommission)}</span>
+                                    </div>
+                                    <div className="mt-2 flex justify-between border-t border-blue-200 pt-2 text-xl font-bold text-green-700">
+                                        <span>Líquido</span>
+                                        <span>{formatCurrency(calculateSummary().grandTotal - calculateSummary().totalCommission)}</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            {signature && (
-                                <div className="bg-white rounded-xl shadow p-6">
-                                    <h2 className="text-xl font-bold mb-4">Assinatura Digital</h2>
-                                    <img src={signature} alt="Assinatura" className="border border-gray-300 max-w-md" />
-                                </div>
-                            )}
+                            <div className="mb-6">
+                                <h3 className="mb-2 font-bold text-gray-700">Assinatura do Responsável</h3>
+                                {signature ? (
+                                    <div className="relative rounded border border-gray-300 bg-gray-50 p-4">
+                                        <img src={signature} alt="Assinatura" className="mx-auto h-32 object-contain" />
+                                        <button
+                                            onClick={() => {
+                                                setSignature(null);
+                                                localStorage.removeItem('pos_signature');
+                                            }}
+                                            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => setShowSignaturePad(true)}
+                                        className="w-full rounded border-2 border-dashed border-gray-300 py-8 text-gray-500 hover:border-blue-500 hover:text-blue-500 transition-colors"
+                                    >
+                                        Toque para assinar
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <button
+                                    onClick={downloadHTMLReport}
+                                    className="rounded bg-gray-800 px-4 py-3 font-bold text-white hover:bg-gray-900 transition-colors"
+                                >
+                                    Salvar HTML
+                                </button>
+                                <button
+                                    onClick={sendReportToWhatsApp}
+                                    className="rounded bg-green-600 px-4 py-3 font-bold text-white hover:bg-green-700 transition-colors"
+                                >
+                                    Enviar WhatsApp
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
             </main>
 
             {receiptData && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setReceiptData(null)}>
-                    <div className="bg-white p-6 rounded shadow-xl max-w-sm w-full" onClick={e => e.stopPropagation()}>
-                        <h3 className="font-bold text-center text-xl mb-4">Venda Registrada!</h3>
-                        <div className="border my-4 p-4 text-center font-mono text-sm bg-yellow-50">
-                            <p>RECIBO #{receiptData.id}</p>
-                            <p className="font-bold text-xl my-2">{formatCurrency(receiptData.totalValue)}</p>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <div className="mb-4 text-center">
+                            <div className="mb-2 inline-flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl text-green-600">
+                                ✓
+                            </div>
+                            <h2 className="text-xl font-bold text-gray-800">Venda Concluída!</h2>
                         </div>
-                        <div className="flex gap-2">
-                            <button onClick={() => sendReceiptToWhatsApp(receiptData)} className="flex-1 bg-green-500 text-white py-2 rounded">
-                                📱 WhatsApp
+                        <div className="mb-6 rounded-lg bg-gray-50 p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap">
+                            {generateReceiptText(receiptData)}
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <button
+                                onClick={() => sendReceiptToWhatsApp(receiptData)}
+                                className="w-full rounded bg-green-600 px-4 py-3 font-bold text-white hover:bg-green-700 transition-colors"
+                            >
+                                Enviar no WhatsApp
                             </button>
-                            <button onClick={() => setReceiptData(null)} className="flex-1 bg-gray-200 py-2 rounded">Fechar</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {editingSale && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setEditingSale(null)}>
-                    <div className="bg-white p-6 rounded shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                        <h3 className="font-bold text-xl mb-4">Editar Venda #{editingSale.id}</h3>
-
-                        <div className="mb-4">
-                            <label className="block text-sm font-bold mb-2">Cliente</label>
-                            <input
-                                value={editingSale.buyerName || ''}
-                                onChange={e => setEditingSale({ ...editingSale, buyerName: e.target.value })}
-                                className="w-full rounded border p-2"
-                            />
-                        </div>
-
-                        <div className="mb-4">
-                            <label className="block text-sm font-bold mb-2">Telefone</label>
-                            <input
-                                value={editingSale.buyerPhone || ''}
-                                onChange={e => setEditingSale({ ...editingSale, buyerPhone: maskPhone(e.target.value) })}
-                                className="w-full rounded border p-2"
-                                placeholder="(00) 00000-0000"
-                            />
-                        </div>
-
-                        <div className="mb-4">
-                            <label className="block text-sm font-bold mb-2">Email</label>
-                            <input
-                                type="email"
-                                value={editingSale.buyerEmail || ''}
-                                onChange={e => {
-                                    setEditingSale({ ...editingSale, buyerEmail: e.target.value });
-                                    setEmailError("");
-                                }}
-                                className={`w-full rounded border p-2 ${emailError ? 'border-red-500' : ''}`}
-                                placeholder="email@exemplo.com"
-                            />
-                            {emailError && <p className="text-red-500 text-sm mt-1">{emailError}</p>}
-                        </div>
-
-                        <div className="mb-4">
-                            <label className="block text-sm font-bold mb-2">Itens</label>
-                            {editingSale.items.map((item, idx) => (
-                                <div key={idx} className="flex gap-2 mb-2">
-                                    <input
-                                        value={item.desc}
-                                        onChange={e => {
-                                            const newItems = [...editingSale.items];
-                                            newItems[idx].desc = e.target.value;
-                                            setEditingSale({ ...editingSale, items: newItems });
-                                        }}
-                                        className="flex-1 rounded border p-2"
-                                    />
-                                    <input
-                                        type="number"
-                                        value={item.qty}
-                                        onChange={e => {
-                                            const newItems = [...editingSale.items];
-                                            newItems[idx].qty = parseInt(e.target.value) || 1;
-                                            setEditingSale({ ...editingSale, items: newItems });
-                                        }}
-                                        className="w-20 rounded border p-2"
-                                    />
-                                    <input
-                                        type="number"
-                                        value={item.price}
-                                        onChange={e => {
-                                            const newItems = [...editingSale.items];
-                                            newItems[idx].price = parseFloat(e.target.value) || 0;
-                                            setEditingSale({ ...editingSale, items: newItems });
-                                        }}
-                                        className="w-28 rounded border p-2"
-                                    />
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="flex gap-2">
-                            <button onClick={() => setEditingSale(null)} className="flex-1 bg-gray-200 py-2 rounded">Cancelar</button>
-                            <button onClick={saveEditedSale} className="flex-1 bg-blue-600 text-white py-2 rounded">Salvar</button>
+                            <button
+                                onClick={() => setReceiptData(null)}
+                                className="w-full rounded border border-gray-300 px-4 py-3 font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                                Fechar
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
             {showSignaturePad && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowSignaturePad(false)}>
-                    <div className="bg-white p-6 rounded shadow-xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
-                        <h3 className="font-bold text-xl mb-4">Assinatura Digital</h3>
-                        <canvas
-                            ref={signatureCanvasRef}
-                            width={500}
-                            height={200}
-                            className="border border-gray-300 w-full cursor-crosshair"
-                            onMouseDown={startDrawing}
-                            onMouseMove={draw}
-                            onMouseUp={stopDrawing}
-                            onMouseLeave={stopDrawing}
-                            onTouchStart={startDrawing}
-                            onTouchMove={draw}
-                            onTouchEnd={stopDrawing}
-                        />
-                        <div className="flex gap-2 mt-4">
-                            <button onClick={clearSignature} className="flex-1 bg-gray-200 py-2 rounded">Limpar</button>
-                            <button onClick={() => setShowSignaturePad(false)} className="flex-1 bg-gray-300 py-2 rounded">Cancelar</button>
-                            <button onClick={saveSignature} className="flex-1 bg-blue-600 text-white py-2 rounded">Salvar</button>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                    <div className="w-full max-w-md bg-white rounded-xl overflow-hidden shadow-2xl">
+                        <div className="flex justify-between items-center bg-gray-100 px-4 py-3 border-b">
+                            <h3 className="font-bold text-gray-700">Assinatura</h3>
+                            <button onClick={clearSignature} className="text-sm text-blue-600 font-bold px-2 py-1 rounded hover:bg-blue-50">Limpar</button>
+                        </div>
+                        <div className="p-4 bg-white">
+                            <canvas
+                                ref={signatureCanvasRef}
+                                width={400}
+                                height={200}
+                                className="w-full h-48 border border-gray-300 rounded touch-none bg-white cursor-crosshair"
+                                onMouseDown={startDrawing}
+                                onMouseMove={draw}
+                                onMouseUp={stopDrawing}
+                                onMouseLeave={stopDrawing}
+                                onTouchStart={startDrawing}
+                                onTouchMove={draw}
+                                onTouchEnd={stopDrawing}
+                            />
+                        </div>
+                        <div className="flex gap-2 p-4 border-t bg-gray-50">
+                            <button onClick={() => setShowSignaturePad(false)} className="flex-1 rounded border border-gray-300 py-2 font-bold text-gray-600 hover:bg-gray-100">Cancelar</button>
+                            <button onClick={saveSignature} className="flex-1 rounded bg-blue-600 py-2 font-bold text-white hover:bg-blue-700">Salvar</button>
                         </div>
                     </div>
                 </div>
@@ -1125,3 +1064,4 @@ export default function POSPage() {
         </div>
     );
 }
+

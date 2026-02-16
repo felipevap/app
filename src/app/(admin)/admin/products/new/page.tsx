@@ -151,7 +151,7 @@ export default function NewProductPage() {
         });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!formData.garageSaleId) {
@@ -159,7 +159,7 @@ export default function NewProductPage() {
             return;
         }
 
-        addProduct(formData);
+        await addProduct(formData);
         alert('Produto cadastrado com sucesso!');
         router.push(`/admin/products?garageSale=${formData.garageSaleId}`);
     };
