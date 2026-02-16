@@ -6,11 +6,10 @@ import Link from "next/link";
 
 interface Sale {
     id: number;
-    items: { desc: string; qty: number; price: number }[];
+    items: { description: string; quantity: number; price: number }[];
     payments: { method: string; amount: number }[];
     totalValue: number;
-    date: string;
-    timestamp: string;
+    createdAt: string;
     buyerName?: string;
     buyerPhone?: string;
     buyerEmail?: string;
@@ -49,8 +48,9 @@ export default function AdminSalesPage() {
         }).format(value);
     };
 
-    const formatDate = (timestamp: string) => {
-        return new Date(timestamp).toLocaleString('pt-BR', {
+    const formatDate = (dateString: string) => {
+        if (!dateString) return 'Data desconhecida';
+        return new Date(dateString).toLocaleString('pt-BR', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric',
@@ -131,7 +131,7 @@ export default function AdminSalesPage() {
                                                 {sale.buyerPhone && <span className="text-neutral-400 font-normal ml-2">({sale.buyerPhone})</span>}
                                             </p>
                                             <p className="text-sm text-neutral-400">
-                                                {formatDate(sale.timestamp)}
+                                                {formatDate(sale.createdAt)}
                                                 {sale.garageSaleId && garageSales.find(gs => gs.id === sale.garageSaleId) && (
                                                     <span className="ml-2">
                                                         • {garageSales.find(gs => gs.id === sale.garageSaleId)?.nome}
@@ -169,11 +169,11 @@ export default function AdminSalesPage() {
                                                     {sale.items.map((item, idx) => (
                                                         <div key={idx} className="flex items-center justify-between p-2 bg-neutral-900 rounded">
                                                             <div className="flex items-center gap-2">
-                                                                <span className="font-bold text-blue-400">{item.qty}x</span>
-                                                                <span className="text-white">{item.desc}</span>
+                                                                <span className="font-bold text-blue-400">{item.quantity}x</span>
+                                                                <span className="text-white">{item.description}</span>
                                                             </div>
                                                             <span className="font-semibold text-neutral-300">
-                                                                {formatCurrency(item.price * item.qty)}
+                                                                {formatCurrency(item.price * item.quantity)}
                                                             </span>
                                                         </div>
                                                     ))}

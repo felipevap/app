@@ -24,6 +24,7 @@ interface Sale {
     totalValue: number;
     date: string;
     timestamp: string;
+    createdAt?: string;
     buyerName?: string;
     buyerPhone?: string;
     buyerEmail?: string;
@@ -153,6 +154,7 @@ export default function POSPage() {
         return labels[method] || method;
     };
 
+
     const maskPhone = (value: string) => {
         return value
             .replace(/\D/g, '')
@@ -160,6 +162,12 @@ export default function POSPage() {
             .replace(/(\d{5})(\d)/, '$1-$2')
             .replace(/(-\d{4})\d+?$/, '$1');
     };
+
+    useEffect(() => {
+        if (isCheckoutMode) {
+            setTempPayment(prev => ({ ...prev, amount: remainingAmount > 0 ? remainingAmount : 0 }));
+        }
+    }, [isCheckoutMode, remainingAmount]);
 
     const validateEmail = (email: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -318,6 +326,38 @@ export default function POSPage() {
         return summary;
     };
 
+    const startEditSale = (sale: any) => {
+        setEditingSale(sale);
+        setCurrentSale({
+            items: sale.items.map((item: any) => ({
+                ...item,
+                desc: item.description || item.desc,
+                qty: item.quantity || item.qty,
+                price: parseFloat(item.price)
+            })) || [],
+            payments: sale.payments || [],
+            buyerName: sale.buyerName || "",
+            buyerPhone: sale.buyerPhone || "",
+            buyerEmail: sale.buyerEmail || "",
+        });
+        setIsCheckoutMode(true);
+        const originalTotal = sale.items?.reduce((acc: number, item: any) => acc + (item.price * (item.quantity || item.qty)), 0) || 0;
+        if (originalTotal > 0 && sale.totalValue < originalTotal) {
+            const discountAmount = originalTotal - sale.totalValue;
+            const discountPct = Math.round((discountAmount / originalTotal) * 100);
+            setDiscountPercent(discountPct);
+        } else {
+            setDiscountPercent(0);
+        }
+    };
+
+    const cancelEdit = () => {
+        setEditingSale(null);
+        setCurrentSale({ items: [], payments: [], buyerName: "", buyerPhone: "", buyerEmail: "" });
+        setDiscountPercent(0);
+        setIsCheckoutMode(false);
+    };
+
     const addItem = () => {
         if (!newItem.desc || newItem.price <= 0) return;
         const updatedItems = [...(currentSale.items || []), { ...newItem, productId: selectedProductId || undefined }];
@@ -339,10 +379,20 @@ export default function POSPage() {
     };
 
     const addPayment = () => {
+        // Prevent adding payment if amount is <= 0 OR if we've already paid everything
         if (tempPayment.amount <= 0) return;
+
         const updatedPayments = [...(currentSale.payments || []), { ...tempPayment }];
         setCurrentSale({ ...currentSale, payments: updatedPayments });
-        setTempPayment({ method: "pix", amount: 0 });
+
+        // Calculate the NEW remaining amount to default the next payment input
+        const subtotal = currentSale.items?.reduce((acc, item) => acc + (item.price * item.qty), 0) || 0;
+        const discount = (subtotal * discountPercent) / 100;
+        const total = subtotal - discount;
+        const currentPaid = updatedPayments.reduce((acc, p) => acc + p.amount, 0);
+        const remaining = total - currentPaid;
+
+        setTempPayment({ method: "pix", amount: remaining > 0 ? remaining : 0 });
     };
 
     const removePayment = (idx: number) => {
@@ -369,7 +419,24 @@ export default function POSPage() {
                 garageSaleId: selectedGarageSaleId,
             };
 
-            const newSale = await createSale(saleData);
+            if (editingSale) {
+                // Update existing sale
+                const res = await fetch(`/api/sales/${editingSale.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(saleData)
+                });
+
+                if (!res.ok) throw new Error('Failed to update sale');
+
+                alert("Venda Editada com Sucesso!");
+                setEditingSale(null);
+            } else {
+                // Create new sale
+                const newSale = await createSale(saleData);
+                setReceiptData(newSale);
+                alert("Venda Finalizada com Sucesso!");
+            }
 
             // Refresh sales history
             const res = await fetch(`/api/sales?garageSaleId=${selectedGarageSaleId}`);
@@ -378,11 +445,10 @@ export default function POSPage() {
                 setSalesHistory(data);
             }
 
-            setReceiptData(newSale);
             setCurrentSale({ items: [], payments: [], buyerName: "", buyerPhone: "", buyerEmail: "" });
+            setDiscountPercent(0);
             setIsCheckoutMode(false);
             setSelectedProductId(null);
-            alert("Venda Finalizada com Sucesso!");
         } catch (error) {
             console.error("Erro ao finalizar venda:", error);
             alert("Erro ao finalizar venda. Tente novamente.");
@@ -706,7 +772,20 @@ export default function POSPage() {
                                                         <span>{item.desc}</span>
                                                     </div>
                                                     <div className="flex items-center gap-3">
-                                                        <span className="font-semibold text-gray-700">{formatCurrency(item.price * item.qty)}</span>
+                                                        <div className="text-right">
+                                                            {discountPercent > 0 ? (
+                                                                <>
+                                                                    <div className="text-xs text-gray-400 line-through">
+                                                                        {formatCurrency(item.price * item.qty)}
+                                                                    </div>
+                                                                    <div className="font-semibold text-gray-700">
+                                                                        {formatCurrency((item.price * item.qty) * (1 - discountPercent / 100))}
+                                                                    </div>
+                                                                </>
+                                                            ) : (
+                                                                <span className="font-semibold text-gray-700">{formatCurrency(item.price * item.qty)}</span>
+                                                            )}
+                                                        </div>
                                                         {!isCheckoutMode && (
                                                             <button onClick={() => removeItem(idx)} className="text-red-500 hover:text-red-700 px-1 font-bold">✕</button>
                                                         )}
@@ -716,6 +795,16 @@ export default function POSPage() {
                                         </ul>
                                     )}
                                 </div>
+                                {editingSale && (
+                                    <div className="bg-white px-4 pb-2">
+                                        <button
+                                            onClick={cancelEdit}
+                                            className="w-full rounded bg-gray-200 py-2 text-gray-800 font-bold hover:bg-gray-300 transition-colors flex items-center justify-center gap-2"
+                                        >
+                                            <span>↩</span> Cancelar Edição de Venda
+                                        </button>
+                                    </div>
+                                )}
 
                                 <div className="border-t bg-gray-50 p-4">
                                     {!isCheckoutMode ? (
@@ -887,7 +976,7 @@ export default function POSPage() {
                                                     <span>{formatCurrency(sale.totalValue)}</span>
                                                 </div>
                                                 <div className="mb-2 text-xs text-gray-500">
-                                                    {new Date(sale.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                                    {sale.createdAt ? new Date(sale.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : (sale.date ? new Date(sale.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '')}
                                                     {sale.buyerName && ` - ${sale.buyerName}`}
                                                 </div>
                                                 <div className="flex flex-wrap gap-1 mb-2">
@@ -898,6 +987,12 @@ export default function POSPage() {
                                                     ))}
                                                 </div>
                                                 <div className="flex gap-2 mt-2 pt-2 border-t border-gray-200">
+                                                    <button
+                                                        onClick={() => startEditSale(sale)}
+                                                        className="flex-1 rounded border border-yellow-200 bg-yellow-50 px-2 py-1 text-xs text-yellow-700 hover:bg-yellow-100 transition-colors"
+                                                    >
+                                                        Editar
+                                                    </button>
                                                     <button
                                                         onClick={() => setReceiptData(sale)}
                                                         className="flex-1 rounded border border-blue-200 bg-blue-50 px-2 py-1 text-xs text-blue-700 hover:bg-blue-100 transition-colors"
