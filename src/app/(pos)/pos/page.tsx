@@ -112,9 +112,19 @@ export default function POSPage() {
         !selectedGarageSaleId || sale.garageSaleId === selectedGarageSaleId
     );
 
-    const formatCurrency = (val: number) => {
-        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-    };
+    import { formatDate, formatCurrency } from "@/utils/formatters";
+
+    // ...
+    text += `Data: ${formatDate(sale.date)}\n\n`;
+
+    // ...
+    html += `<p><strong>Data:</strong> ${formatDate(new Date())}</p>`;
+
+    // ...
+    <p className="text-sm text-gray-500">
+        {formatDate(gs.dataInicio)}
+        {gs.dataFim && ` - ${formatDate(gs.dataFim)}`}
+    </p>
 
     const getPaymentLabel = (method: string) => {
         const labels: Record<string, string> = {

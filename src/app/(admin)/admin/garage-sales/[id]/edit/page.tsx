@@ -28,12 +28,12 @@ export default function EditGarageSalePage() {
             if (garageSale) {
                 setFormData({
                     nome: garageSale.nome,
-                    dataInicio: garageSale.dataInicio,
-                    dataFim: garageSale.dataFim,
+                    dataInicio: garageSale.dataInicio ? new Date(garageSale.dataInicio).toISOString().split('T')[0] : "",
+                    dataFim: garageSale.dataFim ? new Date(garageSale.dataFim).toISOString().split('T')[0] : "",
                     endereco: garageSale.endereco,
-                    responsavel: garageSale.responsavel,
-                    email: garageSale.email,
-                    regras: garageSale.regras,
+                    responsavel: garageSale.responsavel || "",
+                    email: garageSale.email || "",
+                    regras: garageSale.regras || "",
                     banner: garageSale.banner || "",
                 });
             }

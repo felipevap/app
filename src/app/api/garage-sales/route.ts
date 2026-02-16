@@ -16,14 +16,18 @@ export async function GET() {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { nome, dataInicio, dataFim, endereco } = body;
+        const { nome, dataInicio, dataFim, endereco, responsavel, email, regras, banner } = body;
 
         const garageSale = await prisma.garageSale.create({
             data: {
                 nome,
                 dataInicio: new Date(dataInicio),
                 dataFim: dataFim ? new Date(dataFim) : null,
-                endereco
+                endereco,
+                responsavel,
+                email,
+                regras,
+                banner
             }
         });
 
