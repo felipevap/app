@@ -73,9 +73,6 @@ export default function GarageSalesPage() {
                                 className="group rounded-xl border border-neutral-800 bg-neutral-950 p-6 shadow-sm transition-all hover:border-neutral-700 hover:shadow-lg"
                             >
                                 <div className="mb-4 flex items-start justify-between">
-                                    import {formatDate} from "@/utils/formatters";
-
-                                    // ... inside component ...
                                     <div className="flex-1">
                                         <h3 className="text-xl font-bold text-white">{gs.nome}</h3>
                                         <p className="mt-1 text-sm text-neutral-400">
