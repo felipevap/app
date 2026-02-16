@@ -220,6 +220,11 @@ export default function POSPage() {
     const currentPaymentsTotal = currentSale.payments?.reduce((acc, p) => acc + p.amount, 0) || 0;
     const remainingAmount = currentSaleTotal - currentPaymentsTotal;
 
+    const availableProducts = getProductsByGarageSale(selectedGarageSaleId).filter(p => p.status === 'disponível');
+    const filteredSuggestions = availableProducts.filter(p =>
+        newItem.desc && p.nome.toLowerCase().includes(newItem.desc.toLowerCase())
+    );
+
     const filteredSalesHistory = salesHistory.filter(sale =>
         !selectedGarageSaleId || sale.garageSaleId === selectedGarageSaleId
     );
@@ -392,14 +397,6 @@ export default function POSPage() {
         setSelectedProductId(product.id);
         setShowProductSuggestions(false);
     };
-
-    const availableProducts = getProductsByGarageSale(selectedGarageSaleId).filter(
-        p => p.status === 'disponível'
-    );
-
-    const filteredSuggestions = availableProducts.filter(p =>
-        newItem.desc && p.nome.toLowerCase().includes(newItem.desc.toLowerCase())
-    );
 
     const removeItem = (idx: number) => {
         const updatedItems = currentSale.items?.filter((_, i) => i !== idx);

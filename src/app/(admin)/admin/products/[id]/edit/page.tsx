@@ -242,19 +242,26 @@ export default function EditProductPage() {
                     </div>
 
                     {showCamera && (
-                        <div className="mb-4 rounded-xl overflow-hidden border border-neutral-700">
+                        <div className="mb-4 rounded-xl overflow-hidden border-2 border-blue-500 shadow-xl">
+                            <div className="bg-neutral-900 p-2">
+                                <p className="text-center text-neutral-300 text-sm font-semibold">📸 Posicione o produto e clique para capturar</p>
+                            </div>
                             <Webcam
                                 ref={webcamRef}
                                 audio={false}
                                 screenshotFormat="image/jpeg"
-                                videoConstraints={{ facingMode: "environment" }}
-                                className="w-full"
+                                videoConstraints={{
+                                    facingMode: "environment",
+                                    width: { ideal: 1920 },
+                                    height: { ideal: 1080 }
+                                }}
+                                className="w-full h-96 object-cover"
                             />
-                            <div className="bg-neutral-900 p-4 flex justify-center">
+                            <div className="bg-neutral-900 p-6 flex justify-center gap-4">
                                 <button
                                     type="button"
                                     onClick={capturePhoto}
-                                    className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-lg font-bold text-white transition-colors"
+                                    className="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded-lg font-bold text-white transition-colors text-lg shadow-lg"
                                 >
                                     📸 Capturar Foto
                                 </button>

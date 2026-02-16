@@ -29,7 +29,7 @@ export default function Home() {
           <div className="relative z-10">
             <span className="text-4xl">📷</span>
             <h2 className="mt-4 text-2xl font-bold text-white">Captura</h2>
-            <p className="mt-2 text-sm text-gray-400">Adicionar Novos Itens</p>
+            <p className="mt-2 text-sm text-gray-400">Achar Itens</p>
           </div>
         </Link>
 
