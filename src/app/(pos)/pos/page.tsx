@@ -100,19 +100,30 @@ export default function POSPage() {
     }, []);
 
     useEffect(() => {
-        const loadPendingOrders = () => {
-            const orders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
-            const filtered = orders.filter((order: any) => order.garageSaleId === selectedGarageSaleId);
-            console.log('PDV - Total pedidos no localStorage:', orders.length);
-            console.log('PDV - Garage Sale ID selecionado:', selectedGarageSaleId);
-            console.log('PDV - Pedidos filtrados para este GS:', filtered.length);
-            console.log('PDV - Pedidos:', filtered);
-            setPendingOrders(filtered);
+        const loadPendingOrders = async () => {
+            try {
+                const response = await fetch(`/api/pending-orders?garageSaleId=${selectedGarageSaleId}`);
+                if (response.ok) {
+                    const orders = await response.json();
+                    console.log('PDV - Pedidos carregados da API:', orders.length);
+                    console.log('PDV - Garage Sale ID selecionado:', selectedGarageSaleId);
+                    console.log('PDV - Pedidos:', orders);
+                    setPendingOrders(orders);
+                } else {
+                    console.error('Erro ao carregar pedidos pendentes');
+                    setPendingOrders([]);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar pedidos pendentes:', error);
+                setPendingOrders([]);
+            }
         };
 
-        loadPendingOrders();
-        const interval = setInterval(loadPendingOrders, 2000);
-        return () => clearInterval(interval);
+        if (selectedGarageSaleId) {
+            loadPendingOrders();
+            const interval = setInterval(loadPendingOrders, 5000);
+            return () => clearInterval(interval);
+        }
     }, [selectedGarageSaleId]);
 
     const currentSaleSubtotal = currentSale.items?.reduce((acc, item) => acc + (item.price * item.qty), 0) || 0;
@@ -155,20 +166,30 @@ export default function POSPage() {
         return emailRegex.test(email);
     };
 
-    const loadPendingOrder = (order: any) => {
+    const loadPendingOrder = async (order: any) => {
         setCurrentSale({
-            items: order.items,
+            items: order.items.map((item: any) => ({
+                productId: item.productId,
+                desc: item.description,
+                qty: item.quantity,
+                price: item.price
+            })),
             payments: [],
-            buyerName: order.customerInfo.nome,
-            buyerPhone: order.customerInfo.telefone,
-            buyerEmail: order.customerInfo.email,
+            buyerName: order.customerName,
+            buyerPhone: order.customerPhone,
+            buyerEmail: order.customerEmail,
         });
         setIsCheckoutMode(true);
 
-        const allOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
-        const updatedOrders = allOrders.filter((o: any) => o.id !== order.id);
-        localStorage.setItem('pending_orders', JSON.stringify(updatedOrders));
-        setPendingOrders(updatedOrders.filter((o: any) => o.garageSaleId === selectedGarageSaleId));
+        try {
+            await fetch(`/api/pending-orders?id=${order.id}`, {
+                method: 'DELETE',
+            });
+
+            setPendingOrders(pendingOrders.filter((o: any) => o.id !== order.id));
+        } catch (error) {
+            console.error('Erro ao remover pedido pendente:', error);
+        }
     };
 
     const generateReceiptText = (sale: Sale) => {

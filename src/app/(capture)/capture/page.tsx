@@ -102,42 +102,53 @@ export default function CapturePage() {
         setCart(newCart);
     };
 
-    const checkout = () => {
+    const checkout = async () => {
         if (!customerInfo.nome || !customerInfo.telefone || !customerInfo.email) {
             alert('Por favor, preencha todos os campos (Nome, Telefone e Email)');
             return;
         }
 
-        const pendingOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
+        try {
+            const orderData = {
+                customerName: customerInfo.nome,
+                customerPhone: customerInfo.telefone,
+                customerEmail: customerInfo.email,
+                total: cart.reduce((acc, item) => acc + item.preco, 0),
+                garageSaleId: selectedGarageSaleId,
+                items: cart.map(item => ({
+                    productId: item.id,
+                    desc: item.nome,
+                    qty: 1,
+                    price: item.preco
+                }))
+            };
 
-        const newOrder = {
-            id: Date.now().toString(),
-            customerInfo,
-            items: cart.map(item => ({
-                productId: item.id,
-                desc: item.nome,
-                qty: 1,
-                price: item.preco
-            })),
-            total: cart.reduce((acc, item) => acc + item.preco, 0),
-            createdAt: new Date().toISOString(),
-            garageSaleId: selectedGarageSaleId
-        };
+            console.log('Enviando pedido para API:', orderData);
 
-        pendingOrders.push(newOrder);
-        localStorage.setItem('pending_orders', JSON.stringify(pendingOrders));
+            const response = await fetch('/api/pending-orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            });
 
-        console.log('Pedido salvo:', newOrder);
-        console.log('Total de pedidos pendentes:', pendingOrders.length);
-        console.log('Garage Sale ID:', selectedGarageSaleId);
+            if (!response.ok) {
+                throw new Error('Falha ao salvar pedido');
+            }
 
-        setShowSuccessMessage(true);
-        setTimeout(() => {
-            setShowSuccessMessage(false);
-            setCart([]);
-            setCustomerInfo({ nome: '', telefone: '', email: '' });
-            setIsCartOpen(false);
-        }, 3000);
+            const savedOrder = await response.json();
+            console.log('Pedido salvo com sucesso:', savedOrder);
+
+            setShowSuccessMessage(true);
+            setTimeout(() => {
+                setShowSuccessMessage(false);
+                setCart([]);
+                setCustomerInfo({ nome: '', telefone: '', email: '' });
+                setIsCartOpen(false);
+            }, 3000);
+        } catch (error) {
+            console.error('Erro ao salvar pedido:', error);
+            alert('Erro ao salvar pedido. Tente novamente.');
+        }
     };
 
     const maskPhone = (value: string) => {
