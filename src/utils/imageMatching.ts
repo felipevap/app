@@ -1,6 +1,6 @@
 export async function findMatchingProduct(
     capturedImageBase64: string,
-    products: { id: string, images: string[] }[]
+    products: { id: string, imagens: string[] }[]
 ): Promise<string | null> {
     if (products.length === 0) return null;
 
@@ -37,9 +37,9 @@ export async function findMatchingProduct(
         const THRESHOLD = 65;
 
         for (const product of products) {
-            if (!product.images || product.images.length === 0) continue;
+            if (!product.imagens || product.imagens.length === 0) continue;
 
-            for (const productImage of product.images) {
+            for (const productImage of product.imagens) {
                 try {
                     const productImg = await loadImage(productImage);
                     const productData = getImageData(productImg);

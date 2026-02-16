@@ -12,7 +12,7 @@ export interface GarageSale {
     email: string;
     regras: string;
     banner?: string;
-    criadoEm: number;
+    criadoEm: number; // Mantido para compatibilidade
 }
 
 export interface Product {
@@ -31,75 +31,73 @@ export interface Product {
 interface GarageSaleContextType {
     garageSales: GarageSale[];
     products: Product[];
-    addGarageSale: (garageSale: Omit<GarageSale, 'id' | 'criadoEm'>) => GarageSale;
-    updateGarageSale: (id: string, garageSale: Partial<GarageSale>) => void;
-    deleteGarageSale: (id: string) => void;
+    loading: boolean;
+    addGarageSale: (garageSale: Omit<GarageSale, 'id' | 'criadoEm'>) => Promise<GarageSale>;
+    updateGarageSale: (id: string, garageSale: Partial<GarageSale>) => Promise<void>;
+    deleteGarageSale: (id: string) => Promise<void>;
     getGarageSale: (id: string) => GarageSale | undefined;
-    addProduct: (product: Omit<Product, 'id' | 'status'>) => Product;
-    updateProduct: (id: string, product: Partial<Product>) => void;
-    deleteProduct: (id: string) => void;
+    addProduct: (product: Omit<Product, 'id' | 'status'>) => Promise<Product>;
+    updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
+    deleteProduct: (id: string) => Promise<void>;
     getProduct: (id: string) => Product | undefined;
     getProductsByGarageSale: (garageSaleId: string) => Product[];
+    createSale: (sale: any) => Promise<any>;
+    refreshData: () => Promise<void>;
 }
 
 const GarageSaleContext = createContext<GarageSaleContextType | undefined>(undefined);
 
-const generateId = () => {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-        return crypto.randomUUID();
-    }
-    return Date.now().toString(36) + Math.random().toString(36).substring(2);
-};
-
 export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [garageSales, setGarageSales] = useState<GarageSale[]>(() => {
-        if (typeof window === 'undefined') return [];
-        const stored = localStorage.getItem('garage-sales');
-        return stored ? JSON.parse(stored) : [];
-    });
+    const [garageSales, setGarageSales] = useState<GarageSale[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const [products, setProducts] = useState<Product[]>(() => {
-        if (typeof window === 'undefined') return [];
-        const stored = localStorage.getItem('garage-sale-products');
-        return stored ? JSON.parse(stored) : [];
-    });
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
+    const fetchData = useCallback(async () => {
         try {
-            localStorage.setItem('garage-sales', JSON.stringify(garageSales));
-        } catch (error) {
-            console.error('Erro ao salvar Garage Sales:', error);
-        }
-    }, [garageSales]);
+            setLoading(true);
+            const [gsRes, prodRes] = await Promise.all([
+                fetch('/api/garage-sales'),
+                fetch('/api/products')
+            ]);
 
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-        try {
-            localStorage.setItem('garage-sale-products', JSON.stringify(products));
-        } catch (error) {
-            console.error('Erro ao salvar produtos:', error);
-            if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-                alert('Armazenamento cheio! Não foi possível salvar o produto. Tente remover produtos antigos ou usar menos imagens.');
+            if (gsRes.ok && prodRes.ok) {
+                const gsData = await gsRes.json();
+                const prodData = await prodRes.json();
+                setGarageSales(gsData);
+                setProducts(prodData);
             }
+        } catch (error) {
+            console.error('Failed to fetch data:', error);
+        } finally {
+            setLoading(false);
         }
-    }, [products]);
+    }, []);
 
-    const addGarageSale = useCallback((garageSale: Omit<GarageSale, 'id' | 'criadoEm'>): GarageSale => {
-        const newGarageSale: GarageSale = {
-            ...garageSale,
-            id: generateId(),
-            criadoEm: Date.now()
-        };
-        setGarageSales(prev => [...prev, newGarageSale]);
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    const addGarageSale = useCallback(async (garageSale: Omit<GarageSale, 'id' | 'criadoEm'>): Promise<GarageSale> => {
+        const res = await fetch('/api/garage-sales', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(garageSale)
+        });
+
+        if (!res.ok) throw new Error('Failed to create garage sale');
+
+        const newGarageSale = await res.json();
+        setGarageSales(prev => [newGarageSale, ...prev]);
         return newGarageSale;
     }, []);
 
-    const updateGarageSale = useCallback((id: string, updated: Partial<GarageSale>) => {
+    const updateGarageSale = useCallback(async (id: string, updated: Partial<GarageSale>) => {
+        // TODO: Implementar PUT
         setGarageSales(prev => prev.map(gs => gs.id === id ? { ...gs, ...updated } : gs));
     }, []);
 
-    const deleteGarageSale = useCallback((id: string) => {
+    const deleteGarageSale = useCallback(async (id: string) => {
+        // TODO: Implementar DELETE
         setGarageSales(prev => prev.filter(gs => gs.id !== id));
         setProducts(prev => prev.filter(p => p.garageSaleId !== id));
     }, []);
@@ -108,21 +106,34 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
         return garageSales.find(gs => gs.id === id);
     }, [garageSales]);
 
-    const addProduct = useCallback((product: Omit<Product, 'id' | 'status'>): Product => {
-        const newProduct: Product = {
-            ...product,
-            id: generateId(),
-            status: 'disponível'
-        };
-        setProducts(prev => [...prev, newProduct]);
+    const addProduct = useCallback(async (product: Omit<Product, 'id' | 'status'>): Promise<Product> => {
+        const res = await fetch('/api/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(product)
+        });
+
+        if (!res.ok) throw new Error('Failed to create product');
+
+        const newProduct = await res.json();
+        setProducts(prev => [newProduct, ...prev]);
         return newProduct;
     }, []);
 
-    const updateProduct = useCallback((id: string, updated: Partial<Product>) => {
-        setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updated } : p));
+    const updateProduct = useCallback(async (id: string, updated: Partial<Product>) => {
+        const res = await fetch(`/api/products/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updated)
+        });
+
+        if (!res.ok) throw new Error('Failed to update product');
+
+        const updatedProduct = await res.json();
+        setProducts(prev => prev.map(p => p.id === id ? updatedProduct : p));
     }, []);
 
-    const deleteProduct = useCallback((id: string) => {
+    const deleteProduct = useCallback(async (id: string) => {
         setProducts(prev => prev.filter(p => p.id !== id));
     }, []);
 
@@ -134,9 +145,24 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
         return products.filter(p => p.garageSaleId === garageSaleId);
     }, [products]);
 
+    const createSale = useCallback(async (sale: any) => {
+        const res = await fetch('/api/sales', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(sale)
+        });
+
+        if (!res.ok) throw new Error('Failed to create sale');
+
+        const newSale = await res.json();
+        await fetchData();
+        return newSale;
+    }, [fetchData]);
+
     const value = useMemo(() => ({
         garageSales,
         products,
+        loading,
         addGarageSale,
         updateGarageSale,
         deleteGarageSale,
@@ -145,10 +171,13 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
         updateProduct,
         deleteProduct,
         getProduct,
-        getProductsByGarageSale
+        getProductsByGarageSale,
+        createSale,
+        refreshData: fetchData
     }), [
         garageSales,
         products,
+        loading,
         addGarageSale,
         updateGarageSale,
         deleteGarageSale,
@@ -157,7 +186,9 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
         updateProduct,
         deleteProduct,
         getProduct,
-        getProductsByGarageSale
+        getProductsByGarageSale,
+        createSale,
+        fetchData
     ]);
 
     return (

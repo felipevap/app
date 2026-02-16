@@ -23,14 +23,18 @@ export default function AdminDashboard() {
     const [salesHistory, setSalesHistory] = useState<Sale[]>([]);
 
     useEffect(() => {
-        const savedSales = localStorage.getItem('pos_sales_history');
-        if (savedSales) {
+        const fetchSales = async () => {
             try {
-                setSalesHistory(JSON.parse(savedSales));
+                const res = await fetch('/api/sales');
+                if (res.ok) {
+                    const data = await res.json();
+                    setSalesHistory(data);
+                }
             } catch (e) {
                 console.error("Failed to load sales history", e);
             }
-        }
+        };
+        fetchSales();
     }, []);
 
     const filteredSales = selectedGarageSaleId === "all"

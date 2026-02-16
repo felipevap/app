@@ -6,7 +6,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Webcam from "react-webcam";
 
-export default function NewProductPage() {
+import { Suspense } from "react";
+
+function NewProductContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { garageSales, addProduct } = useGarageSales();
@@ -151,7 +153,7 @@ export default function NewProductPage() {
         });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!formData.garageSaleId) {
@@ -159,7 +161,7 @@ export default function NewProductPage() {
             return;
         }
 
-        addProduct(formData);
+        await addProduct(formData);
         alert('Produto cadastrado com sucesso!');
         router.push(`/admin/products?garageSale=${formData.garageSaleId}`);
     };
@@ -431,5 +433,13 @@ export default function NewProductPage() {
                 </button>
             </form>
         </div>
+    );
+}
+
+export default function NewProductPage() {
+    return (
+        <Suspense fallback={<div className="text-white text-center p-8">Carregando...</div>}>
+            <NewProductContent />
+        </Suspense>
     );
 }

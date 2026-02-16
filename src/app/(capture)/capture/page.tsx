@@ -2,7 +2,8 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react';
 import Webcam from 'react-webcam';
-import { useProducts, type Product } from '@/contexts/ProductContext';
+// import { useProducts, type Product } from '@/contexts/ProductContext';
+import type { Product } from '@/contexts/GarageSaleContext';
 import { useGarageSales } from '@/contexts/GarageSaleContext';
 import { findMatchingProduct } from '@/utils/imageMatching';
 import Link from 'next/link';
@@ -11,8 +12,7 @@ import { useRouter } from 'next/navigation';
 
 export default function CapturePage() {
     const webcamRef = useRef<Webcam>(null);
-    const { products } = useProducts() as any;
-    const { garageSales, getProductsByGarageSale } = useGarageSales();
+    const { garageSales, products, getProductsByGarageSale } = useGarageSales();
     const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("");
     const [isScanning, setIsScanning] = useState(false);
     const [foundProduct, setFoundProduct] = useState<Product | null>(null);
@@ -87,9 +87,9 @@ export default function CapturePage() {
         // Save cart to pending state for POS
         // We transpose the cart items to match the expected POS item format: { desc, qty, price }
         const posItems = cart.map(item => ({
-            desc: item.name,
+            desc: item.nome,
             qty: 1,
-            price: item.price
+            price: item.preco
         }));
 
         localStorage.setItem('pending_cart', JSON.stringify(posItems));
@@ -216,22 +216,22 @@ export default function CapturePage() {
                     >
                         <div className="w-12 h-1.5 bg-neutral-700 rounded-full mx-auto mb-6"></div>
                         <div className="flex gap-4">
-                            {foundProduct.images[0] && (
-                                <img src={foundProduct.images[0]} alt={foundProduct.name} className="w-24 h-24 rounded-xl object-cover bg-neutral-800" />
+                            {foundProduct.imagens[0] && (
+                                <img src={foundProduct.imagens[0]} alt={foundProduct.nome} className="w-24 h-24 rounded-xl object-cover bg-neutral-800" />
                             )}
                             <div className="flex-1">
                                 <div className="flex justify-between items-start">
-                                    <h2 className="text-xl font-bold text-white mb-1">{foundProduct.name}</h2>
+                                    <h2 className="text-xl font-bold text-white mb-1">{foundProduct.nome}</h2>
                                     <button onClick={() => setFoundProduct(null)} className="text-neutral-500 p-1">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                     </button>
                                 </div>
                                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                                     <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full">
-                                        {foundProduct.category}
+                                        {foundProduct.categoria}
                                     </span>
                                 </div>
-                                <p className="text-blue-400 font-bold text-lg mb-2">{formatBRL(foundProduct.price)}</p>
+                                <p className="text-blue-400 font-bold text-lg mb-2">{formatBRL(foundProduct.preco)}</p>
                             </div>
                         </div>
                         <button onClick={addToCart} className="w-full mt-6 bg-green-600 py-3 rounded-xl font-semibold text-white hover:bg-green-500 transition-colors">
@@ -263,12 +263,12 @@ export default function CapturePage() {
                             ) : (
                                 cart.map((item, idx) => (
                                     <div key={idx} className="flex gap-4 bg-neutral-800 p-3 rounded-xl">
-                                        {item.images && item.images[0] && (
-                                            <img src={item.images[0]} className="w-16 h-16 rounded-lg object-cover" />
+                                        {item.imagens && item.imagens[0] && (
+                                            <img src={item.imagens[0]} className="w-16 h-16 rounded-lg object-cover" />
                                         )}
                                         <div className="flex-1">
-                                            <div className="font-bold text-sm line-clamp-1">{item.name}</div>
-                                            <div className="text-blue-400 font-bold">{formatBRL(item.price)}</div>
+                                            <div className="font-bold text-sm line-clamp-1">{item.nome}</div>
+                                            <div className="text-blue-400 font-bold">{formatBRL(item.preco)}</div>
                                         </div>
                                         <button onClick={() => removeFromCart(idx)} className="text-red-500">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>

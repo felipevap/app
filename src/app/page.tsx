@@ -47,7 +47,7 @@ export default function Home() {
       </div>
 
       <footer className="mt-16 text-sm text-neutral-600">
-        &copy; 2026 Garage Sale Premium
+        &copy; 2026 Garage Sale Premium <span className="mx-2">|</span> v1.1.0
       </footer>
     </div>
   );

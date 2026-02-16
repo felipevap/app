@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function ProductsPage() {
+import { Suspense } from "react";
+
+function ProductsContent() {
     const { garageSales, products, getProductsByGarageSale, deleteProduct } = useGarageSales();
     const searchParams = useSearchParams();
     const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("");
@@ -223,5 +225,13 @@ export default function ProductsPage() {
                 </>
             )}
         </div>
+    );
+}
+
+export default function ProductsPage() {
+    return (
+        <Suspense fallback={<div className="text-white text-center p-8">Carregando...</div>}>
+            <ProductsContent />
+        </Suspense>
     );
 }
