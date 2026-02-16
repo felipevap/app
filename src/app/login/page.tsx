@@ -11,13 +11,11 @@ export default function LoginPage() {
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
-        // Hardcoded credentials as per plan
         if (email === "leader.fabio@gmail.com" && password === "eamsjc73") {
-            // Simulate login token/session here if needed
             document.cookie = "auth=true; path=/";
             router.push("/admin");
         } else {
-            setError("Invalid credentials");
+            setError("Credenciais inválidas");
         }
     };
 
@@ -28,7 +26,7 @@ export default function LoginPage() {
                     <h1 className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-4xl font-bold text-transparent">
                         Garage Sale
                     </h1>
-                    <p className="mt-2 text-gray-400">Espinha Dorsal Access</p>
+                    <p className="mt-2 text-gray-400">Acesso Espinha Dorsal</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">
@@ -41,14 +39,14 @@ export default function LoginPage() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="mt-1 block w-full rounded-lg border border-white/10 bg-black/20 px-4 py-3 text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                            placeholder="admin@example.com"
+                            placeholder="admin@exemplo.com"
                             required
                         />
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-gray-300">
-                            Password
+                            Senha
                         </label>
                         <input
                             type="password"
@@ -70,7 +68,7 @@ export default function LoginPage() {
                         type="submit"
                         className="w-full transform rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 font-semibold text-white transition-all hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900"
                     >
-                        Sign In
+                        Entrar
                     </button>
                 </form>
             </div>

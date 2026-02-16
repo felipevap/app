@@ -89,16 +89,16 @@ export default function CapturePage() {
 
     const onUserMediaError = useCallback((error: string | DOMException) => {
         console.error("Camera Error:", error);
-        setCameraError("Camera access failed. Ensure you are on HTTPS or localhost.");
+        setCameraError("Acesso à câmera falhou. Certifique-se de estar em HTTPS ou localhost.");
     }, []);
 
     return (
         <div className="h-screen w-full bg-black relative overflow-hidden font-sans text-white">
             {cameraError ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-6 text-center z-50 bg-neutral-900">
-                    <p className="text-red-500 font-bold mb-4 text-xl">Camera Unavailable</p>
+                    <p className="text-red-500 font-bold mb-4 text-xl">Câmera Indisponível</p>
                     <p className="mb-4">{cameraError}</p>
-                    <Link href="/" className="mt-8 bg-neutral-700 px-6 py-2 rounded-full">Back Home</Link>
+                    <Link href="/" className="mt-8 bg-neutral-700 px-6 py-2 rounded-full">Voltar ao Início</Link>
                 </div>
             ) : (
                 <Webcam
@@ -119,7 +119,7 @@ export default function CapturePage() {
                     </Link>
                     <div className="flex gap-2">
                         <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-medium">
-                            {currentProducts.length} Products Loaded
+                            {currentProducts.length} Produtos Carregados
                         </div>
                         <button onClick={() => setIsCartOpen(!isCartOpen)} className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-bold flex items-center gap-2 hover:bg-blue-600/80 transition-colors">
                             <span>🛒 {cart.length}</span>
@@ -145,7 +145,7 @@ export default function CapturePage() {
                         )}
                     </div>
                     <p className="text-white/80 text-center mt-4 text-sm font-medium drop-shadow-md">
-                        Align product in frame
+                        Alinhe o produto no quadro
                     </p>
                 </div>
 
@@ -177,7 +177,7 @@ export default function CapturePage() {
                         exit={{ opacity: 0, y: -20 }}
                         className="absolute top-24 left-1/2 -translate-x-1/2 z-20 bg-red-500/90 backdrop-blur-md px-6 py-3 rounded-full text-white font-semibold shadow-lg pointer-events-none"
                     >
-                        Product not found
+                        Produto não encontrado
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -213,7 +213,7 @@ export default function CapturePage() {
                             </div>
                         </div>
                         <button onClick={addToCart} className="w-full mt-6 bg-green-600 py-3 rounded-xl font-semibold text-white hover:bg-green-500 transition-colors">
-                            Add to Cart
+                            Adicionar ao Carrinho
                         </button>
                     </motion.div>
                 )}
@@ -229,7 +229,7 @@ export default function CapturePage() {
                         className="absolute inset-y-0 right-0 z-40 w-full max-w-sm bg-neutral-900 border-l border-neutral-800 shadow-2xl p-6 pointer-events-auto flex flex-col"
                     >
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-2xl font-bold">Cart ({cart.length})</h2>
+                            <h2 className="text-2xl font-bold">Carrinho ({cart.length})</h2>
                             <button onClick={() => setIsCartOpen(false)} className="text-neutral-400 hover:text-white">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </button>
@@ -237,7 +237,7 @@ export default function CapturePage() {
 
                         <div className="flex-1 overflow-y-auto space-y-4">
                             {cart.length === 0 ? (
-                                <div className="text-center text-neutral-500 mt-10">Cart is empty</div>
+                                <div className="text-center text-neutral-500 mt-10">Carrinho vazio</div>
                             ) : (
                                 cart.map((item, idx) => (
                                     <div key={idx} className="flex gap-4 bg-neutral-800 p-3 rounded-xl">
@@ -266,7 +266,7 @@ export default function CapturePage() {
                                 disabled={cart.length === 0}
                                 className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Send to Sales App
+                                Enviar para PDV
                             </button>
                         </div>
                     </motion.div>

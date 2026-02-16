@@ -60,7 +60,14 @@ export default function AdminLayout({
                     })}
                 </nav>
 
-                <div className="border-t border-neutral-800 p-4">
+                <div className="border-t border-neutral-800 p-4 space-y-2">
+                    <Link
+                        href="/"
+                        className="flex items-center gap-3 text-blue-400 hover:text-blue-300"
+                    >
+                        <span className="text-xl">🏠</span>
+                        {isSidebarOpen && <span>Início</span>}
+                    </Link>
                     <Link
                         href="/login"
                         className="flex items-center gap-3 text-red-400 hover:text-red-300"
