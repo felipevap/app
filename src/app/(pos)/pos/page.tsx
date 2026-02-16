@@ -106,109 +106,7 @@ export default function POSPage() {
         }
     }, []);
 
-    if (!selectedGarageSaleId && garageSales.length > 0) {
-        return (
-            <div className="flex h-screen flex-col bg-gray-100 text-slate-800 font-sans">
-                <header className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm">
-                    <div className="flex items-center gap-2">
-                        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                            <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-sm font-bold text-white">
-                                GS
-                            </div>
-                            <span className="hidden font-bold sm:block">Garage Sale</span>
-                        </Link>
-                    </div>
-                </header>
 
-                <main className="flex-grow flex items-center justify-center p-8">
-                    <div className="max-w-4xl w-full">
-                        <div className="text-center mb-8">
-                            <h1 className="text-4xl font-bold text-gray-800 mb-2">Ponto de Venda (PDV)</h1>
-                            <p className="text-gray-600">Selecione o evento para iniciar as vendas</p>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {garageSales.map(gs => {
-                                const productCount = getProductsByGarageSale(gs.id).length;
-                                const salesCount = salesHistory.filter(s => s.garageSaleId === gs.id).length;
-
-                                return (
-                                    <button
-                                        key={gs.id}
-                                        onClick={() => setSelectedGarageSaleId(gs.id)}
-                                        className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 text-left border-2 border-transparent hover:border-blue-500"
-                                    >
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div className="flex-1">
-                                                <h3 className="font-bold text-xl text-gray-800 mb-1">{gs.nome}</h3>
-                                                <p className="text-sm text-gray-500">
-                                                    {new Date(gs.dataInicio).toLocaleDateString('pt-BR')}
-                                                    {gs.dataFim && ` - ${new Date(gs.dataFim).toLocaleDateString('pt-BR')}`}
-                                                </p>
-                                            </div>
-                                            <div className="text-3xl">🏪</div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="text-gray-600">Produtos:</span>
-                                                <span className="font-bold text-blue-600">{productCount}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="text-gray-600">Vendas:</span>
-                                                <span className="font-bold text-green-600">{salesCount}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-4 pt-4 border-t border-gray-200">
-                                            <div className="text-sm text-gray-600 flex items-center gap-2">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                </svg>
-                                                {gs.endereco}
-                                            </div>
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </main>
-            </div>
-        );
-    }
-
-    if (garageSales.length === 0) {
-        return (
-            <div className="flex h-screen flex-col bg-gray-100 text-slate-800 font-sans">
-                <header className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm">
-                    <div className="flex items-center gap-2">
-                        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                            <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-sm font-bold text-white">
-                                GS
-                            </div>
-                            <span className="hidden font-bold sm:block">Garage Sale</span>
-                        </Link>
-                    </div>
-                </header>
-
-                <main className="flex-grow flex items-center justify-center p-8">
-                    <div className="text-center">
-                        <div className="text-6xl mb-4">🏪</div>
-                        <h2 className="text-2xl font-bold text-gray-800 mb-2">Nenhum Evento Cadastrado</h2>
-                        <p className="text-gray-600 mb-6">Crie um evento no gerenciador para usar o PDV</p>
-                        <Link
-                            href="/admin/garage-sales/new"
-                            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg transition-colors"
-                        >
-                            Criar Evento
-                        </Link>
-                    </div>
-                </main>
-            </div>
-        );
-    }
 
     const saveSalesToLocal = (sales: Sale[]) => {
         localStorage.setItem('pos_sales_history', JSON.stringify(sales));
@@ -563,6 +461,110 @@ export default function POSPage() {
 
     const uniqueCategories = Array.from(new Set(products.map(p => p.categoria)));
     const uniqueConditions = Array.from(new Set(products.map(p => p.condicao)));
+
+    if (!selectedGarageSaleId && garageSales.length > 0) {
+        return (
+            <div className="flex h-screen flex-col bg-gray-100 text-slate-800 font-sans">
+                <header className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm">
+                    <div className="flex items-center gap-2">
+                        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                            <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-sm font-bold text-white">
+                                GS
+                            </div>
+                            <span className="hidden font-bold sm:block">Garage Sale</span>
+                        </Link>
+                    </div>
+                </header>
+
+                <main className="flex-grow flex items-center justify-center p-8">
+                    <div className="max-w-4xl w-full">
+                        <div className="text-center mb-8">
+                            <h1 className="text-4xl font-bold text-gray-800 mb-2">Ponto de Venda (PDV)</h1>
+                            <p className="text-gray-600">Selecione o evento para iniciar as vendas</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {garageSales.map(gs => {
+                                const productCount = getProductsByGarageSale(gs.id).length;
+                                const salesCount = salesHistory.filter(s => s.garageSaleId === gs.id).length;
+
+                                return (
+                                    <button
+                                        key={gs.id}
+                                        onClick={() => setSelectedGarageSaleId(gs.id)}
+                                        className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 text-left border-2 border-transparent hover:border-blue-500"
+                                    >
+                                        <div className="flex items-start justify-between mb-4">
+                                            <div className="flex-1">
+                                                <h3 className="font-bold text-xl text-gray-800 mb-1">{gs.nome}</h3>
+                                                <p className="text-sm text-gray-500">
+                                                    {new Date(gs.dataInicio).toLocaleDateString('pt-BR')}
+                                                    {gs.dataFim && ` - ${new Date(gs.dataFim).toLocaleDateString('pt-BR')}`}
+                                                </p>
+                                            </div>
+                                            <div className="text-3xl">🏪</div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-gray-600">Produtos:</span>
+                                                <span className="font-bold text-blue-600">{productCount}</span>
+                                            </div>
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-gray-600">Vendas:</span>
+                                                <span className="font-bold text-green-600">{salesCount}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4 pt-4 border-t border-gray-200">
+                                            <div className="text-sm text-gray-600 flex items-center gap-2">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
+                                                {gs.endereco}
+                                            </div>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
+    if (garageSales.length === 0) {
+        return (
+            <div className="flex h-screen flex-col bg-gray-100 text-slate-800 font-sans">
+                <header className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm">
+                    <div className="flex items-center gap-2">
+                        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                            <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-sm font-bold text-white">
+                                GS
+                            </div>
+                            <span className="hidden font-bold sm:block">Garage Sale</span>
+                        </Link>
+                    </div>
+                </header>
+
+                <main className="flex-grow flex items-center justify-center p-8">
+                    <div className="text-center">
+                        <div className="text-6xl mb-4">🏪</div>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-2">Nenhum Evento Cadastrado</h2>
+                        <p className="text-gray-600 mb-6">Crie um evento no gerenciador para usar o PDV</p>
+                        <Link
+                            href="/admin/garage-sales/new"
+                            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg transition-colors"
+                        >
+                            Criar Evento
+                        </Link>
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="flex h-screen flex-col bg-gray-100 text-slate-800 font-sans">
