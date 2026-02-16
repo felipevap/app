@@ -3,6 +3,7 @@
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Link from "next/link";
 import { useState } from "react";
+import { formatDate } from "@/utils/formatters";
 
 export default function GarageSalesPage() {
     const { garageSales, deleteGarageSale, getProductsByGarageSale } = useGarageSales();
