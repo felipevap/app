@@ -643,9 +643,9 @@ export default function POSPage() {
                                             <div key={order.id} className="bg-white rounded-lg p-3 border border-orange-200">
                                                 <div className="flex justify-between items-start mb-2">
                                                     <div>
-                                                        <div className="font-bold text-gray-800">{order.customerInfo.nome}</div>
-                                                        <div className="text-sm text-gray-600">{order.customerInfo.telefone}</div>
-                                                        <div className="text-xs text-gray-500">{order.customerInfo.email}</div>
+                                                        <div className="font-bold text-gray-800">{order.customerName}</div>
+                                                        <div className="text-sm text-gray-600">{order.customerPhone}</div>
+                                                        <div className="text-xs text-gray-500">{order.customerEmail}</div>
                                                     </div>
                                                     <div className="text-right">
                                                         <div className="font-bold text-orange-600">{formatCurrency(order.total)}</div>
