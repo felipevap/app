@@ -9,7 +9,11 @@ export async function GET() {
         return NextResponse.json(garageSales);
     } catch (error) {
         console.error('Error fetching garage sales:', error);
-        return NextResponse.json({ error: 'Failed to fetch garage sales' }, { status: 500 });
+        console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        return NextResponse.json({
+            error: 'Failed to fetch garage sales',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        }, { status: 500 });
     }
 }
 
@@ -34,6 +38,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(garageSale);
     } catch (error) {
         console.error('Error creating garage sale:', error);
-        return NextResponse.json({ error: 'Failed to create garage sale' }, { status: 500 });
+        console.error('Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+        return NextResponse.json({
+            error: 'Failed to create garage sale',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        }, { status: 500 });
     }
 }
