@@ -25,6 +25,7 @@ export interface Product {
     condicao: string;
     tags: string[];
     garageSaleId: string;
+    status: 'disponível' | 'vendido';
 }
 
 interface GarageSaleContextType {
@@ -34,7 +35,7 @@ interface GarageSaleContextType {
     updateGarageSale: (id: string, garageSale: Partial<GarageSale>) => void;
     deleteGarageSale: (id: string) => void;
     getGarageSale: (id: string) => GarageSale | undefined;
-    addProduct: (product: Omit<Product, 'id'>) => Product;
+    addProduct: (product: Omit<Product, 'id' | 'status'>) => Product;
     updateProduct: (id: string, product: Partial<Product>) => void;
     deleteProduct: (id: string) => void;
     getProduct: (id: string) => Product | undefined;
@@ -107,10 +108,11 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
         return garageSales.find(gs => gs.id === id);
     }, [garageSales]);
 
-    const addProduct = useCallback((product: Omit<Product, 'id'>): Product => {
+    const addProduct = useCallback((product: Omit<Product, 'id' | 'status'>): Product => {
         const newProduct: Product = {
             ...product,
-            id: generateId()
+            id: generateId(),
+            status: 'disponível'
         };
         setProducts(prev => [...prev, newProduct]);
         return newProduct;

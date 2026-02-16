@@ -29,7 +29,7 @@ interface Sale {
 }
 
 export default function POSPage() {
-    const { garageSales, products, getProductsByGarageSale } = useGarageSales();
+    const { garageSales, products, getProductsByGarageSale, updateProduct } = useGarageSales();
 
     const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("");
     const [currentView, setCurrentView] = useState<'sales' | 'products' | 'report'>('sales');
@@ -50,6 +50,9 @@ export default function POSPage() {
     const [showSignaturePad, setShowSignaturePad] = useState(false);
     const [signature, setSignature] = useState<string | null>(null);
     const [emailError, setEmailError] = useState<string>("");
+    const [showProductSuggestions, setShowProductSuggestions] = useState(false);
+    const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+    const [discountPercent, setDiscountPercent] = useState<number>(0);
 
     const [productFilters, setProductFilters] = useState({
         search: "",
@@ -211,7 +214,9 @@ export default function POSPage() {
         localStorage.setItem('pos_sales_history', JSON.stringify(sales));
     };
 
-    const currentSaleTotal = currentSale.items?.reduce((acc, item) => acc + (item.price * item.qty), 0) || 0;
+    const currentSaleSubtotal = currentSale.items?.reduce((acc, item) => acc + (item.price * item.qty), 0) || 0;
+    const currentSaleDiscount = (currentSaleSubtotal * discountPercent) / 100;
+    const currentSaleTotal = currentSaleSubtotal - currentSaleDiscount;
     const currentPaymentsTotal = currentSale.payments?.reduce((acc, p) => acc + p.amount, 0) || 0;
     const remainingAmount = currentSaleTotal - currentPaymentsTotal;
 
@@ -378,7 +383,23 @@ export default function POSPage() {
         const updatedItems = [...(currentSale.items || []), { ...newItem }];
         setCurrentSale({ ...currentSale, items: updatedItems });
         setNewItem({ desc: "", qty: 1, price: 0 });
+        setSelectedProductId(null);
+        setShowProductSuggestions(false);
     };
+
+    const selectProduct = (product: any) => {
+        setNewItem({ desc: product.nome, qty: 1, price: product.preco });
+        setSelectedProductId(product.id);
+        setShowProductSuggestions(false);
+    };
+
+    const availableProducts = getProductsByGarageSale(selectedGarageSaleId).filter(
+        p => p.status === 'disponível'
+    );
+
+    const filteredSuggestions = availableProducts.filter(p =>
+        newItem.desc && p.nome.toLowerCase().includes(newItem.desc.toLowerCase())
+    );
 
     const removeItem = (idx: number) => {
         const updatedItems = currentSale.items?.filter((_, i) => i !== idx);
@@ -419,9 +440,20 @@ export default function POSPage() {
         const updatedHistory = [...salesHistory, newSale];
         setSalesHistory(updatedHistory);
         saveSalesToLocal(updatedHistory);
+
+        (currentSale.items || []).forEach(item => {
+            const matchingProduct = getProductsByGarageSale(selectedGarageSaleId).find(
+                p => p.nome === item.desc && p.preco === item.price && p.status === 'disponível'
+            );
+            if (matchingProduct) {
+                updateProduct(matchingProduct.id, { status: 'vendido' });
+            }
+        });
+
         setReceiptData(newSale);
         setCurrentSale({ items: [], payments: [], buyerName: "", buyerPhone: "", buyerEmail: "" });
         setIsCheckoutMode(false);
+        setSelectedProductId(null);
         alert("Venda Finalizada com Sucesso!");
     };
 
@@ -644,14 +676,43 @@ export default function POSPage() {
                                 <div className="border-t bg-gray-50 p-4">
                                     {!isCheckoutMode ? (
                                         <>
-                                            <div className="mb-4 flex gap-2">
-                                                <input
-                                                    type="text"
-                                                    value={newItem.desc}
-                                                    onChange={e => setNewItem({ ...newItem, desc: e.target.value })}
-                                                    className="flex-grow rounded border border-gray-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
-                                                    placeholder="Descrição do item"
-                                                />
+                                            <div className="mb-4 flex gap-2 relative">
+                                                <div className="flex-grow relative">
+                                                    <input
+                                                        type="text"
+                                                        value={newItem.desc}
+                                                        onChange={e => {
+                                                            setNewItem({ ...newItem, desc: e.target.value });
+                                                            setShowProductSuggestions(e.target.value.length > 0);
+                                                        }}
+                                                        onFocus={() => newItem.desc && setShowProductSuggestions(true)}
+                                                        className="w-full rounded border border-gray-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
+                                                        placeholder="Descrição do item (digite para buscar produtos)"
+                                                    />
+                                                    {showProductSuggestions && filteredSuggestions.length > 0 && (
+                                                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                                            {filteredSuggestions.map(product => (
+                                                                <button
+                                                                    key={product.id}
+                                                                    type="button"
+                                                                    onClick={() => selectProduct(product)}
+                                                                    className="w-full text-left p-3 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                                                                >
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div className="flex-1">
+                                                                            <div className="font-semibold text-gray-800">{product.nome}</div>
+                                                                            <div className="text-sm text-gray-500">{product.categoria}</div>
+                                                                        </div>
+                                                                        <div className="text-right">
+                                                                            <div className="font-bold text-blue-600">{formatCurrency(product.preco)}</div>
+                                                                            <div className="text-xs text-green-600">✓ Disponível</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 <input
                                                     type="number"
                                                     value={newItem.qty}
@@ -670,8 +731,35 @@ export default function POSPage() {
                                                     +
                                                 </button>
                                             </div>
-                                            <div className="flex items-center justify-between">
-                                                <div className="text-xl font-bold text-gray-700">Total: {formatCurrency(currentSaleTotal)}</div>
+                                            <div className="space-y-2 border-t border-gray-200 pt-3">
+                                                <div className="flex items-center justify-between text-sm text-gray-600">
+                                                    <span>Subtotal:</span>
+                                                    <span className="font-semibold">{formatCurrency(currentSaleSubtotal)}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <label className="text-sm text-gray-600">Desconto (%):</label>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        max="100"
+                                                        value={discountPercent || ''}
+                                                        onChange={e => setDiscountPercent(parseFloat(e.target.value) || 0)}
+                                                        className="w-20 rounded border border-gray-300 p-1 text-center text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                        placeholder="0"
+                                                    />
+                                                </div>
+                                                {discountPercent > 0 && (
+                                                    <div className="flex items-center justify-between text-sm text-red-600">
+                                                        <span>Desconto ({discountPercent}%):</span>
+                                                        <span className="font-semibold">-{formatCurrency(currentSaleDiscount)}</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center justify-between pt-2 border-t border-gray-300">
+                                                    <div className="text-xl font-bold text-gray-700">Total:</div>
+                                                    <div className="text-xl font-bold text-gray-700">{formatCurrency(currentSaleTotal)}</div>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-end pt-2">
                                                 <button
                                                     onClick={goToCheckout}
                                                     disabled={currentSale.items!.length === 0}
