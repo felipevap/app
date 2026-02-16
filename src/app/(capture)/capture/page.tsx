@@ -127,6 +127,10 @@ export default function CapturePage() {
         pendingOrders.push(newOrder);
         localStorage.setItem('pending_orders', JSON.stringify(pendingOrders));
 
+        console.log('Pedido salvo:', newOrder);
+        console.log('Total de pedidos pendentes:', pendingOrders.length);
+        console.log('Garage Sale ID:', selectedGarageSaleId);
+
         setShowSuccessMessage(true);
         setTimeout(() => {
             setShowSuccessMessage(false);

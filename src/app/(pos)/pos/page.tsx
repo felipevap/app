@@ -102,7 +102,12 @@ export default function POSPage() {
     useEffect(() => {
         const loadPendingOrders = () => {
             const orders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
-            setPendingOrders(orders.filter((order: any) => order.garageSaleId === selectedGarageSaleId));
+            const filtered = orders.filter((order: any) => order.garageSaleId === selectedGarageSaleId);
+            console.log('PDV - Total pedidos no localStorage:', orders.length);
+            console.log('PDV - Garage Sale ID selecionado:', selectedGarageSaleId);
+            console.log('PDV - Pedidos filtrados para este GS:', filtered.length);
+            console.log('PDV - Pedidos:', filtered);
+            setPendingOrders(filtered);
         };
 
         loadPendingOrders();
