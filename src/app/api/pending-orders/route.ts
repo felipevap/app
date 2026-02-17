@@ -60,7 +60,12 @@ export async function POST(req: NextRequest) {
                 }
 
                 if (product.status !== 'disponível') {
-                    throw new Error(`Produto indisponível: ${product.nome}`);
+                    // Allow if reserved by the current client
+                    if (product.status === 'reservado' && product.reservedBy === body.clientId) {
+                        // All good, proceed
+                    } else {
+                        throw new Error(`Produto indisponível: ${product.nome}`);
+                    }
                 }
             }
 

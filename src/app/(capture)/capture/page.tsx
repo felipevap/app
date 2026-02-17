@@ -105,9 +105,20 @@ export default function CapturePage() {
     //     return () => cancelAnimationFrame(animationFrameId);
     // }, [modelLoaded, webcamRef]);
 
-    const currentProducts = selectedGarageSaleId
+    const [sessionId, setSessionId] = useState<string>("");
+
+    useEffect(() => {
+        let sid = localStorage.getItem('garage_sale_session_id');
+        if (!sid) {
+            sid = crypto.randomUUID();
+            localStorage.setItem('garage_sale_session_id', sid);
+        }
+        setSessionId(sid);
+    }, []);
+
+    const currentProducts = (selectedGarageSaleId
         ? getProductsByGarageSale(selectedGarageSaleId)
-        : products;
+        : products).filter(p => p.status === 'disponível');
 
     const formatBRL = (value: number): string => {
         return value.toLocaleString('pt-BR', {
@@ -160,7 +171,7 @@ export default function CapturePage() {
     };
 
     const addToCart = async () => {
-        if (foundProduct) {
+        if (foundProduct && sessionId) {
             // Check local cart
             const isAlreadyInCart = cart.some(item => item.id === foundProduct.id);
             if (isAlreadyInCart) {
@@ -169,33 +180,27 @@ export default function CapturePage() {
                 return;
             }
 
-            // Check server status
+            // Reserve on server
             try {
-                const res = await fetch(`/api/products/${foundProduct.id}`);
-                if (res.ok) {
-                    const freshProduct = await res.json();
-                    if (freshProduct.status !== 'disponível') {
-                        showToast('Este produto já foi reservado ou vendido!', 'error');
-                        setFoundProduct(null);
-                        return;
+                const res = await fetch(`/api/products/${foundProduct.id}/reserve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clientId: sessionId, action: 'reserve' })
+                });
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    if (res.status === 409) {
+                        showToast(errorData.error || 'Produto já reservado por outro cliente.', 'error');
+                    } else {
+                        showToast('Erro ao reservar produto.', 'error');
                     }
+                    setFoundProduct(null);
+                    return;
                 }
             } catch (error) {
-                console.error("Error checking product status:", error);
-                // Proceed optimistically or fail? Let's fail safe.
-                showToast('Erro ao verificar disponibilidade. Tente novamente.', 'error');
-                return;
-            }
-
-            // Check local storage pending orders (optional double check, but server is authority)
-            const pendingOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
-            const isReservedLocal = pendingOrders.some((order: any) =>
-                order.items.some((item: any) => item.productId === foundProduct.id)
-            );
-
-            if (isReservedLocal) {
-                showToast('Este produto já está no carrinho de outro cliente!', 'error');
-                setFoundProduct(null);
+                console.error("Error reserving product:", error);
+                showToast('Erro de conexão. Tente novamente.', 'error');
                 return;
             }
 
@@ -205,7 +210,21 @@ export default function CapturePage() {
         }
     };
 
-    const removeFromCart = (index: number) => {
+    const removeFromCart = async (index: number) => {
+        const itemToRemove = cart[index];
+
+        // Release reservation
+        try {
+            await fetch(`/api/products/${itemToRemove.id}/reserve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ clientId: sessionId, action: 'release' })
+            });
+        } catch (error) {
+            console.error("Error releasing product:", error);
+            // We remove from cart anyway to not block the user
+        }
+
         const newCart = [...cart];
         newCart.splice(index, 1);
         setCart(newCart);
@@ -225,6 +244,7 @@ export default function CapturePage() {
                 customerEmail: customerInfo.email,
                 total: cart.reduce((acc, item) => acc + item.preco, 0),
                 garageSaleId: selectedGarageSaleId,
+                clientId: sessionId, // Pass session ID 
                 items: cart.map(item => ({
                     productId: item.id,
                     desc: item.nome,
