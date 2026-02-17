@@ -1187,7 +1187,7 @@ export default function POSPage() {
                                                 <div className="mb-2 text-xs text-gray-500">
                                                     {sale.createdAt ? new Date(sale.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : (sale.date ? new Date(sale.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '')}
                                                     {sale.buyerName && ` - ${sale.buyerName}`}
-                                                    {sale.buyerPhone && ` (${sale.buyerPhone})`}
+                                                    {sale.buyerPhone && ` ${sale.buyerPhone}`}
                                                 </div>
                                                 <div className="flex flex-wrap gap-1 mb-2">
                                                     {sale.payments.map((p, i) => (
