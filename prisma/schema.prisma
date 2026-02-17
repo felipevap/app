@@ -69,6 +69,9 @@ model SaleItem {
   
   saleId        Int
   sale          Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  
+  originalPrice   Float?
+  discountPercent Float?
 }
 
 model Payment {

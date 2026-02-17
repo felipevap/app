@@ -113,8 +113,9 @@ export default function CapturePage() {
     };
 
     const checkout = async () => {
-        if (!customerInfo.nome || !customerInfo.telefone || !customerInfo.email) {
-            showToast('Por favor, preencha todos os campos', 'error');
+        // Enforce all fields are mandatory
+        if (!customerInfo.nome?.trim() || !customerInfo.telefone?.trim() || !customerInfo.email?.trim()) {
+            showToast('Por favor, preencha nome, telefone e email para continuar.', 'error');
             return;
         }
 

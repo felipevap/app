@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import { formatDate, formatCurrency } from "@/utils/formatters";
+import Toast from "@/components/Toast";
 
 interface Item {
     productId?: string;
@@ -59,6 +60,17 @@ export default function POSPage() {
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
     const [globalDiscount, setGlobalDiscount] = useState<number>(0);
     const [pendingOrders, setPendingOrders] = useState<any[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+    const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+        setToast({ message, type });
+    };
+
+    // ... (lines 60-449 skipped for brevity in this replace, I need to be careful with line numbers)
+    // Actually, I should do this in two chunks or use multi_replace.
+    // Let's use multi_replace to be safe and clean.
+
 
 
 
@@ -217,10 +229,23 @@ export default function POSPage() {
     const generateReceiptText = (sale: Sale) => {
         let text = `GARAGE SALE PREMIUM\n`;
         text += `Recibo #${String(sale.id).padStart(4, '0')}\n`;
-        text += `Data: ${formatDate(sale.date)}\n\n`;
+        text += `Data: ${formatDate(sale.date || sale.createdAt)}\n\n`; // Handle both date fields
         text += `ITENS:\n`;
-        sale.items.forEach(item => {
-            text += `${item.qty}x ${item.desc} - ${formatCurrency(item.price * item.qty)}\n`;
+        sale.items.forEach((item: any) => {
+            const qty = item.qty || item.quantity;
+            const desc = item.desc || item.description;
+            const price = item.price;
+            const total = price * qty;
+
+            text += `${qty}x ${desc}`;
+
+            if (item.discountPercent > 0) {
+                text += ` (Desc. ${item.discountPercent}%)\n`;
+                text += `   De: ${formatCurrency(item.originalPrice * qty)}\n`;
+                text += `   Por: ${formatCurrency(total)}\n`;
+            } else {
+                text += ` - ${formatCurrency(total)}\n`;
+            }
         });
         text += `\nTOTAL: ${formatCurrency(sale.totalValue)}\n`;
         text += `\nPAGAMENTO:\n`;
@@ -257,14 +282,23 @@ export default function POSPage() {
         html += `<tr><td>Dinheiro</td><td>${formatCurrency(summary.money.total)}</td><td>${formatCurrency(summary.money.commission)}</td><td>${formatCurrency(summary.money.net)}</td></tr>`;
         html += `<tr><td>Cartão (Cli)</td><td>${formatCurrency(summary.cardClient.total)}</td><td>${formatCurrency(summary.cardClient.commission)}</td><td>${formatCurrency(summary.cardClient.net)}</td></tr>`;
         html += `<tr><td>Cartão (Loja)</td><td>${formatCurrency(summary.cardGarage.total)}</td><td>${formatCurrency(summary.cardGarage.commission)}</td><td>${formatCurrency(summary.cardGarage.net)}</td></tr>`;
-        html += `<tr style="font-weight:bold;"><td>TOTAL</td><td>${formatCurrency(summary.grandTotal)}</td><td>${formatCurrency(summary.totalCommission)}</td><td>${formatCurrency(summary.grandTotal - summary.totalCommission)}</td></tr>`;
+        html += `<tr style="font-weight:bold; border-top: 2px solid #000;"><td>TOTAL</td><td>${formatCurrency(summary.grandTotal)}</td><td>${formatCurrency(summary.totalCommission)}</td><td>${formatCurrency(summary.grandTotal - summary.totalCommission)}</td></tr>`;
+        if (summary.totalDiscount > 0) {
+            html += `<tr><td colspan="4" style="color:red; text-align:right;">Economia Total para Clientes (Descontos): ${formatCurrency(summary.totalDiscount)}</td></tr>`;
+        }
         html += `</table>`;
         html += `<h2>Lista de Vendas</h2>`;
         filteredSalesHistory.forEach(sale => {
             html += `<div style="border:1px solid #ddd;padding:10px;margin:10px 0;">`;
             html += `<strong>Venda #${sale.id}</strong> - ${new Date(sale.timestamp).toLocaleString('pt-BR')}<br>`;
             html += `Cliente: ${sale.buyerName || 'Balcão'}<br>`;
-            html += `Itens: ${sale.items.map(i => `${i.qty}x ${i.desc}`).join(', ')}<br>`;
+            html += `Cliente: ${sale.buyerName || 'Balcão'}<br>`;
+            html += `Itens:<br><ul>${sale.items.map((i: any) => {
+                const qty = i.qty || i.quantity;
+                const desc = i.desc || i.description;
+                const discount = i.discountPercent > 0 ? ` <span style="color:red; font-size:0.9em;">(Desc: ${i.discountPercent}%)</span>` : '';
+                return `<li>${qty}x ${desc}${discount}</li>`;
+            }).join('')}</ul>`;
             html += `Total: ${formatCurrency(sale.totalValue)}`;
             html += `</div>`;
         });
@@ -296,6 +330,9 @@ export default function POSPage() {
         text += `TOTAL BRUTO: ${formatCurrency(summary.grandTotal)}\n`;
         text += `COMISSÕES: -${formatCurrency(summary.totalCommission)}\n`;
         text += `LÍQUIDO: ${formatCurrency(summary.grandTotal - summary.totalCommission)}\n`;
+        if (summary.totalDiscount > 0) {
+            text += `DESCONTOS CONCEDIDOS: ${formatCurrency(summary.totalDiscount)}\n`;
+        }
         const encodedText = encodeURIComponent(text);
         window.open(`https://wa.me/?text=${encodedText}`, '_blank');
     };
@@ -308,9 +345,26 @@ export default function POSPage() {
             cardGarage: { total: 0, commission: 0, net: 0 },
             grandTotal: 0,
             totalCommission: 0,
+            totalDiscount: 0,
         };
 
         filteredSalesHistory.forEach(sale => {
+            // Calculate discount for this sale if items availability
+            if (sale.items) {
+                sale.items.forEach((item: any) => {
+                    if (item.discountPercent > 0 && item.originalPrice) {
+                        // Calculate discount amount: (original * qty) - (paid * qty)
+                        // OR just (original - price) * qty
+                        const qty = item.qty || item.quantity || 1;
+                        const price = item.price;
+                        const original = item.originalPrice;
+                        if (original > price) {
+                            summary.totalDiscount += (original - price) * qty;
+                        }
+                    }
+                });
+            }
+
             sale.payments.forEach(p => {
                 const commission = p.amount * 0.20;
                 const net = p.amount - commission;
@@ -439,8 +493,9 @@ export default function POSPage() {
     };
 
     const finalizeSale = async () => {
-        if (!selectedGarageSaleId) return;
+        if (!selectedGarageSaleId || isSubmitting) return;
 
+        setIsSubmitting(true);
         try {
             const saleData = {
                 items: currentSale.items || [],
@@ -462,13 +517,25 @@ export default function POSPage() {
 
                 if (!res.ok) throw new Error('Failed to update sale');
 
-                alert("Venda Editada com Sucesso!");
+                showToast("Venda Editada com Sucesso!", "success");
                 setEditingSale(null);
             } else {
                 // Create new sale
                 const newSale = await createSale(saleData);
-                setReceiptData(newSale);
-                alert("Venda Finalizada com Sucesso!");
+
+                // Merge local item details (originalPrice, discountPercent) into the receipt data
+                // because the API response (from DB) doesn't have them.
+                const enrichedItems = newSale.items.map((apiItem: any, index: number) => {
+                    const localItem = currentSale.items![index];
+                    return {
+                        ...apiItem,
+                        originalPrice: localItem?.originalPrice || apiItem.price,
+                        discountPercent: localItem?.discountPercent || 0
+                    };
+                });
+
+                setReceiptData({ ...newSale, items: enrichedItems });
+                showToast("Venda Finalizada com Sucesso!", "success");
             }
 
             // Refresh sales history
@@ -483,7 +550,9 @@ export default function POSPage() {
             setSelectedProductId(null);
         } catch (error) {
             console.error("Erro ao finalizar venda:", error);
-            alert("Erro ao finalizar venda. Tente novamente.");
+            showToast("Erro ao finalizar venda. Tente novamente.", "error");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -534,7 +603,7 @@ export default function POSPage() {
         setSignature(dataURL);
         localStorage.setItem('pos_signature', dataURL);
         setShowSignaturePad(false);
-        alert("Assinatura salva!");
+        showToast("Assinatura salva!", "success");
     };
 
     const clearSignature = () => {
@@ -697,27 +766,27 @@ export default function POSPage() {
                             ))}
                         </select>
                     )}
-                </div>
 
-                <div className="flex rounded-lg bg-gray-100 p-1">
-                    <button
-                        onClick={() => setCurrentView('sales')}
-                        className={`rounded px-4 py-1.5 text-sm font-medium transition-all ${currentView === 'sales' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:bg-gray-200'}`}
-                    >
-                        Vendas
-                    </button>
-                    <button
-                        onClick={() => setCurrentView('products')}
-                        className={`rounded px-4 py-1.5 text-sm font-medium transition-all ${currentView === 'products' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:bg-gray-200'}`}
-                    >
-                        Produtos
-                    </button>
-                    <button
-                        onClick={() => setCurrentView('report')}
-                        className={`rounded px-4 py-1.5 text-sm font-medium transition-all ${currentView === 'report' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:bg-gray-200'}`}
-                    >
-                        Relatório
-                    </button>
+                    <div className="flex rounded-lg bg-gray-100 p-1 ml-4">
+                        <button
+                            onClick={() => setCurrentView('sales')}
+                            className={`rounded px-3 py-1 text-xs font-medium transition-all ${currentView === 'sales' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:bg-gray-200'}`}
+                        >
+                            Vendas
+                        </button>
+                        <button
+                            onClick={() => setCurrentView('products')}
+                            className={`rounded px-3 py-1 text-xs font-medium transition-all ${currentView === 'products' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:bg-gray-200'}`}
+                        >
+                            Produtos
+                        </button>
+                        <button
+                            onClick={() => setCurrentView('report')}
+                            className={`rounded px-3 py-1 text-xs font-medium transition-all ${currentView === 'report' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:bg-gray-200'}`}
+                        >
+                            Relatório
+                        </button>
+                    </div>
                 </div>
 
                 <div className="w-8"></div>
@@ -990,10 +1059,17 @@ export default function POSPage() {
                                                 </div>
                                                 <button
                                                     onClick={finalizeSale}
-                                                    disabled={remainingAmount > 0.01}
-                                                    className="w-full rounded bg-green-600 px-6 py-4 font-bold text-white hover:bg-green-700 disabled:opacity-50 transition-colors shadow-md hover:shadow-lg disabled:shadow-none"
+                                                    disabled={remainingAmount > 0.01 || isSubmitting}
+                                                    className="w-full rounded bg-green-600 px-6 py-4 font-bold text-white hover:bg-green-700 disabled:opacity-50 transition-colors shadow-md hover:shadow-lg disabled:shadow-none flex items-center justify-center gap-2"
                                                 >
-                                                    Confirmar Pagamento
+                                                    {isSubmitting ? (
+                                                        <>
+                                                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                                            Processando...
+                                                        </>
+                                                    ) : (
+                                                        'Confirmar Pagamento'
+                                                    )}
                                                 </button>
                                                 <button
                                                     onClick={() => setIsCheckoutMode(false)}
@@ -1024,6 +1100,7 @@ export default function POSPage() {
                                                 <div className="mb-2 text-xs text-gray-500">
                                                     {sale.createdAt ? new Date(sale.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : (sale.date ? new Date(sale.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '')}
                                                     {sale.buyerName && ` - ${sale.buyerName}`}
+                                                    {sale.buyerPhone && ` (${sale.buyerPhone})`}
                                                 </div>
                                                 <div className="flex flex-wrap gap-1 mb-2">
                                                     {sale.payments.map((p, i) => (
@@ -1288,6 +1365,14 @@ export default function POSPage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
             )}
         </div>
     );
