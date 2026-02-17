@@ -42,13 +42,13 @@ export async function POST(
                         // expired, allow steal
                     } else {
                         return NextResponse.json(
-                            { error: "Product is already reserved", reservedBy: product.reservedBy },
+                            { error: "O produto já está reservado", reservedBy: product.reservedBy },
                             { status: 409 }
                         );
                     }
                 } else {
                     return NextResponse.json(
-                        { error: "Product is already reserved", reservedBy: product.reservedBy },
+                        { error: "O produto já está reservado", reservedBy: product.reservedBy },
                         { status: 409 }
                     );
                 }

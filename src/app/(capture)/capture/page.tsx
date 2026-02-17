@@ -356,9 +356,9 @@ export default function CapturePage() {
                 </div>
             ) : (
                 <motion.div
-                    initial={{ scale: 1 }}
-                    animate={{ scale: isScanning ? 0.9 : 1 }}
-                    transition={{ duration: 0.4, type: "spring" }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.4 }}
                     className="absolute inset-0 w-full h-full bg-black"
                 >
                     {/* Scanner Frame - Improved Visuals */}
