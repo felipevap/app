@@ -1,4 +1,7 @@
 import Link from "next/link";
+import Link from "next/link";
+import NextImage from "next/image";
+import { cookies } from "next/headers";
 import { cookies } from "next/headers";
 import AuthButton from "@/components/AuthButton";
 
@@ -10,6 +13,16 @@ export default async function Home() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-black p-4 text-center">
       <div className="absolute top-4 right-4">
         <AuthButton isLoggedIn={isLoggedIn} />
+      </div>
+
+      <div className="mb-8 relative w-full max-w-2xl aspect-[16/9] rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+        <NextImage
+          src="/logo-home.jpg"
+          alt="Garage Sale Premium Logo"
+          fill
+          className="object-cover"
+          priority
+        />
       </div>
 
       <h1 className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-6xl font-bold text-transparent">
