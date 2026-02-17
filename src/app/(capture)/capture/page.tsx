@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import MyOrdersModal from './MyOrdersModal';
-import { loadModel, detectObjects, DetectionResult } from '@/utils/objectDetection';
+// import { loadModel, detectObjects, DetectionResult } from '@/utils/objectDetection';
 
 export default function CapturePage() {
     const webcamRef = useRef<Webcam>(null);
@@ -28,8 +28,8 @@ export default function CapturePage() {
 
     const [searchResults, setSearchResults] = useState<Product[]>([]);
     const [showMyOrders, setShowMyOrders] = useState(false);
-    const [modelLoaded, setModelLoaded] = useState(false);
-    const [detections, setDetections] = useState<DetectionResult[]>([]);
+    // const [modelLoaded, setModelLoaded] = useState(false);
+    // const [detections, setDetections] = useState<DetectionResult[]>([]);
     const router = useRouter();
 
     useEffect(() => {
@@ -57,33 +57,33 @@ export default function CapturePage() {
     }, [customerInfo]);
 
     // Load AI Model
-    useEffect(() => {
-        let isMounted = true;
-        loadModel().then((success) => {
-            if (isMounted) setModelLoaded(success);
-        });
-        return () => { isMounted = false; };
-    }, []);
+    // useEffect(() => {
+    //     let isMounted = true;
+    //     loadModel().then((success) => {
+    //         if (isMounted) setModelLoaded(success);
+    //     });
+    //     return () => { isMounted = false; };
+    // }, []);
 
     // Run Object Detection Loop
-    useEffect(() => {
-        if (!modelLoaded || !webcamRef.current || !webcamRef.current.video) return;
+    // useEffect(() => {
+    //     if (!modelLoaded || !webcamRef.current || !webcamRef.current.video) return;
 
-        let animationFrameId: number;
+    //     let animationFrameId: number;
 
-        const detect = async () => {
-            if (webcamRef.current && webcamRef.current.video && webcamRef.current.video.readyState === 4) {
-                const results = await detectObjects(webcamRef.current.video);
-                // Filter out 'person' to avoid clutter if desired, or keep all
-                setDetections(results.filter(r => r.class !== 'person'));
-            }
-            animationFrameId = requestAnimationFrame(detect);
-        };
+    //     const detect = async () => {
+    //         if (webcamRef.current && webcamRef.current.video && webcamRef.current.video.readyState === 4) {
+    //             const results = await detectObjects(webcamRef.current.video);
+    //             // Filter out 'person' to avoid clutter if desired, or keep all
+    //             setDetections(results.filter(r => r.class !== 'person'));
+    //         }
+    //         animationFrameId = requestAnimationFrame(detect);
+    //     };
 
-        detect();
+    //     detect();
 
-        return () => cancelAnimationFrame(animationFrameId);
-    }, [modelLoaded, webcamRef]);
+    //     return () => cancelAnimationFrame(animationFrameId);
+    // }, [modelLoaded, webcamRef]);
 
     const currentProducts = selectedGarageSaleId
         ? getProductsByGarageSale(selectedGarageSaleId)
@@ -284,7 +284,7 @@ export default function CapturePage() {
                         />
 
                         {/* Object Detection Overlays */}
-                        {modelLoaded && detections.map((det, idx) => (
+                        {/* {modelLoaded && detections.map((det, idx) => (
                             <button
                                 key={idx}
                                 onClick={() => searchProducts(det.class)}
@@ -297,7 +297,7 @@ export default function CapturePage() {
                             >
                                 {det.class} {Math.round(det.score * 100)}%
                             </button>
-                        ))}
+                        ))} */}
 
                         <div className="absolute inset-0 pointer-events-none"></div>
                     </div>
