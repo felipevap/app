@@ -404,10 +404,10 @@ export default function CapturePage() {
                         initial={{ opacity: 0, y: -20, x: "-50%" }}
                         animate={{ opacity: 1, y: 0, x: "-50%" }}
                         exit={{ opacity: 0, y: -20, x: "-50%" }}
-                        className={`absolute top-24 left-1/2 z-50 px-6 py-3 rounded-full shadow-lg font-medium text-sm flex items-center gap-2 pointer-events-none
-                            ${toast.type === 'success' ? 'bg-green-500 text-white' :
-                                toast.type === 'error' ? 'bg-red-500 text-white' :
-                                    'bg-neutral-800 text-white border border-neutral-700'}`}
+                        className={`absolute top-20 left-1/2 z-50 px-4 py-2 rounded-xl shadow-lg font-bold text-xs flex items-center gap-2 pointer-events-none
+                            ${toast.type === 'success' ? 'bg-green-600 text-white' :
+                                toast.type === 'error' ? 'bg-red-600 text-white' :
+                                    'bg-neutral-800 text-white border border-white/10'}`}
                     >
                         {toast.type === 'success' && <span>✓</span>}
                         {toast.type === 'error' && <span>✕</span>}
@@ -454,12 +454,12 @@ export default function CapturePage() {
                 <p className="text-white text-center text-lg md:text-xl font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] bg-black/60 backdrop-blur-md py-3 px-8 rounded-2xl border border-white/20 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
                     {isScanning ? "Analisando..." : "Aponte e capture"}
                 </p>
-                <div className="relative w-full aspect-square max-w-[500px] max-h-[500px]">
+                <div className="relative w-full h-[60vh] flex items-center justify-center">
                     {/* Corner Markers */}
-                    <div className="absolute top-0 left-0 w-12 h-12 border-t-[6px] border-l-[6px] border-white rounded-tl-2xl drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"></div>
-                    <div className="absolute top-0 right-0 w-12 h-12 border-t-[6px] border-r-[6px] border-white rounded-tr-2xl drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"></div>
-                    <div className="absolute bottom-0 left-0 w-12 h-12 border-b-[6px] border-l-[6px] border-white rounded-bl-2xl drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"></div>
-                    <div className="absolute bottom-0 right-0 w-12 h-12 border-b-[6px] border-r-[6px] border-white rounded-br-2xl drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"></div>
+                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white/80 rounded-tl-xl drop-shadow-lg"></div>
+                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white/80 rounded-tr-xl drop-shadow-lg"></div>
+                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white/80 rounded-bl-xl drop-shadow-lg"></div>
+                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white/80 rounded-br-xl drop-shadow-lg"></div>
 
                     {/* Scanning Animation */}
                     {isScanning && (
@@ -513,7 +513,7 @@ export default function CapturePage() {
                                 </span>
                             )}
                         </div>
-                        <span className="text-xl font-black uppercase tracking-tight">Ver Carrinho</span>
+                        <span className="text-lg font-black uppercase tracking-tight">Carrinho</span>
                     </button>
 
                     <button
@@ -560,9 +560,31 @@ export default function CapturePage() {
                     >
                         <div className="w-16 h-2 bg-neutral-700 rounded-full mx-auto mb-8"></div>
 
-                        <button onClick={addToCart} className="w-full bg-green-600 py-6 rounded-2xl font-black text-white hover:bg-green-500 active:scale-95 transition-all text-2xl mb-8 shadow-xl border border-green-400/30">
-                            ✓ ADICIONAR AO CARRINHO
-                        </button>
+                        <div className="flex gap-4 flex-col">
+                            <div className="flex-1">
+                                <div className="flex justify-between items-start gap-2">
+                                    <h2 className="text-xl font-black text-white leading-tight">{foundProduct.nome}</h2>
+                                    <button onClick={() => setFoundProduct(null)} className="text-neutral-500 p-1 hover:text-white transition-colors bg-neutral-800 rounded-lg">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    </button>
+                                </div>
+                                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                    <span className="px-3 py-1 bg-blue-500 text-white text-[10px] font-black rounded-full uppercase tracking-wider">
+                                        {foundProduct.categoria}
+                                    </span>
+                                    <span className="text-blue-400 font-black text-2xl">{formatBRL(foundProduct.preco)}</span>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-4 items-center">
+                                {foundProduct.imagens[0] && (
+                                    <img src={foundProduct.imagens[0]} alt={foundProduct.nome} className="w-24 h-24 rounded-xl object-cover bg-neutral-800 border border-white/10 shadow-lg" />
+                                )}
+                                <button onClick={addToCart} className="flex-1 bg-green-600 py-4 rounded-xl font-black text-white hover:bg-green-500 active:scale-95 transition-all text-lg shadow-xl border border-green-400/30">
+                                    ✓ ADICIONAR
+                                </button>
+                            </div>
+                        </div>
 
                         <div className="flex gap-6 flex-col sm:flex-row">
                             {foundProduct.imagens[0] && (

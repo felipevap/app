@@ -62,6 +62,7 @@ export default function POSPage() {
     const [globalDiscount, setGlobalDiscount] = useState<number>(0);
     const [pendingOrders, setPendingOrders] = useState<any[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isHistoryOpen, setIsHistoryOpen] = useState(true);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; action?: { label: string; onClick: () => void } } | null>(null);
     const [clientId, setClientId] = useState<string>("");
 
@@ -887,6 +888,16 @@ export default function POSPage() {
                             Relatório
                         </button>
                     </div>
+
+                    {currentView === 'sales' && (
+                        <button
+                            onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+                            className={`ml-2 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${isHistoryOpen ? 'bg-gray-200 text-gray-700' : 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'}`}
+                        >
+                            {isHistoryOpen ? 'ESCONDER HISTÓRICO' : 'VER HISTÓRICO'}
+                        </button>
+                    )}
+
                 </div>
 
                 <div className="w-8"></div>
@@ -894,8 +905,8 @@ export default function POSPage() {
 
             <main className="flex flex-grow overflow-hidden relative">
                 {currentView === 'sales' && (
-                    <div className="flex h-full w-full gap-4 p-4">
-                        <div className="flex w-full flex-col gap-4 overflow-hidden lg:w-2/3">
+                    <div className="flex h-[calc(100vh-80px)] w-full gap-4 p-4 overflow-hidden">
+                        <div className={`flex flex-col gap-4 overflow-hidden transition-all duration-300 ${isHistoryOpen ? 'w-full lg:w-2/3' : 'w-full'}`}>
                             <div className="rounded-xl border border-orange-200 bg-orange-50 shadow-sm p-4 flex flex-col max-h-[180px]">
                                 <div className="flex justify-between items-center mb-3 flex-shrink-0">
                                     <h3 className="font-bold text-orange-800 flex items-center gap-2">
@@ -1247,64 +1258,71 @@ export default function POSPage() {
                             </div>
                         </div>
 
-                        <div className="hidden flex-col gap-4 lg:flex lg:w-1/3">
-                            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm h-full overflow-hidden flex flex-col">
-                                <h3 className="mb-4 font-bold text-gray-700">Histórico de Vendas</h3>
-                                <div className="flex-grow overflow-y-auto space-y-3 pr-2">
-                                    {filteredSalesHistory.length === 0 ? (
-                                        <p className="text-center text-sm text-gray-500 py-4">Nenhuma venda registrada hoje</p>
-                                    ) : (
-                                        filteredSalesHistory.slice().reverse().map(sale => (
-                                            <div key={sale.id} className="rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm hover:shadow-md transition-shadow">
-                                                <div className="flex justify-between font-bold text-gray-700">
-                                                    <span>#{String(sale.id).padStart(4, '0')}</span>
-                                                    <span>{formatCurrency(sale.totalValue)}</span>
+                        {currentView === 'sales' && isHistoryOpen && (
+                            <div className="fixed inset-y-0 right-0 z-40 w-80 translate-x-0 border-l border-gray-200 bg-white p-4 shadow-2xl transition-transform lg:relative lg:inset-auto lg:z-0 lg:w-1/3 lg:translate-x-0 lg:rounded-xl lg:border lg:shadow-sm">
+                                <div className="flex h-full flex-col overflow-hidden">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="font-bold text-gray-700">Histórico de Vendas</h3>
+                                        <button onClick={() => setIsHistoryOpen(false)} className="lg:hidden p-1 text-gray-400 hover:text-gray-600">
+                                            ✕
+                                        </button>
+                                    </div>
+                                    <div className="flex-grow overflow-y-auto space-y-3 pr-2">
+                                        {filteredSalesHistory.length === 0 ? (
+                                            <p className="text-center text-sm text-gray-500 py-4">Nenhuma venda registrada hoje</p>
+                                        ) : (
+                                            filteredSalesHistory.slice().reverse().map(sale => (
+                                                <div key={sale.id} className="rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm hover:shadow-md transition-shadow">
+                                                    <div className="flex justify-between font-bold text-gray-700">
+                                                        <span>#{String(sale.id).padStart(4, '0')}</span>
+                                                        <span>{formatCurrency(sale.totalValue)}</span>
+                                                    </div>
+                                                    <div className="mb-2 text-xs text-gray-500">
+                                                        {sale.createdAt ? new Date(sale.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : (sale.date ? new Date(sale.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '')}
+                                                        {sale.buyerName && ` - ${sale.buyerName}`}
+                                                        {sale.buyerPhone && ` ${sale.buyerPhone}`}
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-1 mb-2">
+                                                        {sale.payments.map((p, i) => (
+                                                            <span key={i} className="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
+                                                                {getPaymentLabel(p.method)}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                    <div className="flex gap-2 mt-2 pt-2 border-t border-gray-200">
+                                                        <button
+                                                            onClick={() => startEditSale(sale)}
+                                                            className="flex-1 rounded border border-yellow-200 bg-yellow-50 px-2 py-1 text-xs text-yellow-700 hover:bg-yellow-100 transition-colors"
+                                                        >
+                                                            Editar
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setReceiptData(sale)}
+                                                            className="flex-1 rounded border border-blue-200 bg-blue-50 px-2 py-1 text-xs text-blue-700 hover:bg-blue-100 transition-colors"
+                                                        >
+                                                            Recibo
+                                                        </button>
+                                                        <button
+                                                            onClick={() => sendReceiptToWhatsApp(sale)}
+                                                            className="flex-1 rounded border border-green-200 bg-green-50 px-2 py-1 text-xs text-green-700 hover:bg-green-100 transition-colors"
+                                                        >
+                                                            Zap
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteSale(sale.id)}
+                                                            className="p-1 px-2 text-xs text-red-600 hover:bg-red-50 rounded border border-red-200 transition-colors"
+                                                            title="Excluir"
+                                                        >
+                                                            🗑️
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div className="mb-2 text-xs text-gray-500">
-                                                    {sale.createdAt ? new Date(sale.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : (sale.date ? new Date(sale.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '')}
-                                                    {sale.buyerName && ` - ${sale.buyerName}`}
-                                                    {sale.buyerPhone && ` ${sale.buyerPhone}`}
-                                                </div>
-                                                <div className="flex flex-wrap gap-1 mb-2">
-                                                    {sale.payments.map((p, i) => (
-                                                        <span key={i} className="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
-                                                            {getPaymentLabel(p.method)}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                                <div className="flex gap-2 mt-2 pt-2 border-t border-gray-200">
-                                                    <button
-                                                        onClick={() => startEditSale(sale)}
-                                                        className="flex-1 rounded border border-yellow-200 bg-yellow-50 px-2 py-1 text-xs text-yellow-700 hover:bg-yellow-100 transition-colors"
-                                                    >
-                                                        Editar
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setReceiptData(sale)}
-                                                        className="flex-1 rounded border border-blue-200 bg-blue-50 px-2 py-1 text-xs text-blue-700 hover:bg-blue-100 transition-colors"
-                                                    >
-                                                        Recibo
-                                                    </button>
-                                                    <button
-                                                        onClick={() => sendReceiptToWhatsApp(sale)}
-                                                        className="flex-1 rounded border border-green-200 bg-green-50 px-2 py-1 text-xs text-green-700 hover:bg-green-100 transition-colors"
-                                                    >
-                                                        WhatsApp
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteSale(sale.id)}
-                                                        className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded border border-red-200 hover:border-red-300 transition-colors"
-                                                        title="Excluir Venda"
-                                                    >
-                                                        🗑️
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
+                                            ))
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 )}
 
