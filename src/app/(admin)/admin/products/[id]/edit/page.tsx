@@ -7,6 +7,8 @@ import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Webcam from "react-webcam";
 import Toast from "@/components/Toast";
 
+const CATEGORIES = ["Eletrônicos", "Roupas", "Móveis", "Livros", "Brinquedos", "Esportes", "Decoração", "Outros"];
+
 export default function EditProductPage() {
     const router = useRouter();
     const params = useParams();
@@ -338,23 +340,36 @@ export default function EditProductPage() {
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-neutral-300 mb-2">Categoria</label>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">Categoria</label>
+                    <div className="space-y-2">
                         <select
-                            value={formData.categoria}
-                            onChange={e => setFormData({ ...formData, categoria: e.target.value })}
+                            value={CATEGORIES.includes(formData.categoria) ? formData.categoria : "Outros"}
+                            onChange={(e) => {
+                                if (e.target.value === "custom") {
+                                    setFormData({ ...formData, categoria: "" });
+                                } else {
+                                    setFormData({ ...formData, categoria: e.target.value });
+                                }
+                            }}
                             className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
-                            required
                         >
-                            <option value="Eletrônicos">Eletrônicos</option>
-                            <option value="Roupas">Roupas</option>
-                            <option value="Móveis">Móveis</option>
-                            <option value="Livros">Livros</option>
-                            <option value="Brinquedos">Brinquedos</option>
-                            <option value="Esportes">Esportes</option>
-                            <option value="Decoração">Decoração</option>
+                            {CATEGORIES.filter(c => c !== "Outros").map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
                             <option value="Outros">Outros</option>
+                            <option value="custom">✨ Nova Categoria...</option>
                         </select>
+
+                        {(!CATEGORIES.includes(formData.categoria) && formData.categoria !== "Outros") || formData.categoria === "" ? (
+                            <input
+                                type="text"
+                                value={formData.categoria}
+                                onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
+                                placeholder="Digite o nome da categoria"
+                                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                                autoFocus
+                            />
+                        ) : null}
                     </div>
 
                     <div>

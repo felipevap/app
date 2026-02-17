@@ -213,7 +213,7 @@ export default function CapturePage() {
 
     const checkout = async () => {
         // Enforce all fields are mandatory
-        if (!customerInfo.nome?.trim() || !customerInfo.telefone?.trim() || !customerInfo.email?.trim()) {
+        if (!customerInfo.nome?.trim() || !customerInfo.telefone?.trim()) {
             showToast('Por favor, preencha nome, telefone e email para continuar.', 'error');
             return;
         }
@@ -644,7 +644,7 @@ export default function CapturePage() {
                                         />
                                         <input
                                             type="email"
-                                            placeholder="Email *"
+                                            placeholder="Email (Opcional)"
                                             value={customerInfo.email}
                                             onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
                                             className="w-full bg-neutral-800 text-white px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"

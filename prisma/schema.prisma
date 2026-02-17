@@ -40,7 +40,9 @@ model Product {
   categoria     String?
   condicao      String?
   tags          String[]
-  status        String    @default("disponível") // disponível, vendido
+  status        String    @default("disponível") // disponível, vendido, reservado
+  reservedBy    String?   // Session ID/Client ID
+  reservedAt    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
@@ -95,7 +97,7 @@ model PendingOrder {
   id            String   @id @default(uuid())
   customerName  String
   customerPhone String
-  customerEmail String
+  customerEmail String?
   total         Float
   status        String   @default("pending")
   isPaid        Boolean  @default(false)

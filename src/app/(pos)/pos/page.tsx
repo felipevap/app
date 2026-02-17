@@ -63,6 +63,16 @@ export default function POSPage() {
     const [pendingOrders, setPendingOrders] = useState<any[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; action?: { label: string; onClick: () => void } } | null>(null);
+    const [clientId, setClientId] = useState<string>("");
+
+    useEffect(() => {
+        let storedId = localStorage.getItem('pos_client_id');
+        if (!storedId) {
+            storedId = crypto.randomUUID();
+            localStorage.setItem('pos_client_id', storedId);
+        }
+        setClientId(storedId);
+    }, []);
 
     const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
         setToast({ message, type });
@@ -420,14 +430,47 @@ export default function POSPage() {
         setIsCheckoutMode(true);
     };
 
-    const cancelEdit = () => {
+    const cancelEdit = async () => {
+        // Release all reserved items
+        const itemsToRelease = currentSale.items?.filter(i => i.productId) || [];
+        await Promise.all(itemsToRelease.map(item =>
+            fetch(`/api/products/${item.productId}/reserve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ clientId, action: 'release' })
+            }).catch(e => console.error("Failed to release item", e))
+        ));
+
         setEditingSale(null);
         setCurrentSale({ items: [], payments: [], buyerName: "", buyerPhone: "", buyerEmail: "" });
         setIsCheckoutMode(false);
     };
 
-    const addItem = () => {
+    const addItem = async () => {
         if (!newItem.desc || newItem.price <= 0) return;
+
+        if (selectedProductId) {
+            try {
+                const res = await fetch(`/api/products/${selectedProductId}/reserve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clientId, action: 'reserve' })
+                });
+
+                if (!res.ok) {
+                    const data = await res.json();
+                    if (res.status === 409) {
+                        showToast(`Item reservado por: ${data.reservedBy === clientId ? 'Você (já no carrinho?)' : 'Outro usuário'}`, 'error');
+                        return;
+                    }
+                    throw new Error(data.error || 'Failed to reserve');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Erro ao reservar item.", 'error');
+                return;
+            }
+        }
 
         const finalPrice = newItem.price * (1 - (newItem.discountPercent || 0) / 100);
 
@@ -455,7 +498,20 @@ export default function POSPage() {
         setShowProductSuggestions(false);
     };
 
-    const removeItem = (idx: number) => {
+    const removeItem = async (idx: number) => {
+        const itemToRemove = currentSale.items?.[idx];
+        if (itemToRemove?.productId) {
+            try {
+                await fetch(`/api/products/${itemToRemove.productId}/reserve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clientId, action: 'release' })
+                });
+            } catch (err) {
+                console.error("Failed to release item", err);
+            }
+        }
+
         const updatedItems = currentSale.items?.filter((_, i) => i !== idx);
         setCurrentSale({ ...currentSale, items: updatedItems });
     };
@@ -937,7 +993,7 @@ export default function POSPage() {
                                         value={currentSale.buyerEmail}
                                         onChange={e => setCurrentSale({ ...currentSale, buyerEmail: e.target.value })}
                                         className="rounded border p-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                                        placeholder="E-mail"
+                                        placeholder="E-mail (Opcional)"
                                     />
                                 </div>
 

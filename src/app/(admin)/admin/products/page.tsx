@@ -97,7 +97,10 @@ function ProductsContent() {
         }
     };
 
-    const categorias = ["Eletrônicos", "Roupas", "Móveis", "Livros", "Brinquedos", "Esportes", "Decoração", "Outros"];
+    // Get unique categories from all products + default ones
+    const existingCategories = Array.from(new Set(products.map(p => p.categoria || "Outros"))).filter(Boolean);
+    const defaultCategories = ["Eletrônicos", "Roupas", "Móveis", "Livros", "Brinquedos", "Esportes", "Decoração", "Outros"];
+    const categorias = Array.from(new Set([...defaultCategories, ...existingCategories])).sort();
     const condicoes = ["Novo", "Semi-novo", "Usado - Excelente", "Usado - Bom", "Usado - Regular"];
 
     return (
