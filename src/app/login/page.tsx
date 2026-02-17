@@ -42,13 +42,13 @@ export default function LoginPage() {
                 <form action={clientAction} className="space-y-6">
                     <div>
                         <label className="block text-sm font-medium text-gray-300">
-                            Email
+                            Email ou Usuário
                         </label>
                         <input
-                            type="email"
+                            type="text"
                             name="email"
                             className="mt-1 block w-full rounded-lg border border-white/10 bg-black/20 px-4 py-3 text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                            placeholder="admin@exemplo.com"
+                            placeholder="admin@exemplo.com ou usuario"
                             required
                         />
                     </div>

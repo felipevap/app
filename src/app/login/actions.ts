@@ -4,10 +4,13 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 export async function login(formData: FormData) {
-    const email = formData.get('email') as string;
+    const loginIdentifier = formData.get('email') as string;
     const password = formData.get('password') as string;
 
-    if (email === "leader.fabio@gmail.com" && password === "eamsjc73") {
+    const isValidUser = (loginIdentifier === "leader.fabio@gmail.com" && password === "eamsjc73") ||
+        (loginIdentifier === "fabio" && password === "eamsjc73");
+
+    if (isValidUser) {
         // Set cookie valid for 1 day
         const oneDay = 24 * 60 * 60 * 1000;
 
