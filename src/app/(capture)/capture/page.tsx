@@ -379,16 +379,10 @@ export default function CapturePage() {
                     </Link>
 
                     <div className="flex gap-4">
-                        {garageSales.length > 0 && (
-                            <select
-                                value={selectedGarageSaleId}
-                                onChange={(e) => setSelectedGarageSaleId(e.target.value)}
-                                className="bg-black/40 backdrop-blur-md px-6 py-3 rounded-full text-white border border-white/20 focus:ring-2 focus:ring-blue-500 outline-none shadow-lg text-lg"
-                            >
-                                {garageSales.map(gs => (
-                                    <option key={gs.id} value={gs.id} className="bg-black">{gs.nome}</option>
-                                ))}
-                            </select>
+                        {selectedGarageSaleId && (
+                            <div className="bg-black/40 backdrop-blur-md px-6 py-3 rounded-full text-white border border-white/20 shadow-lg text-lg font-bold">
+                                {garageSales.find(gs => gs.id === selectedGarageSaleId)?.nome}
+                            </div>
                         )}
                     </div>
 

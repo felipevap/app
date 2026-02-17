@@ -9,7 +9,7 @@ import Toast from "@/components/Toast";
 
 import { Suspense } from "react";
 
-const CATEGORIES = ["Eletrônicos", "Roupas", "Móveis", "Livros", "Brinquedos", "Esportes", "Decoração", "Outros"];
+const CATEGORIES = ["Eletrônicos", "Roupas", "Móveis", "Livros", "Brinquedos", "Esportes", "Decoração", "CD", "DVD", "LP", "Itens cozinha", "Ferramentas", "Itens piscina", "Cama mesa e banho", "Eletrodomésticos", "Saúde", "Outros"];
 
 function NewProductContent() {
     const router = useRouter();

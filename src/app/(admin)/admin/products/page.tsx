@@ -99,7 +99,7 @@ function ProductsContent() {
 
     // Get unique categories from all products + default ones
     const existingCategories = Array.from(new Set(products.map(p => p.categoria || "Outros"))).filter(Boolean);
-    const defaultCategories = ["Eletrônicos", "Roupas", "Móveis", "Livros", "Brinquedos", "Esportes", "Decoração", "Outros"];
+    const defaultCategories = ["Eletrônicos", "Roupas", "Móveis", "Livros", "Brinquedos", "Esportes", "Decoração", "CD", "DVD", "LP", "Itens cozinha", "Ferramentas", "Itens piscina", "Cama mesa e banho", "Eletrodomésticos", "Saúde", "Outros"];
     const categorias = Array.from(new Set([...defaultCategories, ...existingCategories])).sort();
     const condicoes = ["Novo", "Semi-novo", "Usado - Excelente", "Usado - Bom", "Usado - Regular"];
 
@@ -267,6 +267,12 @@ function ProductsContent() {
                                             </span>
                                             <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs text-green-400">
                                                 {product.condicao}
+                                            </span>
+                                            <span className={`rounded-full px-2 py-0.5 text-xs ${product.status === 'vendido' ? 'bg-red-500/20 text-red-400' :
+                                                    product.status === 'reservado' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                        'bg-blue-500/20 text-blue-400'
+                                                }`}>
+                                                {product.status ? (product.status.charAt(0).toUpperCase() + product.status.slice(1)) : 'Disponível'}
                                             </span>
                                         </div>
                                         {product.tags.length > 0 && (

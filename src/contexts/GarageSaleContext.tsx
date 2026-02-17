@@ -29,7 +29,7 @@ export interface Product {
     condicao: string;
     tags: string[];
     garageSaleId: string;
-    status: 'disponível' | 'vendido';
+    status: 'disponível' | 'vendido' | 'reservado';
     deletedAt?: string | null;
 }
 

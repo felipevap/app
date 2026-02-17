@@ -35,7 +35,7 @@ interface Sale {
 }
 
 export default function POSPage() {
-    const { garageSales, products, getProductsByGarageSale, createSale } = useGarageSales();
+    const { garageSales, products, getProductsByGarageSale, createSale, refreshData } = useGarageSales();
 
     const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("");
     const [currentView, setCurrentView] = useState<'sales' | 'products' | 'report'>('sales');
@@ -150,10 +150,13 @@ export default function POSPage() {
 
         if (selectedGarageSaleId) {
             loadPendingOrders();
-            const interval = setInterval(loadPendingOrders, 5000);
+            const interval = setInterval(() => {
+                loadPendingOrders();
+                refreshData();
+            }, 5000);
             return () => clearInterval(interval);
         }
-    }, [selectedGarageSaleId]);
+    }, [selectedGarageSaleId, refreshData]);
 
     const currentSaleSubtotal = currentSale.items?.reduce((acc, item) => acc + ((item.originalPrice || item.price) * item.qty), 0) || 0;
     const currentSaleTotal = currentSale.items?.reduce((acc, item) => acc + (item.price * item.qty), 0) || 0;
@@ -1377,8 +1380,11 @@ export default function POSPage() {
                                                 <div className="flex h-full items-center justify-center text-gray-300 text-4xl">📷</div>
                                             )}
 
-                                            <div className={`absolute top-2 left-2 rounded-full px-2 py-1 text-xs font-bold shadow-sm ${product.status === 'vendido' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                                                {product.status === 'vendido' ? 'VENDIDO' : 'DISPONÍVEL'}
+                                            <div className={`absolute top-2 left-2 rounded-full px-2 py-1 text-xs font-bold shadow-sm ${product.status === 'vendido' ? 'bg-red-100 text-red-700' :
+                                                product.status === 'reservado' ? 'bg-yellow-100 text-yellow-700' :
+                                                    'bg-green-100 text-green-700'
+                                                }`}>
+                                                {product.status ? product.status.toUpperCase() : 'DISPONÍVEL'}
                                             </div>
                                             <div className="absolute top-2 right-2 rounded-full bg-white/90 px-2 py-1 text-xs font-bold text-gray-700 shadow-sm">
                                                 {formatCurrency(product.preco)}

@@ -7,7 +7,7 @@ import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Webcam from "react-webcam";
 import Toast from "@/components/Toast";
 
-const CATEGORIES = ["Eletrônicos", "Roupas", "Móveis", "Livros", "Brinquedos", "Esportes", "Decoração", "Outros"];
+const CATEGORIES = ["Eletrônicos", "Roupas", "Móveis", "Livros", "Brinquedos", "Esportes", "Decoração", "CD", "DVD", "LP", "Itens cozinha", "Ferramentas", "Itens piscina", "Cama mesa e banho", "Eletrodomésticos", "Saúde", "Outros"];
 
 export default function EditProductPage() {
     const router = useRouter();
@@ -27,6 +27,7 @@ export default function EditProductPage() {
         condicao: "Usado - Bom",
         tags: [] as string[],
         garageSaleId: "",
+        status: "disponível" as "disponível" | "vendido" | "reservado",
     });
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
 
@@ -47,6 +48,7 @@ export default function EditProductPage() {
                     condicao: product.condicao,
                     tags: product.tags,
                     garageSaleId: product.garageSaleId,
+                    status: product.status,
                 });
             }
         }
@@ -385,6 +387,20 @@ export default function EditProductPage() {
                             <option value="Usado - Excelente">Usado - Excelente</option>
                             <option value="Usado - Bom">Usado - Bom</option>
                             <option value="Usado - Regular">Usado - Regular</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-neutral-300 mb-2">Status</label>
+                        <select
+                            value={formData.status}
+                            onChange={e => setFormData({ ...formData, status: e.target.value as any })}
+                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                            required
+                        >
+                            <option value="disponível">Disponível</option>
+                            <option value="reservado">Reservado</option>
+                            <option value="vendido">Vendido</option>
                         </select>
                     </div>
 
