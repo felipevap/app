@@ -76,7 +76,8 @@ export async function POST(req: NextRequest) {
                             price: item.price,
                             quantity: item.qty || item.quantity,
                             originalPrice: item.originalPrice,
-                            discountPercent: item.discountPercent
+                            discountPercent: item.discountPercent,
+                            productId: item.productId // Save productId to link with Product
                         }))
                     },
                     payments: {

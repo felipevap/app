@@ -66,11 +66,34 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, props: { params: Promise<{ id: string }> }) {
     try {
-        const { id: paramId } = await params;
-        const id = parseInt(paramId);
-        await prisma.sale.delete({ where: { id } });
+        const params = await props.params;
+        const id = parseInt(params.id);
+
+        await prisma.$transaction(async (tx) => {
+            // 1. Fetch sale to identify items
+            const sale = await tx.sale.findUnique({
+                where: { id },
+                include: { items: true }
+            });
+
+            if (!sale) throw new Error("Sale not found");
+
+            // 2. Restore items to stock (status: disponível) if they have a productId
+            for (const item of sale.items) {
+                if (item.productId) {
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: { status: 'disponível' }
+                    });
+                }
+            }
+
+            // 3. Delete sale (cascades items and payments)
+            await tx.sale.delete({ where: { id } });
+        });
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error deleting sale:', error);

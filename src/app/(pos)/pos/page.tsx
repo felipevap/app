@@ -61,7 +61,7 @@ export default function POSPage() {
     const [globalDiscount, setGlobalDiscount] = useState<number>(0);
     const [pendingOrders, setPendingOrders] = useState<any[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; action?: { label: string; onClick: () => void } } | null>(null);
 
     const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
         setToast({ message, type });
@@ -598,6 +598,36 @@ export default function POSPage() {
 
     const stopDrawing = () => {
         setIsDrawing(false);
+    };
+
+    const handleDeleteSale = (saleId: number) => {
+        setToast({
+            message: "Tem certeza que deseja excluir esta venda? Os itens retornarão ao estoque.",
+            type: "info",
+            action: {
+                label: "Confirmar Exclusão",
+                onClick: async () => {
+                    try {
+                        const res = await fetch(`/api/sales/${saleId}`, {
+                            method: 'DELETE'
+                        });
+
+                        if (!res.ok) throw new Error('Failed to delete sale');
+
+                        // Refresh sales list
+                        setSalesHistory(prev => prev.filter(s => s.id !== saleId));
+                        showToast("Venda excluída com sucesso!", "success");
+
+                        // Also trigger a refresh of products if we had logic for that
+                        // Since we don't have a direct way to force-refresh products from outside the hook without reload or complex state
+                        // Ideally we should call a refreshProducts function from context
+                    } catch (error) {
+                        console.error('Error deleting sale:', error);
+                        showToast("Erro ao excluir venda. Tente novamente.", "error");
+                    }
+                }
+            }
+        });
     };
 
     const saveSignature = () => {
@@ -1185,6 +1215,13 @@ export default function POSPage() {
                                                     >
                                                         WhatsApp
                                                     </button>
+                                                    <button
+                                                        onClick={() => handleDeleteSale(sale.id)}
+                                                        className="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded border border-red-200 hover:border-red-300 transition-colors"
+                                                        title="Excluir Venda"
+                                                    >
+                                                        🗑️
+                                                    </button>
                                                 </div>
                                             </div>
                                         ))
@@ -1442,6 +1479,7 @@ export default function POSPage() {
                     message={toast.message}
                     type={toast.type}
                     onClose={() => setToast(null)}
+                    action={toast.action}
                 />
             )}
         </div>
