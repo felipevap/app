@@ -48,7 +48,7 @@ interface GarageSaleContextType {
     getProduct: (id: string) => Product | undefined;
     getProductsByGarageSale: (garageSaleId: string) => Product[];
     createSale: (sale: any) => Promise<any>;
-    refreshData: (options?: { includeDeleted?: boolean }) => Promise<void>;
+    refreshData: (options?: { includeDeleted?: boolean; silent?: boolean }) => Promise<void>;
 }
 
 const GarageSaleContext = createContext<GarageSaleContextType | undefined>(undefined);
@@ -58,13 +58,14 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const fetchData = useCallback(async (options?: { includeDeleted?: boolean }) => {
+    const fetchData = useCallback(async (options?: { includeDeleted?: boolean; silent?: boolean }) => {
         try {
-            setLoading(true);
+            if (!options?.silent) setLoading(true);
             const query = options?.includeDeleted ? '?includeDeleted=true' : '';
+            const timestamp = new Date().getTime(); // Add timestamp to bust browser cache
             const [gsRes, prodRes] = await Promise.all([
-                fetch(`/api/garage-sales${query}`),
-                fetch(`/api/products${query}`)
+                fetch(`/api/garage-sales${query}`, { cache: 'no-store' }),
+                fetch(`/api/products${query}${query ? '&' : '?'}t=${timestamp}`, { cache: 'no-store' })
             ]);
 
             if (gsRes.ok && prodRes.ok) {
@@ -76,7 +77,7 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
         } catch (error) {
             console.error('Failed to fetch data:', error);
         } finally {
-            setLoading(false);
+            if (!options?.silent) setLoading(false);
         }
     }, []);
 

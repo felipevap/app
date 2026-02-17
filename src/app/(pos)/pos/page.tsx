@@ -152,7 +152,7 @@ export default function POSPage() {
             loadPendingOrders();
             const interval = setInterval(() => {
                 loadPendingOrders();
-                refreshData();
+                refreshData({ silent: true });
             }, 5000);
             return () => clearInterval(interval);
         }
@@ -872,7 +872,7 @@ export default function POSPage() {
                             onClick={() => setCurrentView('sales')}
                             className={`rounded px-3 py-1 text-xs font-medium transition-all ${currentView === 'sales' ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:bg-gray-200'}`}
                         >
-                            Vendas
+                            Vendas {pendingOrders.length > 0 && `(${pendingOrders.length})`}
                         </button>
                         <button
                             onClick={() => setCurrentView('products')}
@@ -1222,7 +1222,7 @@ export default function POSPage() {
                                                 </div>
                                                 <button
                                                     onClick={finalizeSale}
-                                                    disabled={remainingAmount > 0.01 || isSubmitting}
+                                                    disabled={remainingAmount > 0.01 || isSubmitting || (currentSale.items?.length || 0) === 0}
                                                     className="w-full rounded bg-green-600 px-6 py-4 font-bold text-white hover:bg-green-700 disabled:opacity-50 transition-colors shadow-md hover:shadow-lg disabled:shadow-none flex items-center justify-center gap-2"
                                                 >
                                                     {isSubmitting ? (
