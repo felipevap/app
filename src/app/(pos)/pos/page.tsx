@@ -39,6 +39,7 @@ export default function POSPage() {
 
     const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("");
     const [currentView, setCurrentView] = useState<'sales' | 'products' | 'report'>('sales');
+    const [pendingOrderFilter, setPendingOrderFilter] = useState("");
     const [isCheckoutMode, setIsCheckoutMode] = useState(false);
     const [currentSale, setCurrentSale] = useState<Partial<Sale>>({
         items: [],
@@ -779,6 +780,11 @@ export default function POSPage() {
         );
     }
 
+    const filteredPendingOrders = pendingOrders.filter(order =>
+        order.customerName?.toLowerCase().includes(pendingOrderFilter.toLowerCase()) ||
+        order.customerPhone?.includes(pendingOrderFilter)
+    );
+
     return (
         <div className="flex h-screen flex-col bg-gray-100 text-slate-800 font-sans">
             <header className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm">
@@ -832,16 +838,27 @@ export default function POSPage() {
                     <div className="flex h-full w-full gap-4 p-4">
                         <div className="flex w-full flex-col gap-4 overflow-y-auto lg:w-2/3">
                             <div className="rounded-xl border border-orange-200 bg-orange-50 shadow-sm p-4">
-                                <h3 className="font-bold text-orange-800 mb-3 flex items-center gap-2">
-                                    <span className="text-xl">📱</span> Pedidos do App ({pendingOrders.length})
-                                </h3>
-                                {pendingOrders.length === 0 ? (
+                                <div className="flex justify-between items-center mb-3">
+                                    <h3 className="font-bold text-orange-800 flex items-center gap-2">
+                                        <span className="text-xl">📱</span> Pedidos do App ({filteredPendingOrders.length})
+                                    </h3>
+                                    <input
+                                        type="text"
+                                        placeholder="Filtrar por nome..."
+                                        value={pendingOrderFilter}
+                                        onChange={(e) => setPendingOrderFilter(e.target.value)}
+                                        className="text-sm border border-orange-300 rounded-lg px-3 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 w-48"
+                                    />
+                                </div>
+                                {filteredPendingOrders.length === 0 ? (
                                     <div className="text-center text-orange-600 py-4 text-sm">
-                                        Nenhum pedido pendente. Os pedidos feitos pelo app de captura aparecerão aqui.
+                                        {pendingOrders.length === 0
+                                            ? "Nenhum pedido pendente. Os pedidos feitos pelo app de captura aparecerão aqui."
+                                            : "Nenhum pedido encontrado com esse filtro."}
                                     </div>
                                 ) : (
                                     <div className="space-y-2">
-                                        {pendingOrders.map((order: any) => (
+                                        {filteredPendingOrders.map((order: any) => (
                                             <div key={order.id} className="bg-white rounded-lg p-3 border border-orange-200">
                                                 <div className="flex justify-between items-start mb-2">
                                                     <div>
@@ -1423,10 +1440,28 @@ export default function POSPage() {
                             </div>
                             <h2 className="text-xl font-bold text-gray-800">Venda Concluída!</h2>
                         </div>
-                        <div className="mb-6 rounded-lg bg-gray-50 p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap">
+                        <div className="mb-6 rounded-lg bg-gray-50 p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap max-h-[60vh] overflow-y-auto">
                             {generateReceiptText(receiptData)}
                         </div>
                         <div className="flex flex-col gap-2">
+                            <button
+                                onClick={() => {
+                                    const printWindow = window.open('', '', 'width=400,height=600');
+                                    if (printWindow) {
+                                        printWindow.document.write('<html><head><title>Recibo</title>');
+                                        printWindow.document.write('<style>body{font-family:monospace;white-space:pre-wrap;padding:20px;font-size:12px;}</style>');
+                                        printWindow.document.write('</head><body>');
+                                        printWindow.document.write(generateReceiptText(receiptData));
+                                        printWindow.document.write('<script>window.print();window.close();</script>');
+                                        printWindow.document.write('</body></html>');
+                                        printWindow.document.close();
+                                    }
+                                }}
+                                className="w-full rounded bg-blue-600 px-4 py-3 font-bold text-white hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                                Imprimir Recibo
+                            </button>
                             <button
                                 onClick={() => sendReceiptToWhatsApp(receiptData)}
                                 className="w-full rounded bg-green-600 px-4 py-3 font-bold text-white hover:bg-green-700 transition-colors"

@@ -159,8 +159,9 @@ export default function CapturePage() {
         setTimeout(() => setToast(null), 3000);
     };
 
-    const addToCart = () => {
+    const addToCart = async () => {
         if (foundProduct) {
+            // Check local cart
             const isAlreadyInCart = cart.some(item => item.id === foundProduct.id);
             if (isAlreadyInCart) {
                 showToast('Este produto já está no seu carrinho!', 'info');
@@ -168,12 +169,31 @@ export default function CapturePage() {
                 return;
             }
 
+            // Check server status
+            try {
+                const res = await fetch(`/api/products/${foundProduct.id}`);
+                if (res.ok) {
+                    const freshProduct = await res.json();
+                    if (freshProduct.status !== 'disponível') {
+                        showToast('Este produto já foi reservado ou vendido!', 'error');
+                        setFoundProduct(null);
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error("Error checking product status:", error);
+                // Proceed optimistically or fail? Let's fail safe.
+                showToast('Erro ao verificar disponibilidade. Tente novamente.', 'error');
+                return;
+            }
+
+            // Check local storage pending orders (optional double check, but server is authority)
             const pendingOrders = JSON.parse(localStorage.getItem('pending_orders') || '[]');
-            const isReserved = pendingOrders.some((order: any) =>
+            const isReservedLocal = pendingOrders.some((order: any) =>
                 order.items.some((item: any) => item.productId === foundProduct.id)
             );
 
-            if (isReserved) {
+            if (isReservedLocal) {
                 showToast('Este produto já está no carrinho de outro cliente!', 'error');
                 setFoundProduct(null);
                 return;
@@ -220,22 +240,20 @@ export default function CapturePage() {
             });
 
             if (!response.ok) {
-                throw new Error('Falha ao salvar pedido');
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Falha ao salvar pedido');
             }
 
             setShowSuccessMessage(true);
             setTimeout(() => {
                 setShowSuccessMessage(false);
                 setCart([]);
-                setShowSuccessMessage(false);
-                setCart([]);
                 // User data is preserved for next time
                 setIsCartOpen(false);
-                setIsCartOpen(false);
             }, 3000);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro ao salvar pedido:', error);
-            showToast('Erro ao salvar pedido. Tente novamente.', 'error');
+            showToast(error.message || 'Erro ao salvar pedido. Tente novamente.', 'error');
         }
     };
 

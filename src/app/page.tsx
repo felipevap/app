@@ -42,7 +42,7 @@ export default async function Home() {
           <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
           <div className="relative z-10">
             <span className="text-4xl">🤝</span>
-            <h2 className="mt-4 text-2xl font-bold text-white">Amigo Garage</h2>
+            <h2 className="mt-4 text-2xl font-bold text-white">Cliente</h2>
             <p className="mt-2 text-sm text-gray-400">Consultar Preços e Comprar</p>
           </div>
         </Link>

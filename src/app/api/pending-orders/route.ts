@@ -48,31 +48,62 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { customerName, customerPhone, customerEmail, total, garageSaleId, items } = body;
 
-        const pendingOrder = await prisma.pendingOrder.create({
-            data: {
-                customerName,
-                customerPhone,
-                customerEmail,
-                total,
-                garageSaleId,
-                items: {
-                    create: items.map((item: any) => ({
-                        productId: item.productId,
-                        description: item.desc,
-                        price: item.price,
-                        quantity: item.qty,
-                    })),
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Verify availability and lock items
+            for (const item of items) {
+                const product = await tx.product.findUnique({
+                    where: { id: item.productId }
+                });
+
+                if (!product) {
+                    throw new Error(`Produto não encontrado: ${item.desc}`);
+                }
+
+                if (product.status !== 'disponível') {
+                    throw new Error(`Produto indisponível: ${product.nome}`);
+                }
+
+                await tx.product.update({
+                    where: { id: item.productId },
+                    data: { status: 'reservado' }
+                });
+            }
+
+            // 2. Create Pending Order
+            const pendingOrder = await tx.pendingOrder.create({
+                data: {
+                    customerName,
+                    customerPhone,
+                    customerEmail,
+                    total,
+                    garageSaleId,
+                    items: {
+                        create: items.map((item: any) => ({
+                            productId: item.productId,
+                            description: item.desc,
+                            price: item.price,
+                            quantity: item.qty,
+                        })),
+                    },
                 },
-            },
-            include: {
-                items: true,
-            },
+                include: {
+                    items: true,
+                },
+            });
+
+            return pendingOrder;
         });
 
-        return NextResponse.json(pendingOrder);
-    } catch (error) {
+        return NextResponse.json(result);
+    } catch (error: any) {
         console.error('Error creating pending order:', error);
-        return NextResponse.json({ error: 'Failed to create pending order' }, { status: 500 });
+        const message = error.message || 'Failed to create pending order';
+
+        if (message.includes('indisponível')) {
+            return NextResponse.json({ error: message }, { status: 409 }); // Conflict
+        }
+
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }
 
