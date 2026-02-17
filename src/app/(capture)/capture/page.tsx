@@ -30,22 +30,43 @@ export default function CapturePage() {
     const [pendingOrders, setPendingOrders] = useState<any[]>([]);
     const [isLoadingPending, setIsLoadingPending] = useState(false);
 
-    useEffect(() => {
-        if (isCartOpen && cartTab === 'pending' && (customerInfo.email || customerInfo.telefone)) {
-            setIsLoadingPending(true);
-            const params = new URLSearchParams();
-            if (customerInfo.email) params.append('customerEmail', customerInfo.email);
-            if (customerInfo.telefone) params.append('customerPhone', customerInfo.telefone);
+    const [pendingCount, setPendingCount] = useState(0);
 
-            fetch(`/api/pending-orders?${params.toString()}`)
-                .then(res => res.json())
-                .then(data => {
-                    setPendingOrders(Array.isArray(data) ? data : []);
-                })
-                .catch(err => console.error(err))
-                .finally(() => setIsLoadingPending(false));
+    const fetchPendingOrders = useCallback(() => {
+        if (!customerInfo.email && !customerInfo.telefone) return;
+
+        setIsLoadingPending(true);
+        const params = new URLSearchParams();
+        if (customerInfo.email) params.append('customerEmail', customerInfo.email);
+        if (customerInfo.telefone) params.append('customerPhone', customerInfo.telefone);
+
+        fetch(`/api/pending-orders?${params.toString()}`)
+            .then(res => res.json())
+            .then(data => {
+                const orders = Array.isArray(data) ? data : [];
+                setPendingOrders(orders);
+                // Calculate total pending items
+                const totalItems = orders.reduce((acc: number, order: any) => {
+                    return acc + order.items.reduce((iAcc: number, item: any) => iAcc + item.quantity, 0);
+                }, 0);
+                setPendingCount(totalItems);
+            })
+            .catch(err => console.error(err))
+            .finally(() => setIsLoadingPending(false));
+    }, [customerInfo.email, customerInfo.telefone]);
+
+    useEffect(() => {
+        if (isCartOpen && cartTab === 'pending') {
+            fetchPendingOrders();
         }
-    }, [isCartOpen, cartTab, customerInfo.email, customerInfo.telefone]);
+    }, [isCartOpen, cartTab, fetchPendingOrders]);
+
+    // Initial fetch if user info exists
+    useEffect(() => {
+        if (customerInfo.nome || customerInfo.telefone) {
+            fetchPendingOrders();
+        }
+    }, [customerInfo.nome, customerInfo.telefone]);
 
     const [searchResults, setSearchResults] = useState<Product[]>([]);
     // const [modelLoaded, setModelLoaded] = useState(false);
@@ -265,12 +286,17 @@ export default function CapturePage() {
             }
 
             setShowSuccessMessage(true);
+
+            // Refresh pending orders immediately
+            fetchPendingOrders();
+
             setTimeout(() => {
                 setShowSuccessMessage(false);
                 setCart([]);
-                // User data is preserved for next time
-                setIsCartOpen(false);
-            }, 3000);
+                // Keep cart open and switch to pending tab
+                setCartTab('pending');
+                // setIsCartOpen(false); // Removed to keep cart open
+            }, 2000);
         } catch (error: any) {
             console.error('Erro ao salvar pedido:', error);
             showToast(error.message || 'Erro ao salvar pedido. Tente novamente.', 'error');
@@ -406,7 +432,21 @@ export default function CapturePage() {
                         )}
                     </div>
 
+
+
                     <div className="flex gap-3">
+                        {pendingCount > 0 && (
+                            <button
+                                onClick={() => {
+                                    setCartTab('pending');
+                                    setIsCartOpen(true);
+                                }}
+                                className="bg-yellow-500/90 backdrop-blur-md p-4 rounded-2xl text-white font-bold flex flex-col items-center justify-center gap-1 hover:bg-yellow-600 transition-all shadow-lg min-w-[80px] animate-pulse"
+                            >
+                                <span className="text-2xl">⏳</span>
+                                <span className="text-xs font-bold bg-white text-yellow-600 px-2 py-0.5 rounded-full">{pendingCount}</span>
+                            </button>
+                        )}
                         <button
                             onClick={() => setIsCartOpen(!isCartOpen)}
                             className="bg-black/40 backdrop-blur-md p-4 rounded-2xl text-white font-bold flex flex-col items-center justify-center gap-1 hover:bg-blue-600/80 transition-all shadow-lg min-w-[80px]"
@@ -419,8 +459,11 @@ export default function CapturePage() {
                 </header>
 
                 {/* Scanner Frame - Improved Visuals */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-                    <div className="relative w-[85vw] h-[85vw] max-w-[450px] max-h-[450px]">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex flex-col items-center gap-4">
+                    <p className="text-white text-center text-lg font-medium drop-shadow-md bg-black/40 backdrop-blur-md py-2 px-6 rounded-full border border-white/10 mb-4 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                        {isScanning ? "Analisando..." : "Aponte para o produto e capture"}
+                    </p>
+                    <div className="relative w-[95vw] h-[95vw] max-w-[600px] max-h-[600px]">
                         {/* Corner Markers */}
                         <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-white rounded-tl-xl drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"></div>
                         <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-white rounded-tr-xl drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"></div>
@@ -445,9 +488,6 @@ export default function CapturePage() {
                             </>
                         )}
                     </div>
-                    <p className="text-white text-center mt-8 text-lg font-medium drop-shadow-md bg-black/40 backdrop-blur-md py-2 px-6 rounded-full mx-auto w-fit border border-white/10">
-                        {isScanning ? "Analisando produto..." : "Aponte e capture"}
-                    </p>
                 </div>
 
                 {/* Scan Button */}
@@ -457,8 +497,8 @@ export default function CapturePage() {
                         disabled={isScanning}
                         className="group relative"
                     >
-                        <div className="absolute inset-0 bg-white/30 rounded-full blur-2xl group-hover:bg-blue-500/50 transition-colors duration-500"></div>
-                        <div className="relative bg-white text-black p-6 rounded-full shadow-[0_0_30px_rgba(255,255,255,0.3)] transform transition-all active:scale-95 border-[6px] border-white/40 bg-clip-padding group-hover:scale-105">
+                        <div className="absolute inset-0 bg-white/30 rounded-full blur-xl group-hover:bg-blue-500/50 transition-colors duration-500"></div>
+                        <div className="relative bg-white text-black p-6 rounded-full shadow-[0_0_30px_rgba(255,255,255,0.3)] transform transition-all active:scale-95 border-[6px] border-white/40 bg-clip-padding group-hover:scale-105 group-hover:shadow-[0_0_40px_rgba(59,130,246,0.6)]">
                             {isScanning ? (
                                 <svg className="w-10 h-10 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
                             ) : (
