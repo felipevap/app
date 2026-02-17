@@ -14,6 +14,9 @@ export interface GarageSale {
     banner?: string;
     criadoEm: number;
     deletedAt?: string | null;
+    cep?: string | null;
+    cpf?: string | null;
+    pix?: string | null;
 }
 
 export interface Product {

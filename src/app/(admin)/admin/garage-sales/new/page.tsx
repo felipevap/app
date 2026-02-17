@@ -19,6 +19,9 @@ export default function NewGarageSalePage() {
         regras: "",
 
         banner: "",
+        cep: "",
+        cpf: "",
+        pix: "",
     });
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
 
@@ -65,8 +68,32 @@ export default function NewGarageSalePage() {
         reader.readAsDataURL(file);
     };
 
+    const isValidCPF = (cpf: string) => {
+        cpf = cpf.replace(/[^\d]+/g, '');
+        if (cpf.length !== 11 || !!cpf.match(/(\d)\1{10}/)) return false;
+        let soma = 0;
+        let resto;
+        for (let i = 1; i <= 9; i++) soma += parseInt(cpf.substring(i - 1, i)) * (11 - i);
+        resto = (soma * 10) % 11;
+        if ((resto === 10) || (resto === 11)) resto = 0;
+        if (resto !== parseInt(cpf.substring(9, 10))) return false;
+        soma = 0;
+        for (let i = 1; i <= 10; i++) soma += parseInt(cpf.substring(i - 1, i)) * (12 - i);
+        resto = (soma * 10) % 11;
+        if ((resto === 10) || (resto === 11)) resto = 0;
+        if (resto !== parseInt(cpf.substring(10, 11))) return false;
+        return true;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validate CPF if provided
+        if (formData.cpf && !isValidCPF(formData.cpf)) {
+            showToast("CPF inválido. Verifique os dados inseridos.", "error");
+            return;
+        }
+
         try {
             await addGarageSale(formData);
             showToast("Garage Sale criada com sucesso!", "success");
@@ -194,6 +221,59 @@ export default function NewGarageSalePage() {
 
                 <div className="space-y-4">
                     <h2 className="text-xl font-semibold text-green-400">Regras e Configuração</h2>
+
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                        <div>
+                            <label className="block text-sm font-medium text-neutral-300">
+                                CEP
+                            </label>
+                            <input
+                                type="text"
+                                name="cep"
+                                value={formData.cep}
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, '').replace(/^(\d{5})(\d)/, '$1-$2').substring(0, 9);
+                                    setFormData(prev => ({ ...prev, cep: val }));
+                                }}
+                                className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                placeholder="00000-000"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-neutral-300">
+                                CPF (Responsável)
+                            </label>
+                            <input
+                                type="text"
+                                name="cpf"
+                                value={formData.cpf}
+                                onChange={(e) => {
+                                    let val = e.target.value.replace(/\D/g, '');
+                                    if (val.length > 11) val = val.substring(0, 11);
+                                    val = val.replace(/(\d{3})(\d)/, '$1.$2');
+                                    val = val.replace(/(\d{3})(\d)/, '$1.$2');
+                                    val = val.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                                    setFormData(prev => ({ ...prev, cpf: val }));
+                                }}
+                                className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                placeholder="000.000.000-00"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-neutral-300">
+                                Chave PIX
+                            </label>
+                            <input
+                                type="text"
+                                name="pix"
+                                value={formData.pix}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                placeholder="Email, CPF, Telefone ou Aleatória"
+                            />
+                        </div>
+                    </div>
+
                     <div>
                         <label className="block text-sm font-medium text-neutral-300">
                             Regras e Termos

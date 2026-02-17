@@ -40,7 +40,10 @@ export async function POST(req: NextRequest) {
                 responsavel,
                 email,
                 regras,
-                banner
+                banner,
+                cep: body.cep,
+                cpf: body.cpf,
+                pix: body.pix
             }
         });
 
