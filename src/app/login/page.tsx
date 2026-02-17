@@ -24,7 +24,7 @@ export default function LoginPage() {
             <div className="w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
                 <div className="mb-8 text-center">
                     <h1 className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-4xl font-bold text-transparent">
-                        Garage Sale
+                        Garage Sale Premium
                     </h1>
                     <p className="mt-2 text-gray-400">Acesso Gerenciador</p>
                 </div>
