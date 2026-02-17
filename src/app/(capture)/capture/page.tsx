@@ -106,6 +106,12 @@ export default function CapturePage() {
         }
     };
 
+    const removeFromCart = (index: number) => {
+        const newCart = [...cart];
+        newCart.splice(index, 1);
+        setCart(newCart);
+    };
+
     const checkout = async () => {
         if (!customerInfo.nome || !customerInfo.telefone || !customerInfo.email) {
             showToast('Por favor, preencha todos os campos', 'error');
@@ -150,12 +156,67 @@ export default function CapturePage() {
         }
     };
 
-    // ... (rest of the functions remain the same)
+    const maskPhone = (value: string) => {
+        const cleaned = value.replace(/\D/g, '');
+        if (cleaned.length <= 10) {
+            return cleaned
+                .replace(/(\d{2})(\d)/, '($1) $2')
+                .replace(/(\d{4})(\d)/, '$1-$2')
+                .replace(/(-\d{4})\d+?$/, '$1');
+        } else {
+            return cleaned
+                .replace(/(\d{2})(\d)/, '($1) $2')
+                .replace(/(\d{5})(\d)/, '$1-$2')
+                .replace(/(-\d{4})\d+?$/, '$1');
+        }
+    };
+
+    const searchProducts = (query: string) => {
+        setSearchQuery(query);
+        if (query.length >= 3) {
+            const filtered = currentProducts.filter((p: Product) =>
+                p.nome.toLowerCase().includes(query.toLowerCase()) ||
+                p.descricao.toLowerCase().includes(query.toLowerCase())
+            );
+            setSearchResults(filtered);
+        } else {
+            setSearchResults([]);
+        }
+    };
+
+    const selectProductFromSearch = (product: Product) => {
+        setFoundProduct(product);
+        setShowSearchModal(false);
+        setSearchQuery('');
+        setSearchResults([]);
+    };
+
+    const [cameraError, setCameraError] = useState<string | null>(null);
+
+    const onUserMediaError = useCallback((error: string | DOMException) => {
+        console.error("Camera Error:", error);
+        setCameraError("Acesso à câmera falhou. Certifique-se de estar em HTTPS ou localhost.");
+    }, []);
 
     return (
         <div className="h-screen w-full bg-black relative overflow-hidden font-sans text-white">
-            {/* ... (Webcam component remains the same) */}
-            
+            {cameraError ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-6 text-center z-50 bg-neutral-900">
+                    <p className="text-red-500 font-bold mb-4 text-xl">Câmera Indisponível</p>
+                    <p className="mb-4">{cameraError}</p>
+                    <Link href="/" className="mt-8 bg-neutral-700 px-6 py-2 rounded-full">Voltar ao Início</Link>
+                </div>
+            ) : (
+                <Webcam
+                    ref={webcamRef}
+                    audio={false}
+                    screenshotFormat="image/jpeg"
+                    videoConstraints={{ facingMode: "environment" }}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onUserMediaError={onUserMediaError}
+                />
+            )}
+
             {/* Toast Notification */}
             <AnimatePresence>
                 {toast && (
@@ -164,9 +225,9 @@ export default function CapturePage() {
                         animate={{ opacity: 1, y: 0, x: "-50%" }}
                         exit={{ opacity: 0, y: -20, x: "-50%" }}
                         className={`absolute top-24 left-1/2 z-50 px-6 py-3 rounded-full shadow-lg font-medium text-sm flex items-center gap-2 pointer-events-none
-                            ${toast.type === 'success' ? 'bg-green-500 text-white' : 
-                              toast.type === 'error' ? 'bg-red-500 text-white' : 
-                              'bg-neutral-800 text-white border border-neutral-700'}`}
+                            ${toast.type === 'success' ? 'bg-green-500 text-white' :
+                                toast.type === 'error' ? 'bg-red-500 text-white' :
+                                    'bg-neutral-800 text-white border border-neutral-700'}`}
                     >
                         {toast.type === 'success' && <span>✓</span>}
                         {toast.type === 'error' && <span>✕</span>}
@@ -176,39 +237,59 @@ export default function CapturePage() {
                 )}
             </AnimatePresence>
 
-            {/* ... (UI Overlay header remains the same) */}
-
-            {/* Scanner Frame - Improved Visuals */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-                <div className="relative w-[90vw] h-[90vw] max-w-[500px] max-h-[500px]">
-                    {/* Corner Markers */}
-                    <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white/80 rounded-tl-xl drop-shadow-lg"></div>
-                    <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white/80 rounded-tr-xl drop-shadow-lg"></div>
-                    <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white/80 rounded-bl-xl drop-shadow-lg"></div>
-                    <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white/80 rounded-br-xl drop-shadow-lg"></div>
-
-                    {/* Scanning Animation */}
-                    {isScanning && (
-                        <>
-                            <motion.div
-                                className="absolute inset-0 border-2 border-blue-500/50 rounded-lg"
-                                initial={{ opacity: 0, scale: 1 }}
-                                animate={{ opacity: [0, 1, 0], scale: 1.05 }}
-                                transition={{ repeat: Infinity, duration: 1.5 }}
-                            />
-                            <motion.div 
-                                className="absolute w-full h-1 bg-blue-500/80 shadow-[0_0_15px_rgba(59,130,246,0.8)]"
-                                initial={{ top: "0%" }}
-                                animate={{ top: "100%" }}
-                                transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                            />
-                        </>
+            {/* UI Overlay */}
+            <div className="absolute inset-0 z-10 flex flex-col justify-between p-6 pb-24 pointer-events-none">
+                <header className="flex justify-between items-start pointer-events-auto">
+                    <Link href="/" className="bg-black/40 backdrop-blur-md p-3 rounded-full text-white hover:bg-black/60 transition-colors">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
+                    </Link>
+                    {garageSales.length > 0 && (
+                        <select
+                            value={selectedGarageSaleId}
+                            onChange={(e) => setSelectedGarageSaleId(e.target.value)}
+                            className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-white border border-white/20 focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            {garageSales.map(gs => (
+                                <option key={gs.id} value={gs.id} className="bg-black">{gs.nome}</option>
+                            ))}
+                        </select>
                     )}
+                    <button onClick={() => setIsCartOpen(!isCartOpen)} className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-bold flex items-center gap-2 hover:bg-blue-600/80 transition-colors">
+                        <span>🛒 {cart.length}</span>
+                    </button>
+                </header>
+
+                {/* Scanner Frame - Improved Visuals */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                    <div className="relative w-[90vw] h-[90vw] max-w-[500px] max-h-[500px]">
+                        {/* Corner Markers */}
+                        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white/80 rounded-tl-xl drop-shadow-lg"></div>
+                        <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white/80 rounded-tr-xl drop-shadow-lg"></div>
+                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white/80 rounded-bl-xl drop-shadow-lg"></div>
+                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white/80 rounded-br-xl drop-shadow-lg"></div>
+
+                        {/* Scanning Animation */}
+                        {isScanning && (
+                            <>
+                                <motion.div
+                                    className="absolute inset-0 border-2 border-blue-500/50 rounded-lg"
+                                    initial={{ opacity: 0, scale: 1 }}
+                                    animate={{ opacity: [0, 1, 0], scale: 1.05 }}
+                                    transition={{ repeat: Infinity, duration: 1.5 }}
+                                />
+                                <motion.div
+                                    className="absolute w-full h-1 bg-blue-500/80 shadow-[0_0_15px_rgba(59,130,246,0.8)]"
+                                    initial={{ top: "0%" }}
+                                    animate={{ top: "100%" }}
+                                    transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                                />
+                            </>
+                        )}
+                    </div>
+                    <p className="text-white/90 text-center mt-6 text-base font-medium drop-shadow-lg bg-black/20 backdrop-blur-sm py-1 px-3 rounded-full mx-auto w-fit">
+                        {isScanning ? "Analisando produto..." : "Toque no botão para capturar"}
+                    </p>
                 </div>
-                <p className="text-white/90 text-center mt-6 text-base font-medium drop-shadow-lg bg-black/20 backdrop-blur-sm py-1 px-3 rounded-full mx-auto w-fit">
-                    {isScanning ? "Analisando produto..." : "Toque no botão para capturar"}
-                </p>
-            </div>
 
                 {/* Scan Button */}
                 <div className="flex justify-center pointer-events-auto">
@@ -251,64 +332,64 @@ export default function CapturePage() {
                 )}
             </AnimatePresence>
 
-            {/* Found Product Modal */ }
-    <AnimatePresence>
-        {foundProduct && (
-            <motion.div
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
-                transition={{ type: "spring", damping: 20 }}
-                className="absolute bottom-0 left-0 right-0 z-30 bg-neutral-900 rounded-t-3xl p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-neutral-700 pointer-events-auto max-h-[85vh] overflow-y-auto"
-            >
-                <div className="w-12 h-1.5 bg-neutral-700 rounded-full mx-auto mb-6"></div>
+            {/* Found Product Modal */}
+            <AnimatePresence>
+                {foundProduct && (
+                    <motion.div
+                        initial={{ y: "100%" }}
+                        animate={{ y: 0 }}
+                        exit={{ y: "100%" }}
+                        transition={{ type: "spring", damping: 20 }}
+                        className="absolute bottom-0 left-0 right-0 z-30 bg-neutral-900 rounded-t-3xl p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-neutral-700 pointer-events-auto max-h-[85vh] overflow-y-auto"
+                    >
+                        <div className="w-12 h-1.5 bg-neutral-700 rounded-full mx-auto mb-6"></div>
 
-                <button onClick={addToCart} className="w-full bg-green-600 py-5 rounded-xl font-bold text-white hover:bg-green-500 transition-colors text-xl mb-6 shadow-lg">
-                    ✓ Adicionar ao Carrinho
-                </button>
+                        <button onClick={addToCart} className="w-full bg-green-600 py-5 rounded-xl font-bold text-white hover:bg-green-500 transition-colors text-xl mb-6 shadow-lg">
+                            ✓ Adicionar ao Carrinho
+                        </button>
 
-                <div className="flex gap-4">
-                    {foundProduct.imagens[0] && (
-                        <img src={foundProduct.imagens[0]} alt={foundProduct.nome} className="w-32 h-32 rounded-xl object-cover bg-neutral-800" />
-                    )}
-                    <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                            <h2 className="text-2xl font-bold text-white mb-2">{foundProduct.nome}</h2>
-                            <button onClick={() => setFoundProduct(null)} className="text-neutral-500 p-1 hover:text-white transition-colors">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            </button>
+                        <div className="flex gap-4">
+                            {foundProduct.imagens[0] && (
+                                <img src={foundProduct.imagens[0]} alt={foundProduct.nome} className="w-32 h-32 rounded-xl object-cover bg-neutral-800" />
+                            )}
+                            <div className="flex-1">
+                                <div className="flex justify-between items-start">
+                                    <h2 className="text-2xl font-bold text-white mb-2">{foundProduct.nome}</h2>
+                                    <button onClick={() => setFoundProduct(null)} className="text-neutral-500 p-1 hover:text-white transition-colors">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    </button>
+                                </div>
+                                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                                    <span className="px-3 py-1 bg-blue-500/20 text-blue-400 text-sm rounded-full">
+                                        {foundProduct.categoria}
+                                    </span>
+                                </div>
+                                <p className="text-blue-400 font-bold text-2xl mb-2">{formatBRL(foundProduct.preco)}</p>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2 mb-3 flex-wrap">
-                            <span className="px-3 py-1 bg-blue-500/20 text-blue-400 text-sm rounded-full">
-                                {foundProduct.categoria}
-                            </span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Success Message */}
+            <AnimatePresence>
+                {showSuccessMessage && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto"
+                    >
+                        <div className="bg-green-600 text-white p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4">
+                            <div className="text-6xl mb-4">✓</div>
+                            <h3 className="text-2xl font-bold mb-2">Compra Registrada!</h3>
+                            <p className="text-lg">Por favor, dirija-se ao caixa para finalizar o pagamento.</p>
                         </div>
-                        <p className="text-blue-400 font-bold text-2xl mb-2">{formatBRL(foundProduct.preco)}</p>
-                    </div>
-                </div>
-            </motion.div>
-        )}
-    </AnimatePresence>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-    {/* Success Message */ }
-    <AnimatePresence>
-        {showSuccessMessage && (
-            <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto"
-            >
-                <div className="bg-green-600 text-white p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4">
-                    <div className="text-6xl mb-4">✓</div>
-                    <h3 className="text-2xl font-bold mb-2">Compra Registrada!</h3>
-                    <p className="text-lg">Por favor, dirija-se ao caixa para finalizar o pagamento.</p>
-                </div>
-            </motion.div>
-        )}
-    </AnimatePresence>
-
-    {/* Cart Overlay */ }
+            {/* Cart Overlay */}
             <AnimatePresence>
                 {isCartOpen && (
                     <motion.div
@@ -392,7 +473,7 @@ export default function CapturePage() {
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                        exit={{ opacity: 0, }}
                         className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto"
                         onClick={() => setShowSearchModal(false)}
                     >
@@ -465,6 +546,6 @@ export default function CapturePage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div >
+        </div>
     );
 }
