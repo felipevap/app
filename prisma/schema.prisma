@@ -42,7 +42,7 @@ model Product {
   tags          String[]
   status        String    @default("disponível") // disponível, vendido, reservado
   reservedBy    String?   // Session ID/Client ID
-  reservedByNameString?
+  reservedByName String?
   reservedByEmail String?
   reservedByPhone String?
   reservedAt    DateTime?
