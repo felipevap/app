@@ -652,9 +652,35 @@ export default function CapturePage() {
                     >
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-3xl font-black uppercase tracking-tight">🛒 Carrinho</h2>
-                            <button onClick={() => setIsCartOpen(false)} className="text-neutral-400 hover:text-white p-2 bg-neutral-800 rounded-xl transition-all active:scale-90">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={async () => {
+                                        if (confirm('Deseja realmente cancelar o processamento deste cliente? Isso limpará o carrinho e os dados do cliente.')) {
+                                            // Release all reservations
+                                            for (const item of cart) {
+                                                try {
+                                                    await fetch(`/api/products/${item.id}/reserve`, {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ clientId: sessionId, action: 'release' })
+                                                    });
+                                                } catch (e) { console.error("Error releasing on cancel", e); }
+                                            }
+                                            setCart([]);
+                                            setCustomerInfo({ nome: '', telefone: '', email: '' });
+                                            localStorage.removeItem('customerInfo');
+                                            setIsCartOpen(false);
+                                            showToast('Processamento cancelado.', 'info');
+                                        }
+                                    }}
+                                    className="text-red-500 hover:text-red-400 p-2 bg-neutral-800 rounded-xl transition-all active:scale-95 flex items-center gap-1 text-xs font-bold"
+                                >
+                                    CANCELAR
+                                </button>
+                                <button onClick={() => setIsCartOpen(false)} className="text-neutral-400 hover:text-white p-2 bg-neutral-800 rounded-xl transition-all active:scale-90">
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            </div>
                         </div>
 
                         {/* Tabs */}

@@ -973,7 +973,7 @@ export default function POSPage() {
                                             />
                                             <span className="text-xs text-yellow-700">%</span>
                                         </div>
-                                        <button onClick={() => setCurrentSale({ items: [], payments: [] })} className="text-xs text-red-500 bg-red-50 px-3 py-1 rounded-full hover:bg-red-100 transition-colors">
+                                        <button onClick={() => setCurrentSale({ items: [], payments: [], buyerName: "", buyerPhone: "", buyerEmail: "" })} className="text-xs text-red-500 bg-red-50 px-3 py-1 rounded-full hover:bg-red-100 transition-colors">
                                             Limpar
                                         </button>
                                     </div>
