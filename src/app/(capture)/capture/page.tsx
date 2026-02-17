@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import MyOrdersModal from './MyOrdersModal';
+import { loadModel, detectObjects, DetectionResult } from '@/utils/objectDetection';
 
 export default function CapturePage() {
     const webcamRef = useRef<Webcam>(null);
@@ -24,9 +25,11 @@ export default function CapturePage() {
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     const [showSearchModal, setShowSearchModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
+
     const [searchResults, setSearchResults] = useState<Product[]>([]);
     const [showMyOrders, setShowMyOrders] = useState(false);
+    const [modelLoaded, setModelLoaded] = useState(false);
+    const [detections, setDetections] = useState<DetectionResult[]>([]);
     const router = useRouter();
 
     useEffect(() => {
@@ -52,6 +55,35 @@ export default function CapturePage() {
             localStorage.setItem('customerInfo', JSON.stringify(customerInfo));
         }
     }, [customerInfo]);
+
+    // Load AI Model
+    useEffect(() => {
+        let isMounted = true;
+        loadModel().then((success) => {
+            if (isMounted) setModelLoaded(success);
+        });
+        return () => { isMounted = false; };
+    }, []);
+
+    // Run Object Detection Loop
+    useEffect(() => {
+        if (!modelLoaded || !webcamRef.current || !webcamRef.current.video) return;
+
+        let animationFrameId: number;
+
+        const detect = async () => {
+            if (webcamRef.current && webcamRef.current.video && webcamRef.current.video.readyState === 4) {
+                const results = await detectObjects(webcamRef.current.video);
+                // Filter out 'person' to avoid clutter if desired, or keep all
+                setDetections(results.filter(r => r.class !== 'person'));
+            }
+            animationFrameId = requestAnimationFrame(detect);
+        };
+
+        detect();
+
+        return () => cancelAnimationFrame(animationFrameId);
+    }, [modelLoaded, webcamRef]);
 
     const currentProducts = selectedGarageSaleId
         ? getProductsByGarageSale(selectedGarageSaleId)
@@ -195,6 +227,7 @@ export default function CapturePage() {
 
     const searchProducts = (query: string) => {
         setSearchQuery(query);
+        setShowSearchModal(true); // Open modal when searching
         if (query.length >= 3) {
             const filtered = currentProducts.filter((p: Product) =>
                 p.nome.toLowerCase().includes(query.toLowerCase()) ||
@@ -235,18 +268,39 @@ export default function CapturePage() {
                     transition={{ duration: 0.4, type: "spring" }}
                     className="absolute inset-0 w-full h-full bg-black"
                 >
-                    <Webcam
-                        ref={webcamRef}
-                        audio={false}
-                        screenshotFormat="image/jpeg"
-                        videoConstraints={{
-                            facingMode: "environment",
-                            width: { ideal: 1920 },
-                            height: { ideal: 1080 }
-                        }}
-                        className="w-full h-full object-cover"
-                        onUserMediaError={onUserMediaError}
-                    />
+                    {/* Scanner Frame - Improved Visuals */}
+                    <div className="flex-1 relative overflow-hidden">
+                        <Webcam
+                            ref={webcamRef}
+                            audio={false}
+                            screenshotFormat="image/jpeg"
+                            videoConstraints={{
+                                facingMode: 'environment',
+                                width: { ideal: 1920 },
+                                height: { ideal: 1080 }
+                            }}
+                            className="absolute inset-0 w-full h-full object-cover"
+                            onUserMediaError={onUserMediaError}
+                        />
+
+                        {/* Object Detection Overlays */}
+                        {modelLoaded && detections.map((det, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => searchProducts(det.class)}
+                                className="absolute bg-blue-600/80 text-white text-xs font-bold px-2 py-1 rounded-full backdrop-blur-sm border border-white/30 hover:bg-blue-500 transition-colors z-20"
+                                style={{
+                                    left: `${det.bbox[0]}px`,
+                                    top: `${det.bbox[1]}px`,
+                                    // Simple positioning based on bbox
+                                }}
+                            >
+                                {det.class} {Math.round(det.score * 100)}%
+                            </button>
+                        ))}
+
+                        <div className="absolute inset-0 pointer-events-none"></div>
+                    </div>
                 </motion.div>
             )}
 
