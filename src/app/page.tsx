@@ -15,9 +15,14 @@ export default async function Home() {
 
 
 
-      <h1 className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-6xl font-bold text-transparent">
-        Garage Sale Premium
-      </h1>
+      <NextImage
+        src="/logo-home.jpg" // Note: updated to use absolute path for next/image
+        alt="Garage Sale Premium"
+        width={600}
+        height={300}
+        priority
+        className="mx-auto rounded-xl shadow-2xl mb-8 object-contain"
+      />
       <p className="mt-4 text-xl text-gray-400">Sistema de Gerenciamento Premium de Garage Sales</p>
 
       <div className="mt-12 flex flex-wrap justify-center gap-6 w-full max-w-5xl">
