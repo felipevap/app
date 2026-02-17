@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
         const { customerName, customerPhone, customerEmail, total, garageSaleId, items } = body;
 
         const result = await prisma.$transaction(async (tx) => {
-            // 1. Verify availability and lock items
+            // 1. Verify availability first
             for (const item of items) {
                 const product = await tx.product.findUnique({
                     where: { id: item.productId }
@@ -62,11 +62,6 @@ export async function POST(req: NextRequest) {
                 if (product.status !== 'disponível') {
                     throw new Error(`Produto indisponível: ${product.nome}`);
                 }
-
-                await tx.product.update({
-                    where: { id: item.productId },
-                    data: { status: 'reservado' }
-                });
             }
 
             // 2. Create Pending Order
@@ -90,6 +85,21 @@ export async function POST(req: NextRequest) {
                     items: true,
                 },
             });
+
+            // 3. Update products to reserved status with customer details
+            for (const item of items) {
+                await tx.product.update({
+                    where: { id: item.productId },
+                    data: {
+                        status: 'reservado',
+                        reservedBy: pendingOrder.id,
+                        reservedByName: customerName,
+                        reservedByEmail: customerEmail,
+                        reservedByPhone: customerPhone,
+                        reservedAt: new Date()
+                    }
+                });
+            }
 
             return pendingOrder;
         });

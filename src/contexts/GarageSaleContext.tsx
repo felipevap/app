@@ -30,6 +30,10 @@ export interface Product {
     tags: string[];
     garageSaleId: string;
     status: 'disponível' | 'vendido' | 'reservado';
+    reservedBy?: string | null;
+    reservedByName?: string | null;
+    reservedByEmail?: string | null;
+    reservedByPhone?: string | null;
     deletedAt?: string | null;
 }
 

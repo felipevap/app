@@ -35,7 +35,7 @@ interface Sale {
 }
 
 export default function POSPage() {
-    const { garageSales, products, getProductsByGarageSale, createSale, refreshData } = useGarageSales();
+    const { garageSales, products, getProductsByGarageSale, createSale, refreshData, updateProduct } = useGarageSales();
 
     const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("");
     const [currentView, setCurrentView] = useState<'sales' | 'products' | 'report'>('sales');
@@ -1380,17 +1380,41 @@ export default function POSPage() {
                                                 <div className="flex h-full items-center justify-center text-gray-300 text-4xl">📷</div>
                                             )}
 
-                                            <div className={`absolute top-2 left-2 rounded-full px-2 py-1 text-xs font-bold shadow-sm ${product.status === 'vendido' ? 'bg-red-100 text-red-700' :
-                                                product.status === 'reservado' ? 'bg-yellow-100 text-yellow-700' :
-                                                    'bg-green-100 text-green-700'
-                                                }`}>
-                                                {product.status ? product.status.toUpperCase() : 'DISPONÍVEL'}
+                                            <div className="absolute top-2 left-2 shadow-sm z-10">
+                                                <select
+                                                    value={product.status}
+                                                    onChange={async (e) => {
+                                                        const newStatus = e.target.value as 'disponível' | 'vendido' | 'reservado';
+                                                        try {
+                                                            await updateProduct(product.id, { status: newStatus });
+                                                            showToast(`Status atualizado para ${newStatus.toUpperCase()}`, "success");
+                                                        } catch (error) {
+                                                            showToast("Erro ao atualizar status", "error");
+                                                        }
+                                                    }}
+                                                    className={`rounded-full px-2 py-1 text-xs font-bold outline-none border-none cursor-pointer appearance-none ${product.status === 'vendido' ? 'bg-red-100 text-red-700' :
+                                                        product.status === 'reservado' ? 'bg-yellow-100 text-yellow-700' :
+                                                            'bg-green-100 text-green-700'
+                                                        }`}
+                                                >
+                                                    <option value="disponível">DISPONÍVEL</option>
+                                                    <option value="reservado">RESERVADO</option>
+                                                    <option value="vendido">VENDIDO</option>
+                                                </select>
                                             </div>
-                                            <div className="absolute top-2 right-2 rounded-full bg-white/90 px-2 py-1 text-xs font-bold text-gray-700 shadow-sm">
+                                            <div className="absolute top-2 right-2 rounded-full bg-white/90 px-2 py-1 text-xs font-bold text-gray-700 shadow-sm z-10">
                                                 {formatCurrency(product.preco)}
                                             </div>
                                             {product.status === 'vendido' && (
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 font-bold text-white">VENDIDO</div>
+                                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 font-bold text-white pointer-events-none z-0">VENDIDO</div>
+                                            )}
+                                            {product.status === 'reservado' && (product.reservedByName || product.reservedByPhone || product.reservedByEmail) && (
+                                                <div className="absolute bottom-0 left-0 right-0 bg-yellow-50/95 p-2 text-xs border-t border-yellow-200 z-10">
+                                                    <div className="font-bold text-yellow-800">Reservado para:</div>
+                                                    {product.reservedByName && <div className="truncate text-yellow-900">{product.reservedByName}</div>}
+                                                    {product.reservedByPhone && <div className="truncate text-yellow-700">{product.reservedByPhone}</div>}
+                                                    {product.reservedByEmail && <div className="truncate text-yellow-700 text-[10px]">{product.reservedByEmail}</div>}
+                                                </div>
                                             )}
                                         </div>
                                         <div className="flex flex-grow flex-col p-3">
