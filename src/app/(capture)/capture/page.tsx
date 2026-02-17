@@ -269,7 +269,7 @@ export default function CapturePage() {
                     className="absolute inset-0 w-full h-full bg-black"
                 >
                     {/* Scanner Frame - Improved Visuals */}
-                    <div className="flex-1 relative overflow-hidden">
+                    <div className="absolute inset-0 overflow-hidden">
                         <Webcam
                             ref={webcamRef}
                             audio={false}
@@ -326,49 +326,63 @@ export default function CapturePage() {
 
             {/* UI Overlay */}
             <div className="absolute inset-0 z-10 flex flex-col justify-between p-6 pb-24 pointer-events-none">
-                <header className="flex justify-between items-start pointer-events-auto">
-                    <Link href="/" className="bg-black/40 backdrop-blur-md p-3 rounded-full text-white hover:bg-black/60 transition-colors">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
+                <header className="flex justify-between items-start pointer-events-auto w-full">
+                    <Link href="/" className="bg-black/40 backdrop-blur-md p-4 rounded-full text-white hover:bg-black/60 transition-colors shadow-lg">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
                     </Link>
-                    {garageSales.length > 0 && (
-                        <select
-                            value={selectedGarageSaleId}
-                            onChange={(e) => setSelectedGarageSaleId(e.target.value)}
-                            className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-white border border-white/20 focus:ring-2 focus:ring-blue-500 outline-none"
+
+                    <div className="flex gap-4">
+                        {garageSales.length > 0 && (
+                            <select
+                                value={selectedGarageSaleId}
+                                onChange={(e) => setSelectedGarageSaleId(e.target.value)}
+                                className="bg-black/40 backdrop-blur-md px-6 py-3 rounded-full text-white border border-white/20 focus:ring-2 focus:ring-blue-500 outline-none shadow-lg text-lg"
+                            >
+                                {garageSales.map(gs => (
+                                    <option key={gs.id} value={gs.id} className="bg-black">{gs.nome}</option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
+
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setIsCartOpen(!isCartOpen)}
+                            className="bg-black/40 backdrop-blur-md p-4 rounded-2xl text-white font-bold flex flex-col items-center justify-center gap-1 hover:bg-blue-600/80 transition-all shadow-lg min-w-[80px]"
                         >
-                            {garageSales.map(gs => (
-                                <option key={gs.id} value={gs.id} className="bg-black">{gs.nome}</option>
-                            ))}
-                        </select>
-                    )}
-                    <button onClick={() => setIsCartOpen(!isCartOpen)} className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-bold flex items-center gap-2 hover:bg-blue-600/80 transition-colors">
-                        <span>🛒 {cart.length}</span>
-                    </button>
-                    <button onClick={() => setShowMyOrders(true)} className="ml-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-bold flex items-center gap-2 hover:bg-green-600/80 transition-colors">
-                        <span>📦</span>
-                    </button>
+                            <span className="text-3xl">🛒</span>
+                            <span className="text-sm font-bold bg-blue-600 px-2 py-0.5 rounded-full">{cart.length}</span>
+                        </button>
+                        <button
+                            onClick={() => setShowMyOrders(true)}
+                            className="bg-black/40 backdrop-blur-md p-4 rounded-2xl text-white font-bold flex flex-col items-center justify-center gap-1 hover:bg-green-600/80 transition-all shadow-lg min-w-[80px]"
+                        >
+                            <span className="text-3xl">📦</span>
+                            <span className="text-xs font-medium">Pedidos</span>
+                        </button>
+                    </div>
                 </header>
 
                 {/* Scanner Frame - Improved Visuals */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-                    <div className="relative w-[90vw] h-[90vw] max-w-[500px] max-h-[500px]">
+                    <div className="relative w-[85vw] h-[85vw] max-w-[450px] max-h-[450px]">
                         {/* Corner Markers */}
-                        <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white/80 rounded-tl-xl drop-shadow-lg"></div>
-                        <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white/80 rounded-tr-xl drop-shadow-lg"></div>
-                        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white/80 rounded-bl-xl drop-shadow-lg"></div>
-                        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white/80 rounded-br-xl drop-shadow-lg"></div>
+                        <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-white rounded-tl-xl drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"></div>
+                        <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-white rounded-tr-xl drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"></div>
+                        <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-white rounded-bl-xl drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"></div>
+                        <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-white rounded-br-xl drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"></div>
 
                         {/* Scanning Animation */}
                         {isScanning && (
                             <>
                                 <motion.div
-                                    className="absolute inset-0 border-2 border-blue-500/50 rounded-lg"
+                                    className="absolute inset-0 border-2 border-blue-500/50 rounded-xl"
                                     initial={{ opacity: 0, scale: 1 }}
                                     animate={{ opacity: [0, 1, 0], scale: 1.05 }}
                                     transition={{ repeat: Infinity, duration: 1.5 }}
                                 />
                                 <motion.div
-                                    className="absolute w-full h-1 bg-blue-500/80 shadow-[0_0_15px_rgba(59,130,246,0.8)]"
+                                    className="absolute w-full h-1 bg-blue-500/80 shadow-[0_0_20px_rgba(59,130,246,1)]"
                                     initial={{ top: "0%" }}
                                     animate={{ top: "100%" }}
                                     transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
@@ -376,24 +390,24 @@ export default function CapturePage() {
                             </>
                         )}
                     </div>
-                    <p className="text-white/90 text-center mt-6 text-base font-medium drop-shadow-lg bg-black/20 backdrop-blur-sm py-1 px-3 rounded-full mx-auto w-fit">
-                        {isScanning ? "Analisando produto..." : "Toque no botão para capturar"}
+                    <p className="text-white text-center mt-8 text-lg font-medium drop-shadow-md bg-black/40 backdrop-blur-md py-2 px-6 rounded-full mx-auto w-fit border border-white/10">
+                        {isScanning ? "Analisando produto..." : "Aponte e capture"}
                     </p>
                 </div>
 
                 {/* Scan Button */}
-                <div className="flex justify-center pointer-events-auto">
+                <div className="flex justify-center pointer-events-auto pb-8">
                     <button
                         onClick={captureAndScan}
                         disabled={isScanning}
                         className="group relative"
                     >
-                        <div className="absolute inset-0 bg-white/20 rounded-full blur-xl group-hover:bg-blue-500/40 transition-colors"></div>
-                        <div className="relative bg-white text-black p-5 rounded-full shadow-2xl transform transition-transform active:scale-95 border-4 border-white/50 bg-clip-padding">
+                        <div className="absolute inset-0 bg-white/30 rounded-full blur-2xl group-hover:bg-blue-500/50 transition-colors duration-500"></div>
+                        <div className="relative bg-white text-black p-6 rounded-full shadow-[0_0_30px_rgba(255,255,255,0.3)] transform transition-all active:scale-95 border-[6px] border-white/40 bg-clip-padding group-hover:scale-105">
                             {isScanning ? (
-                                <svg className="w-8 h-8 animate-pulse text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /></svg>
+                                <svg className="w-10 h-10 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
                             ) : (
-                                <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+                                <div className="w-10 h-10 rounded-full border-4 border-black/80"></div>
                             )}
                         </div>
                     </button>
