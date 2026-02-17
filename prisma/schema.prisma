@@ -44,6 +44,7 @@ model Product {
 
   garageSaleId  String
   garageSale    GarageSale @relation(fields: [garageSaleId], references: [id])
+  saleItems     SaleItem[]
 }
 
 model Sale {
