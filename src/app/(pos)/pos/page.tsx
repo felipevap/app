@@ -10,6 +10,8 @@ interface Item {
     desc: string;
     qty: number;
     price: number;
+    originalPrice?: number;
+    discountPercent?: number;
 }
 
 interface Payment {
@@ -55,18 +57,10 @@ export default function POSPage() {
     const [emailError, setEmailError] = useState<string>("");
     const [showProductSuggestions, setShowProductSuggestions] = useState(false);
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
-    // const [discountPercent, setDiscountPercent] = useState<number>(0);
     const [globalDiscount, setGlobalDiscount] = useState<number>(0);
     const [pendingOrders, setPendingOrders] = useState<any[]>([]);
 
-    interface Item {
-        productId?: string;
-        desc: string;
-        qty: number;
-        price: number;
-        originalPrice?: number;
-        discountPercent?: number;
-    }
+
 
     const [productFilters, setProductFilters] = useState({
         search: "",
@@ -370,7 +364,6 @@ export default function POSPage() {
     const cancelEdit = () => {
         setEditingSale(null);
         setCurrentSale({ items: [], payments: [], buyerName: "", buyerPhone: "", buyerEmail: "" });
-        setDiscountPercent(0);
         setIsCheckoutMode(false);
     };
 
@@ -416,9 +409,7 @@ export default function POSPage() {
         setCurrentSale({ ...currentSale, payments: updatedPayments });
 
         // Calculate the NEW remaining amount to default the next payment input
-        const subtotal = currentSale.items?.reduce((acc, item) => acc + (item.price * item.qty), 0) || 0;
-        const discount = (subtotal * discountPercent) / 100;
-        const total = subtotal - discount;
+        const total = currentSale.items?.reduce((acc, item) => acc + (item.price * item.qty), 0) || 0;
         const currentPaid = updatedPayments.reduce((acc, p) => acc + p.amount, 0);
         const remaining = total - currentPaid;
 
@@ -488,7 +479,6 @@ export default function POSPage() {
             }
 
             setCurrentSale({ items: [], payments: [], buyerName: "", buyerPhone: "", buyerEmail: "" });
-            setDiscountPercent(0);
             setIsCheckoutMode(false);
             setSelectedProductId(null);
         } catch (error) {

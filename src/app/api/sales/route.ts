@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
         const { items, payments, totalValue, buyerName, buyerPhone, buyerEmail, garageSaleId } = body;
 
         const result = await prisma.$transaction(async (tx) => {
-            // Update product status for each item
+            // Update or Create product for each item
             for (const item of items) {
                 if (item.productId) {
                     await tx.product.update({
@@ -38,23 +38,28 @@ export async function POST(req: NextRequest) {
                         data: { status: 'vendido' }
                     }).catch(err => console.warn(`Failed to update product ${item.productId}`, err));
                 } else if (garageSaleId) {
-                    // Fallback: try to find matching available product
-                    const products = await tx.product.findMany({
-                        where: {
-                            garageSaleId,
-                            nome: item.desc,
-                            preco: item.price,
-                            status: 'disponível'
-                        },
-                        take: 1
-                    });
+                    // Item has no ID, so it's an ad-hoc item.
+                    // First try to find if it matches an existing global product (optional fallback)
+                    // But user requested to "add the product", suggesting we should CREATE it if it doesn't exist.
+                    // Let's create it as a "vendido" product so it's registered in the system.
 
-                    if (products.length > 0) {
-                        await tx.product.update({
-                            where: { id: products[0].id },
-                            data: { status: 'vendido' }
-                        });
-                    }
+                    // We use originalPrice if available (to store the "real" value), otherwise the sale price.
+                    // The client side sends 'price' as the final price. 
+                    // We need to check if we are receiving 'originalPrice' from the client.
+                    // The POST body destructuring in line 30 doesn't explicitly pick it up but 'items' has it.
+
+                    const productPrice = item.originalPrice || item.price;
+
+                    await tx.product.create({
+                        data: {
+                            nome: item.desc,
+                            descricao: "Produto adicionado no PDV",
+                            preco: parseFloat(productPrice),
+                            status: 'vendido',
+                            garageSaleId: garageSaleId,
+                            // Add other required fields if any. 
+                        }
+                    });
                 }
             }
 
