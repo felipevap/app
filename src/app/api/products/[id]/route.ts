@@ -23,10 +23,21 @@ export async function DELETE(req: NextRequest, props: { params: Promise<{ id: st
     try {
         const params = await props.params;
         const id = params.id;
+        const { searchParams } = new URL(req.url);
+        const permanent = searchParams.get('permanent') === 'true';
 
-        await prisma.product.delete({
-            where: { id }
-        });
+        if (permanent) {
+            // Hard delete: remove from database
+            await prisma.product.delete({
+                where: { id }
+            });
+        } else {
+            // Soft delete: update deletedAt instead of removing
+            await prisma.product.update({
+                where: { id },
+                data: { deletedAt: new Date() }
+            });
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {

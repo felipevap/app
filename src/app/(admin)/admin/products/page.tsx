@@ -9,17 +9,22 @@ import Toast from "@/components/Toast";
 import { Suspense } from "react";
 
 function ProductsContent() {
-    const { garageSales, products, getProductsByGarageSale, deleteProduct } = useGarageSales();
+    const { garageSales, products, getProductsByGarageSale, deleteProduct, restoreProduct, refreshData } = useGarageSales();
     const searchParams = useSearchParams();
     const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("");
     const [searchTerm, setSearchTerm] = useState("");
     const [filterCategoria, setFilterCategoria] = useState("");
     const [filterCondicao, setFilterCondicao] = useState("");
+    const [showDeleted, setShowDeleted] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
 
     const showToast = (message: string, type: 'success' | 'error' | 'info') => {
         setToast({ message, type, isVisible: true });
     };
+
+    useEffect(() => {
+        refreshData({ includeDeleted: showDeleted });
+    }, [showDeleted, refreshData]);
 
     useEffect(() => {
         const garageSaleParam = searchParams?.get("garageSale");
@@ -36,6 +41,25 @@ function ProductsContent() {
                 p.descricao.toLowerCase().includes(searchTerm.toLowerCase());
             const matchesCategoria = !filterCategoria || p.categoria === filterCategoria;
             const matchesCondicao = !filterCondicao || p.condicao === filterCondicao;
+            const isDeleted = !!p.deletedAt;
+
+            // If showing deleted, show everything that matches other filters
+            // If not showing deleted, only show non-deleted
+            // Actually, the API handles the fetching, but we might have mixed state or need to filter if the API returns mixed.
+            // Our API 'includeDeleted=true' returns BOTH deleted and non-deleted (if I implemented it that way). 
+            // My API implementation: `deletedAt: includeDeleted ? undefined : null`. 
+            // Use 'undefined' means no filter on deletedAt, so it returns ALL.
+            // Use 'null' means only where deletedAt is null.
+            // So if showDeleted is true, we have ALL. We might want to filter to ONLY deleted? 
+            // "crie um filtro para mostrar produtos deletados". usually implies toggling visibility or showing *only* deleted.
+            // Let's assume the user wants to see deleted items ALONGSIDE active ones or just toggle to see them.
+            // Let's rely on the API context. If showDeleted is true, we have all using refreshData.
+            // However, `getProductsByGarageSale` filters by garageSaleId from `products`.
+            // So we just need to ensure we don't accidentally hide them here if not intended.
+            // Since API determines what is in `products`, client-side filtering should correspond.
+
+            if (!showDeleted && isDeleted) return false;
+
             return matchesSearch && matchesCategoria && matchesCondicao;
         })
         : [];
@@ -47,6 +71,28 @@ function ProductsContent() {
                 showToast("Produto excluído com sucesso!", "success");
             } catch (error) {
                 showToast("Erro ao excluir produto. Tente novamente.", "error");
+            }
+        }
+    };
+
+    const handleRestore = async (id: string, nome: string) => {
+        if (confirm(`Tem certeza que deseja restaurar o produto "${nome}"?`)) {
+            try {
+                await restoreProduct(id);
+                showToast("Produto restaurado com sucesso!", "success");
+            } catch (error) {
+                showToast("Erro ao restaurar produto. Tente novamente.", "error");
+            }
+        }
+    };
+
+    const handlePermanentDelete = async (id: string, nome: string) => {
+        if (confirm(`ATENÇÃO: Tem certeza que deseja excluir PERMANENTEMENTE o produto "${nome}"? Esta ação não pode ser desfeita.`)) {
+            try {
+                await deleteProduct(id, true);
+                showToast("Produto excluído permanentemente!", "success");
+            } catch (error) {
+                showToast("Erro ao excluir produto permanentemente. Tente novamente.", "error");
             }
         }
     };
@@ -89,21 +135,36 @@ function ProductsContent() {
                 </div>
             ) : (
                 <>
-                    <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-4">
-                        <label className="block text-sm font-medium text-neutral-300 mb-2">
-                            Selecionar Garage Sale
-                        </label>
-                        <select
-                            value={selectedGarageSaleId}
-                            onChange={(e) => setSelectedGarageSaleId(e.target.value)}
-                            className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:outline-none"
-                        >
-                            {garageSales.map((gs) => (
-                                <option key={gs.id} value={gs.id}>
-                                    {gs.nome} ({new Date(gs.dataInicio).toLocaleDateString('pt-BR')} - {new Date(gs.dataFim).toLocaleDateString('pt-BR')})
-                                </option>
-                            ))}
-                        </select>
+                    <div className="space-y-4 rounded-xl border border-neutral-800 bg-neutral-950 p-4">
+                        <div>
+                            <label className="block text-sm font-medium text-neutral-300 mb-2">
+                                Selecionar Garage Sale
+                            </label>
+                            <select
+                                value={selectedGarageSaleId}
+                                onChange={(e) => setSelectedGarageSaleId(e.target.value)}
+                                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:outline-none"
+                            >
+                                {garageSales.map((gs) => (
+                                    <option key={gs.id} value={gs.id}>
+                                        {gs.nome} ({new Date(gs.dataInicio).toLocaleDateString('pt-BR')} - {new Date(gs.dataFim).toLocaleDateString('pt-BR')})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                            <input
+                                type="checkbox"
+                                id="showDeleted"
+                                checked={showDeleted}
+                                onChange={(e) => setShowDeleted(e.target.checked)}
+                                className="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-blue-600 focus:ring-blue-500"
+                            />
+                            <label htmlFor="showDeleted" className="text-sm font-medium text-neutral-300 select-none cursor-pointer">
+                                Exibir produtos deletados
+                            </label>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -153,7 +214,7 @@ function ProductsContent() {
                                     ? "Tente ajustar os filtros de busca"
                                     : "Comece adicionando produtos para esta Garage Sale"}
                             </p>
-                            {!searchTerm && !filterCategoria && !filterCondicao && (
+                            {!searchTerm && !filterCategoria && !filterCondicao && !showDeleted && (
                                 <Link
                                     href={`/admin/products/new?garageSale=${selectedGarageSaleId}`}
                                     className="inline-block rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-[1.02]"
@@ -167,18 +228,23 @@ function ProductsContent() {
                             {filteredProducts.map((product) => (
                                 <div
                                     key={product.id}
-                                    className="group rounded-xl border border-neutral-800 bg-neutral-950 overflow-hidden shadow-sm transition-all hover:border-neutral-700 hover:shadow-lg"
+                                    className={`group rounded-xl border bg-neutral-950 overflow-hidden shadow-sm transition-all hover:shadow-lg ${product.deletedAt ? 'border-red-900 opacity-75' : 'border-neutral-800 hover:border-neutral-700'}`}
                                 >
                                     <div className="relative h-48 bg-neutral-900">
                                         {product.imagens.length > 0 ? (
                                             <img
                                                 src={product.imagens[0]}
                                                 alt={product.nome}
-                                                className="h-full w-full object-cover"
+                                                className={`h-full w-full object-cover ${product.deletedAt ? 'grayscale' : ''}`}
                                             />
                                         ) : (
                                             <div className="flex h-full items-center justify-center text-6xl">
                                                 📦
+                                            </div>
+                                        )}
+                                        {product.deletedAt && (
+                                            <div className="absolute top-2 left-2 rounded-full bg-red-600 px-2 py-1 text-xs font-bold text-white">
+                                                DELETADO
                                             </div>
                                         )}
                                         {product.imagens.length > 1 && (
@@ -215,18 +281,38 @@ function ProductsContent() {
                                             </div>
                                         )}
                                         <div className="mt-4 flex gap-2">
-                                            <Link
-                                                href={`/admin/products/${product.id}/edit`}
-                                                className="flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-neutral-700"
-                                            >
-                                                ✏️
-                                            </Link>
-                                            <button
-                                                onClick={() => handleDelete(product.id, product.nome)}
-                                                className="rounded-lg border border-red-700 bg-red-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500"
-                                            >
-                                                🗑️
-                                            </button>
+                                            {product.deletedAt ? (
+                                                <div className="flex w-full gap-2">
+                                                    <button
+                                                        onClick={() => handleRestore(product.id, product.nome)}
+                                                        className="flex-1 rounded-lg border border-green-700 bg-green-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-green-500"
+                                                    >
+                                                        ♻️ Restaurar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handlePermanentDelete(product.id, product.nome)}
+                                                        className="rounded-lg border border-red-900 bg-red-800 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+                                                        title="Excluir Permanentemente"
+                                                    >
+                                                        💥
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <Link
+                                                        href={`/admin/products/${product.id}/edit`}
+                                                        className="flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-neutral-700"
+                                                    >
+                                                        ✏️
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => handleDelete(product.id, product.nome)}
+                                                        className="rounded-lg border border-red-700 bg-red-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500"
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

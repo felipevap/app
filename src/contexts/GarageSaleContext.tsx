@@ -27,6 +27,7 @@ export interface Product {
     tags: string[];
     garageSaleId: string;
     status: 'disponível' | 'vendido';
+    deletedAt?: string | null;
 }
 
 interface GarageSaleContextType {
@@ -39,7 +40,8 @@ interface GarageSaleContextType {
     getGarageSale: (id: string) => GarageSale | undefined;
     addProduct: (product: Omit<Product, 'id' | 'status'>) => Promise<Product>;
     updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
-    deleteProduct: (id: string) => Promise<void>;
+    deleteProduct: (id: string, permanent?: boolean) => Promise<void>;
+    restoreProduct: (id: string) => Promise<void>;
     getProduct: (id: string) => Product | undefined;
     getProductsByGarageSale: (garageSaleId: string) => Product[];
     createSale: (sale: any) => Promise<any>;
@@ -59,7 +61,7 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
             const query = options?.includeDeleted ? '?includeDeleted=true' : '';
             const [gsRes, prodRes] = await Promise.all([
                 fetch(`/api/garage-sales${query}`),
-                fetch('/api/products')
+                fetch(`/api/products${query}`)
             ]);
 
             if (gsRes.ok && prodRes.ok) {
@@ -113,9 +115,6 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
 
         if (!res.ok) throw new Error('Failed to delete garage sale');
 
-        // Update local state: remove if we are not showing deleted, or mark as deleted if we are?
-        // Simpler to just remove from list for now, or trigger refresh. 
-        // Let's remove from list to be responsive.
         setGarageSales(prev => prev.filter(gs => gs.id !== id));
     }, []);
 
@@ -150,14 +149,34 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
         setProducts(prev => prev.map(p => p.id === id ? updatedProduct : p));
     }, []);
 
-    const deleteProduct = useCallback(async (id: string) => {
-        const res = await fetch(`/api/products/${id}`, {
+    const deleteProduct = useCallback(async (id: string, permanent: boolean = false) => {
+        const query = permanent ? '?permanent=true' : '';
+        const res = await fetch(`/api/products/${id}${query}`, {
             method: 'DELETE'
         });
 
         if (!res.ok) throw new Error('Failed to delete product');
 
-        setProducts(prev => prev.filter(p => p.id !== id));
+        if (permanent) {
+            // Hard delete: remove from state completely
+            setProducts(prev => prev.filter(p => p.id !== id));
+        } else {
+            // Soft delete: update locally to reflect deleted status
+            setProducts(prev => prev.map(p => p.id === id ? { ...p, deletedAt: new Date().toISOString() } : p));
+        }
+    }, []);
+
+    const restoreProduct = useCallback(async (id: string) => {
+        const res = await fetch(`/api/products/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deletedAt: null })
+        });
+
+        if (!res.ok) throw new Error('Failed to restore product');
+
+        const updatedProduct = await res.json();
+        setProducts(prev => prev.map(p => p.id === id ? updatedProduct : p));
     }, []);
 
     const getProduct = useCallback((id: string) => {
@@ -193,6 +212,7 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
         addProduct,
         updateProduct,
         deleteProduct,
+        restoreProduct,
         getProduct,
         getProductsByGarageSale,
         createSale,
@@ -208,6 +228,7 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
         addProduct,
         updateProduct,
         deleteProduct,
+        restoreProduct,
         getProduct,
         getProductsByGarageSale,
         createSale,

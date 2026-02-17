@@ -5,9 +5,18 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const garageSaleId = searchParams.get('garageSaleId');
+        const includeDeleted = searchParams.get('includeDeleted') === 'true';
+
+        const whereClause: any = {
+            deletedAt: includeDeleted ? undefined : null
+        };
+
+        if (garageSaleId) {
+            whereClause.garageSaleId = garageSaleId;
+        }
 
         const products = await prisma.product.findMany({
-            where: garageSaleId ? { garageSaleId } : undefined,
+            where: whereClause,
             orderBy: { createdAt: 'desc' }
         });
         return NextResponse.json(products);
