@@ -126,17 +126,23 @@ export async function PUT(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
+        const body = await req.json().catch(() => ({}));
+        const status = body.status || searchParams.get('status') || 'paid';
 
         if (!id) {
             return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
         }
 
+        const data = { status };
+        if (status === 'paid') {
+            data.isPaid = true;
+        } else if (status === 'pending' || status === 'processing') {
+            data.isPaid = false;
+        }
+
         const updatedOrder = await prisma.pendingOrder.update({
             where: { id },
-            data: {
-                isPaid: true,
-                status: 'paid'
-            },
+            data,
             include: {
                 items: true,
             },

@@ -65,6 +65,7 @@ export default function POSPage() {
     const [isHistoryOpen, setIsHistoryOpen] = useState(true);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; action?: { label: string; onClick: () => void } } | null>(null);
     const [clientId, setClientId] = useState<string>("");
+    const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
 
     useEffect(() => {
         let storedId = localStorage.getItem('pos_client_id');
@@ -217,6 +218,7 @@ export default function POSPage() {
     };
 
     const loadPendingOrder = async (order: any) => {
+        setProcessingOrderId(order.id);
         setCurrentSale({
             items: order.items.map((item: any) => ({
                 productId: item.productId,
@@ -231,17 +233,31 @@ export default function POSPage() {
             buyerPhone: order.customerPhone,
             buyerEmail: order.customerEmail,
         });
-        setGlobalDiscount(0); // Reset global discount when loading new order
+        setGlobalDiscount(0);
         setIsCheckoutMode(true);
 
         try {
             await fetch(`/api/pending-orders?id=${order.id}`, {
                 method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'processing' })
             });
-
-            setPendingOrders(pendingOrders.filter((o: any) => o.id !== order.id));
         } catch (error) {
-            console.error('Erro ao marcar pedido como pago:', error);
+            console.error('Erro ao marcar pedido como processando:', error);
+        }
+    };
+
+    const handleDeletePendingOrder = async (id: string) => {
+        if (!confirm('Tem certeza que deseja excluir este pedido?')) return;
+        try {
+            const res = await fetch(`/api/pending-orders?id=${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                setPendingOrders(pendingOrders.filter(o => o.id !== id));
+                showToast("Pedido excluído!", "success");
+            }
+        } catch (error) {
+            console.error(error);
+            showToast("Erro ao excluir pedido.", "error");
         }
     };
 
@@ -445,6 +461,15 @@ export default function POSPage() {
             }).catch(e => console.error("Failed to release item", e))
         ));
 
+        if (processingOrderId) {
+            await fetch(`/api/pending-orders?id=${processingOrderId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'pending' })
+            });
+            setProcessingOrderId(null);
+        }
+
         setEditingSale(null);
         setCurrentSale({ items: [], payments: [], buyerName: "", buyerPhone: "", buyerEmail: "" });
         setIsCheckoutMode(false);
@@ -587,6 +612,14 @@ export default function POSPage() {
             } else {
                 // Create new sale
                 const newSale = await createSale(saleData);
+                if (processingOrderId) {
+                    await fetch(`/api/pending-orders?id=${processingOrderId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'paid' })
+                    });
+                    setProcessingOrderId(null);
+                }
 
                 // Merge local item details (originalPrice, discountPercent) into the receipt data
                 // because the API response (from DB) doesn't have them.
@@ -941,12 +974,21 @@ export default function POSPage() {
                                                         <div className="text-xs text-gray-500">{order.items.length} {order.items.length === 1 ? 'item' : 'itens'}</div>
                                                     </div>
                                                 </div>
-                                                <button
-                                                    onClick={() => loadPendingOrder(order)}
-                                                    className="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition-colors font-medium text-sm"
-                                                >
-                                                    Processar Pagamento
-                                                </button>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => loadPendingOrder(order)}
+                                                        className="flex-1 bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition-colors font-medium text-sm uppercase tracking-tighter"
+                                                    >
+                                                        Processar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeletePendingOrder(order.id)}
+                                                        className="bg-red-50 text-red-500 p-2 rounded-lg hover:bg-red-100 transition-colors border border-red-200"
+                                                        title="Excluir Pedido"
+                                                    >
+                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -984,7 +1026,17 @@ export default function POSPage() {
                                             />
                                             <span className="text-xs text-yellow-700">%</span>
                                         </div>
-                                        <button onClick={() => setCurrentSale({ items: [], payments: [], buyerName: "", buyerPhone: "", buyerEmail: "" })} className="text-xs text-red-500 bg-red-50 px-3 py-1 rounded-full hover:bg-red-100 transition-colors">
+                                        <button onClick={async () => {
+                                            if (processingOrderId) {
+                                                await fetch(`/api/pending-orders?id=${processingOrderId}`, {
+                                                    method: 'PUT',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ status: 'pending' })
+                                                });
+                                                setProcessingOrderId(null);
+                                            }
+                                            setCurrentSale({ items: [], payments: [], buyerName: "", buyerPhone: "", buyerEmail: "" });
+                                        }} className="text-xs text-red-500 bg-red-50 px-3 py-1 rounded-full hover:bg-red-100 transition-colors">
                                             Limpar
                                         </button>
                                     </div>
