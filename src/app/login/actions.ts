@@ -8,7 +8,9 @@ export async function login(formData: FormData) {
     const password = formData.get('password') as string;
 
     const isValidUser = (loginIdentifier === "leader.fabio@gmail.com" && password === "eamsjc73") ||
-        (loginIdentifier === "fabio" && password === "eamsjc73");
+        (loginIdentifier === "fabio" && password === "eamsjc73") ||
+        (loginIdentifier === "Fabio" && password === "240673") ||
+        (loginIdentifier === "FabioCosta" && password === "250673");
 
     if (isValidUser) {
         // Set cookie valid for 1 day
