@@ -235,13 +235,13 @@ function ProductsContent() {
                     )}
                 </>
             )}
-            )}
             {toast.isVisible && (
                 <Toast
                     message={toast.message}
                     type={toast.type}
                     onClose={() => setToast({ ...toast, isVisible: false })}
                 />
+            )}
         </div>
     );
 }
