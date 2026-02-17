@@ -15,10 +15,10 @@ export default async function Home() {
 
       <div className="mb-8 relative w-full max-w-2xl aspect-[16/9] rounded-2xl overflow-hidden shadow-2xl border border-white/10">
         <NextImage
-          src="/logo-home.jpg"
+          src="/logo-home.png"
           alt="Garage Sale Premium Logo"
           fill
-          className="object-cover"
+          className="object-cover transition-transform duration-700 hover:scale-105"
           priority
         />
       </div>
