@@ -5,7 +5,7 @@ import Webcam from 'react-webcam';
 // import { useProducts, type Product } from '@/contexts/ProductContext';
 import type { Product } from '@/contexts/GarageSaleContext';
 import { useGarageSales } from '@/contexts/GarageSaleContext';
-import { findMatchingProduct } from '@/utils/imageMatching';
+import { findMatchingProducts } from '@/utils/imageMatching';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
@@ -17,6 +17,7 @@ export default function CapturePage() {
     const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("");
     const [isScanning, setIsScanning] = useState(false);
     const [foundProduct, setFoundProduct] = useState<Product | null>(null);
+    const [alternativeProducts, setAlternativeProducts] = useState<Product[]>([]); // New state
     const [showNotFound, setShowNotFound] = useState(false);
     const [cart, setCart] = useState<any[]>([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
@@ -125,18 +126,27 @@ export default function CapturePage() {
 
         setIsScanning(true);
         setFoundProduct(null);
+        setAlternativeProducts([]);
         setShowNotFound(false);
 
         await new Promise(r => setTimeout(r, 600));
 
-        const matchId = await findMatchingProduct(imageSrc, currentProducts);
+        const matches = await findMatchingProducts(imageSrc, currentProducts);
 
-        if (matchId) {
-            const product = currentProducts.find((p: any) => p.id === matchId);
-            if (product) setFoundProduct(product);
+        if (matches.length > 0) {
+            const bestMatch = currentProducts.find((p: any) => p.id === matches[0].id);
+            if (bestMatch) {
+                setFoundProduct(bestMatch);
+
+                // Get other matches
+                const others = matches.slice(1)
+                    .map(m => currentProducts.find((p: any) => p.id === m.id))
+                    .filter((p): p is Product => !!p);
+                setAlternativeProducts(others);
+            }
         } else {
             setShowNotFound(true);
-            setTimeout(() => setShowNotFound(false), 3000);
+            setTimeout(() => setShowNotFound(false), 5000); // Increased timeout
         }
 
         setIsScanning(false);
@@ -483,6 +493,42 @@ export default function CapturePage() {
                                 </div>
                                 <p className="text-blue-400 font-bold text-2xl mb-2">{formatBRL(foundProduct.preco)}</p>
                             </div>
+                        </div>
+
+                        {/* Alternative Products / Suggestions */}
+                        {alternativeProducts.length > 0 && (
+                            <div className="mt-8">
+                                <h3 className="text-white font-bold mb-3 text-sm uppercase tracking-wider text-neutral-400">Outras opções similares</h3>
+                                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                                    {alternativeProducts.map((prod) => (
+                                        <button
+                                            key={prod.id}
+                                            onClick={() => setFoundProduct(prod)}
+                                            className="min-w-[140px] bg-neutral-800 rounded-xl p-3 flex flex-col items-start hover:bg-neutral-700 transition-colors"
+                                        >
+                                            <img
+                                                src={prod.imagens[0] || ''}
+                                                className="w-full h-24 object-cover rounded-lg mb-2 bg-neutral-700"
+                                            />
+                                            <span className="text-xs text-white font-bold line-clamp-2 text-left mb-1 h-8">{prod.nome}</span>
+                                            <span className="text-blue-400 text-sm font-bold">{formatBRL(prod.preco)}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="mt-6 pt-6 border-t border-neutral-800">
+                            <button
+                                onClick={() => {
+                                    setFoundProduct(null);
+                                    setShowSearchModal(true);
+                                }}
+                                className="w-full py-3 text-neutral-400 font-medium hover:text-white transition-colors flex items-center justify-center gap-2"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                Não é esse? Pesquisar por nome
+                            </button>
                         </div>
                     </motion.div>
                 )}
