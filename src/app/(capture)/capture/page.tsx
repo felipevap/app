@@ -418,21 +418,19 @@ export default function CapturePage() {
             </AnimatePresence>
 
             {/* UI Overlay */}
-            <div className="absolute inset-0 z-10 flex flex-col justify-between p-6 pb-24 pointer-events-none">
-                <header className="flex justify-between items-start pointer-events-auto w-full">
-                    <Link href="/" className="bg-black/40 backdrop-blur-md p-4 rounded-full text-white hover:bg-black/60 transition-colors shadow-lg">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
+            <div className="absolute inset-x-0 top-0 z-10 flex flex-col p-4 pointer-events-none">
+                <header className="flex flex-wrap items-center justify-between pointer-events-auto w-full gap-3">
+                    <Link href="/" className="bg-black/50 backdrop-blur-lg p-4 rounded-2xl text-white hover:bg-black/70 transition-all shadow-xl active:scale-95 border border-white/10">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
                     </Link>
 
-                    <div className="flex gap-4">
+                    <div className="flex-1 min-w-[150px]">
                         {selectedGarageSaleId && (
-                            <div className="bg-black/40 backdrop-blur-md px-6 py-3 rounded-full text-white border border-white/20 shadow-lg text-lg font-bold">
+                            <div className="bg-black/50 backdrop-blur-lg px-5 py-3 rounded-2xl text-white border border-white/20 shadow-xl text-lg font-black text-center truncate">
                                 {garageSales.find(gs => gs.id === selectedGarageSaleId)?.nome}
                             </div>
                         )}
                     </div>
-
-
 
                     <div className="flex gap-3">
                         {pendingCount > 0 && (
@@ -441,34 +439,27 @@ export default function CapturePage() {
                                     setCartTab('pending');
                                     setIsCartOpen(true);
                                 }}
-                                className="bg-yellow-500/90 backdrop-blur-md p-4 rounded-2xl text-white font-bold flex flex-col items-center justify-center gap-1 hover:bg-yellow-600 transition-all shadow-lg min-w-[80px] animate-pulse"
+                                className="bg-yellow-500 backdrop-blur-md p-4 rounded-2xl text-white font-bold flex items-center justify-center gap-2 hover:bg-yellow-600 transition-all shadow-xl active:scale-95 animate-pulse border border-yellow-400/50"
                             >
                                 <span className="text-2xl">⏳</span>
-                                <span className="text-xs font-bold bg-white text-yellow-600 px-2 py-0.5 rounded-full">{pendingCount}</span>
+                                <span className="bg-white text-yellow-600 px-2.5 py-1 rounded-full text-sm font-black">{pendingCount}</span>
                             </button>
                         )}
-                        <button
-                            onClick={() => setIsCartOpen(!isCartOpen)}
-                            className="bg-black/40 backdrop-blur-md p-4 rounded-2xl text-white font-bold flex flex-col items-center justify-center gap-1 hover:bg-blue-600/80 transition-all shadow-lg min-w-[80px]"
-                        >
-                            <span className="text-3xl">🛒</span>
-                            <span className="text-sm font-bold bg-blue-600 px-2 py-0.5 rounded-full">{cart.length}</span>
-                        </button>
-
                     </div>
                 </header>
+            </div>
 
                 {/* Scanner Frame - Improved Visuals */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex flex-col items-center gap-4">
-                    <p className="text-white text-center text-lg font-medium drop-shadow-md bg-black/40 backdrop-blur-md py-2 px-6 rounded-full border border-white/10 mb-4 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                        {isScanning ? "Analisando..." : "Aponte para o produto e capture"}
+                <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-4">
+                    <p className="text-white text-center text-lg md:text-xl font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] bg-black/60 backdrop-blur-md py-3 px-8 rounded-2xl border border-white/20 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                        {isScanning ? "Analisando..." : "Aponte e capture"}
                     </p>
-                    <div className="relative w-[95vw] h-[95vw] max-w-[600px] max-h-[600px]">
+                    <div className="relative w-full aspect-square max-w-[500px] max-h-[500px]">
                         {/* Corner Markers */}
-                        <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-white rounded-tl-xl drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"></div>
-                        <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-white rounded-tr-xl drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"></div>
-                        <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-white rounded-bl-xl drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"></div>
-                        <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-white rounded-br-xl drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"></div>
+                        <div className="absolute top-0 left-0 w-12 h-12 border-t-[6px] border-l-[6px] border-white rounded-tl-2xl drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"></div>
+                        <div className="absolute top-0 right-0 w-12 h-12 border-t-[6px] border-r-[6px] border-white rounded-tr-2xl drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"></div>
+                        <div className="absolute bottom-0 left-0 w-12 h-12 border-b-[6px] border-l-[6px] border-white rounded-bl-2xl drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"></div>
+                        <div className="absolute bottom-0 right-0 w-12 h-12 border-b-[6px] border-r-[6px] border-white rounded-br-2xl drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"></div>
 
                         {/* Scanning Animation */}
                         {isScanning && (
@@ -490,22 +481,48 @@ export default function CapturePage() {
                     </div>
                 </div>
 
-                {/* Scan Button */}
-                <div className="flex justify-center pointer-events-auto pb-8">
-                    <button
-                        onClick={captureAndScan}
-                        disabled={isScanning}
-                        className="group relative"
-                    >
-                        <div className="absolute inset-0 bg-white/30 rounded-full blur-xl group-hover:bg-blue-500/50 transition-colors duration-500"></div>
-                        <div className="relative bg-white text-black p-6 rounded-full shadow-[0_0_30px_rgba(255,255,255,0.3)] transform transition-all active:scale-95 border-[6px] border-white/40 bg-clip-padding group-hover:scale-105 group-hover:shadow-[0_0_40px_rgba(59,130,246,0.6)]">
-                            {isScanning ? (
-                                <svg className="w-10 h-10 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
-                            ) : (
-                                <div className="w-10 h-10 rounded-full border-4 border-black/80"></div>
-                            )}
-                        </div>
-                    </button>
+                {/* Scan Button & Bottom Bar */}
+                <div className="absolute bottom-0 inset-x-0 z-20 pointer-events-none">
+                    <div className="flex justify-center mb-6">
+                        <button
+                            onClick={captureAndScan}
+                            disabled={isScanning}
+                            className="group relative pointer-events-auto"
+                        >
+                            <div className="absolute inset-0 bg-blue-500/30 rounded-full blur-2xl group-hover:bg-blue-500/50 transition-colors duration-500"></div>
+                            <div className="relative bg-white text-black p-8 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.4)] transform transition-all active:scale-90 border-[8px] border-white/30 bg-clip-padding group-hover:scale-110 group-hover:shadow-[0_0_50px_rgba(59,130,246,0.7)]">
+                                {isScanning ? (
+                                    <svg className="w-12 h-12 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
+                                ) : (
+                                    <div className="w-12 h-12 rounded-full border-[6px] border-neutral-900/80"></div>
+                                )}
+                            </div>
+                        </button>
+                    </div>
+
+                    <div className="bg-black/60 backdrop-blur-xl border-t border-white/10 p-4 pb-8 pointer-events-auto flex items-center gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+                        <button
+                            onClick={() => setIsCartOpen(true)}
+                            className="flex-1 bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all py-5 px-6 rounded-2xl text-white flex items-center justify-center gap-4 shadow-xl border border-blue-400/30"
+                        >
+                            <div className="relative">
+                                <span className="text-3xl">🛒</span>
+                                {cart.length > 0 && (
+                                    <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-black w-7 h-7 flex items-center justify-center rounded-full border-2 border-white animate-bounce shadow-lg">
+                                        {cart.length}
+                                    </span>
+                                )}
+                            </div>
+                            <span className="text-xl font-black uppercase tracking-tight">Ver Carrinho</span>
+                        </button>
+
+                        <button
+                            onClick={() => setShowSearchModal(true)}
+                            className="bg-neutral-800 p-5 rounded-2xl text-white hover:bg-neutral-700 active:scale-95 transition-all border border-white/10"
+                        >
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -531,190 +548,199 @@ export default function CapturePage() {
                 )}
             </AnimatePresence>
 
-            {/* Found Product Modal */}
-            <AnimatePresence>
-                {foundProduct && (
-                    <motion.div
-                        initial={{ y: "100%" }}
-                        animate={{ y: 0 }}
-                        exit={{ y: "100%" }}
-                        transition={{ type: "spring", damping: 20 }}
-                        className="absolute bottom-0 left-0 right-0 z-30 bg-neutral-900 rounded-t-3xl p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-neutral-700 pointer-events-auto max-h-[85vh] overflow-y-auto"
-                    >
-                        <div className="w-12 h-1.5 bg-neutral-700 rounded-full mx-auto mb-6"></div>
+            {/* Found Product Modal */ }
+    <AnimatePresence>
+        {foundProduct && (
+            <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 20 }}
+                className="absolute bottom-0 left-0 right-0 z-30 bg-neutral-900 rounded-t-3xl p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-neutral-700 pointer-events-auto max-h-[85vh] overflow-y-auto"
+            >
+                <div className="w-16 h-2 bg-neutral-700 rounded-full mx-auto mb-8"></div>
 
-                        <button onClick={addToCart} className="w-full bg-green-600 py-5 rounded-xl font-bold text-white hover:bg-green-500 transition-colors text-xl mb-6 shadow-lg">
-                            ✓ Adicionar ao Carrinho
-                        </button>
+                <button onClick={addToCart} className="w-full bg-green-600 py-6 rounded-2xl font-black text-white hover:bg-green-500 active:scale-95 transition-all text-2xl mb-8 shadow-xl border border-green-400/30">
+                    ✓ ADICIONAR AO CARRINHO
+                </button>
 
-                        <div className="flex gap-4">
-                            {foundProduct.imagens[0] && (
-                                <img src={foundProduct.imagens[0]} alt={foundProduct.nome} className="w-32 h-32 rounded-xl object-cover bg-neutral-800" />
-                            )}
-                            <div className="flex-1">
-                                <div className="flex justify-between items-start">
-                                    <h2 className="text-2xl font-bold text-white mb-2">{foundProduct.nome}</h2>
-                                    <button onClick={() => setFoundProduct(null)} className="text-neutral-500 p-1 hover:text-white transition-colors">
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                    </button>
-                                </div>
-                                <div className="flex items-center gap-2 mb-3 flex-wrap">
-                                    <span className="px-3 py-1 bg-blue-500/20 text-blue-400 text-sm rounded-full">
-                                        {foundProduct.categoria}
-                                    </span>
-                                </div>
-                                <p className="text-blue-400 font-bold text-2xl mb-2">{formatBRL(foundProduct.preco)}</p>
-                            </div>
-                        </div>
-
-                        {/* Alternative Products / Suggestions */}
-                        {alternativeProducts.length > 0 && (
-                            <div className="mt-8">
-                                <h3 className="text-white font-bold mb-3 text-sm uppercase tracking-wider text-neutral-400">Outras opções similares</h3>
-                                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                                    {alternativeProducts.map((prod) => (
-                                        <button
-                                            key={prod.id}
-                                            onClick={() => setFoundProduct(prod)}
-                                            className="min-w-[140px] bg-neutral-800 rounded-xl p-3 flex flex-col items-start hover:bg-neutral-700 transition-colors"
-                                        >
-                                            <img
-                                                src={prod.imagens[0] || ''}
-                                                className="w-full h-24 object-cover rounded-lg mb-2 bg-neutral-700"
-                                            />
-                                            <span className="text-xs text-white font-bold line-clamp-2 text-left mb-1 h-8">{prod.nome}</span>
-                                            <span className="text-blue-400 text-sm font-bold">{formatBRL(prod.preco)}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="mt-6 pt-6 border-t border-neutral-800">
-                            <button
-                                onClick={() => {
-                                    setFoundProduct(null);
-                                    setShowSearchModal(true);
-                                }}
-                                className="w-full py-3 text-neutral-400 font-medium hover:text-white transition-colors flex items-center justify-center gap-2"
-                            >
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                                Não é esse? Pesquisar por nome
+                <div className="flex gap-6 flex-col sm:flex-row">
+                    {foundProduct.imagens[0] && (
+                        <img src={foundProduct.imagens[0]} alt={foundProduct.nome} className="w-full sm:w-44 h-44 rounded-2xl object-cover bg-neutral-800 border border-white/10 shadow-lg" />
+                    )}
+                    <div className="flex-1">
+                        <div className="flex justify-between items-start gap-4">
+                            <h2 className="text-3xl font-black text-white leading-tight">{foundProduct.nome}</h2>
+                            <button onClick={() => setFoundProduct(null)} className="text-neutral-500 p-2 hover:text-white transition-colors bg-neutral-800 rounded-xl">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </button>
                         </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Success Message */}
-            <AnimatePresence>
-                {showSuccessMessage && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto"
-                    >
-                        <div className="bg-green-600 text-white p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4">
-                            <div className="text-6xl mb-4">✓</div>
-                            <h3 className="text-2xl font-bold mb-2">Compra Registrada!</h3>
-                            <p className="text-lg">Por favor, dirija-se ao caixa para finalizar o pagamento.</p>
+                        <div className="mt-4 flex items-center gap-3 flex-wrap">
+                            <span className="px-4 py-1.5 bg-blue-500 text-white text-sm font-black rounded-full uppercase tracking-wider">
+                                {foundProduct.categoria}
+                            </span>
                         </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        <p className="mt-4 text-blue-400 font-black text-4xl">{formatBRL(foundProduct.preco)}</p>
+                    </div>
+                </div>
 
-            {/* Cart Overlay */}
+                {/* Alternative Products / Suggestions */}
+                {alternativeProducts.length > 0 && (
+                    <div className="mt-8">
+                        <h3 className="text-white font-bold mb-3 text-sm uppercase tracking-wider text-neutral-400">Outras opções similares</h3>
+                        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                            {alternativeProducts.map((prod) => (
+                                <button
+                                    key={prod.id}
+                                    onClick={() => setFoundProduct(prod)}
+                                    className="min-w-[140px] bg-neutral-800 rounded-xl p-3 flex flex-col items-start hover:bg-neutral-700 transition-colors"
+                                >
+                                    <img
+                                        src={prod.imagens[0] || ''}
+                                        className="w-full h-24 object-cover rounded-lg mb-2 bg-neutral-700"
+                                    />
+                                    <span className="text-xs text-white font-bold line-clamp-2 text-left mb-1 h-8">{prod.nome}</span>
+                                    <span className="text-blue-400 text-sm font-bold">{formatBRL(prod.preco)}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <div className="mt-6 pt-6 border-t border-neutral-800">
+                    <button
+                        onClick={() => {
+                            setFoundProduct(null);
+                            setShowSearchModal(true);
+                        }}
+                        className="w-full py-3 text-neutral-400 font-medium hover:text-white transition-colors flex items-center justify-center gap-2"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        Não é esse? Pesquisar por nome
+                    </button>
+                </div>
+            </motion.div>
+        )}
+    </AnimatePresence>
+
+    {/* Success Message */ }
+    <AnimatePresence>
+        {showSuccessMessage && (
+            <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto"
+            >
+                <div className="bg-green-600 text-white p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4">
+                    <div className="text-6xl mb-4">✓</div>
+                    <h3 className="text-2xl font-bold mb-2">Compra Registrada!</h3>
+                    <p className="text-lg">Por favor, dirija-se ao caixa para finalizar o pagamento.</p>
+                </div>
+            </motion.div>
+        )}
+    </AnimatePresence>
+
+    {/* Cart Overlay */ }
             <AnimatePresence>
                 {isCartOpen && (
                     <motion.div
                         initial={{ x: "100%" }}
                         animate={{ x: 0 }}
                         exit={{ x: "100%" }}
-                        className="absolute inset-y-0 right-0 z-40 w-full max-w-sm bg-neutral-900 border-l border-neutral-800 shadow-2xl p-6 pointer-events-auto flex flex-col"
+                        className="fixed inset-0 z-50 bg-neutral-900 shadow-2xl p-6 pointer-events-auto flex flex-col sm:max-w-md sm:right-0 sm:left-auto"
                     >
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-2xl font-bold">Carrinho</h2>
-                            <button onClick={() => setIsCartOpen(false)} className="text-neutral-400 hover:text-white">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-3xl font-black uppercase tracking-tight">🛒 Carrinho</h2>
+                            <button onClick={() => setIsCartOpen(false)} className="text-neutral-400 hover:text-white p-2 bg-neutral-800 rounded-xl transition-all active:scale-90">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </button>
                         </div>
 
                         {/* Tabs */}
-                        <div className="flex bg-neutral-800 rounded-lg p-1 mb-4">
+                        <div className="flex bg-neutral-800 rounded-2xl p-1.5 mb-6 border border-white/5">
                             <button
                                 onClick={() => setCartTab('current')}
-                                className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${cartTab === 'current' ? 'bg-neutral-700 text-white shadow' : 'text-neutral-400 hover:text-white'}`}
+                                className={`flex-1 py-3 text-sm font-black rounded-xl transition-all uppercase tracking-wider ${cartTab === 'current' ? 'bg-blue-600 text-white shadow-lg' : 'text-neutral-400 hover:text-white'}`}
                             >
                                 Atual ({cart.length})
                             </button>
                             <button
                                 onClick={() => setCartTab('pending')}
-                                className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${cartTab === 'pending' ? 'bg-neutral-700 text-white shadow' : 'text-neutral-400 hover:text-white'}`}
+                                className={`flex-1 py-3 text-sm font-black rounded-xl transition-all uppercase tracking-wider ${cartTab === 'pending' ? 'bg-blue-600 text-white shadow-lg' : 'text-neutral-400 hover:text-white'}`}
                             >
-                                Pendentes
+                                Pendentes ({pendingCount})
                             </button>
                         </div>
 
                         {cartTab === 'current' ? (
                             <>
-                                <div className="flex-1 overflow-y-auto space-y-4 mb-6">
+                                <div className="flex-1 overflow-y-auto space-y-4 mb-6 pr-2 custom-scrollbar">
                                     {cart.length === 0 ? (
-                                        <div className="text-center text-neutral-500 mt-10">Carrinho vazio</div>
+                                        <div className="text-center text-neutral-500 py-12 bg-neutral-800/50 rounded-3xl border border-dashed border-neutral-700">
+                                            <div className="text-5xl mb-4">🛒</div>
+                                            <p className="font-bold">Carrinho vazio</p>
+                                        </div>
                                     ) : (
                                         cart.map((item, idx) => (
-                                            <div key={idx} className="flex gap-4 bg-neutral-800 p-3 rounded-xl">
+                                            <div key={idx} className="flex gap-4 bg-neutral-800 p-4 rounded-2xl border border-white/5 shadow-md">
                                                 {item.imagens && item.imagens[0] && (
-                                                    <img src={item.imagens[0]} className="w-16 h-16 rounded-lg object-cover" />
+                                                    <img src={item.imagens[0]} className="w-20 h-20 rounded-xl object-cover border border-white/5" />
                                                 )}
                                                 <div className="flex-1">
-                                                    <div className="font-bold text-sm line-clamp-1">{item.nome}</div>
-                                                    <div className="text-blue-400 font-bold">{formatBRL(item.preco)}</div>
+                                                    <div className="font-black text-white leading-tight mb-1">{item.nome}</div>
+                                                    <div className="text-blue-400 font-black text-xl">{formatBRL(item.preco)}</div>
                                                 </div>
-                                                <button onClick={() => removeFromCart(idx)} className="text-red-500">
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+                                                <button onClick={() => removeFromCart(idx)} className="text-red-500 p-2 bg-red-500/10 rounded-xl hover:bg-red-500/20 active:scale-90 transition-all">
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
                                                 </button>
                                             </div>
                                         ))
                                     )}
                                 </div>
 
-                                <div className="border-t border-neutral-800 pt-4 space-y-4">
-                                    <div className="space-y-3">
-                                        <input
-                                            type="text"
-                                            placeholder="Nome completo *"
-                                            value={customerInfo.nome}
-                                            onChange={(e) => setCustomerInfo({ ...customerInfo, nome: e.target.value })}
-                                            className="w-full bg-neutral-800 text-white px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                        <input
-                                            type="tel"
-                                            placeholder="Telefone *"
-                                            value={customerInfo.telefone}
-                                            onChange={(e) => setCustomerInfo({ ...customerInfo, telefone: maskPhone(e.target.value) })}
-                                            maxLength={15}
-                                            className="w-full bg-neutral-800 text-white px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                        <input
-                                            type="email"
-                                            placeholder="Email (Opcional)"
-                                            value={customerInfo.email}
-                                            onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
-                                            className="w-full bg-neutral-800 text-white px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
+                                <div className="border-t border-neutral-800 pt-6 space-y-4">
+                                    <div className="space-y-4">
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                placeholder="Nome completo *"
+                                                value={customerInfo.nome}
+                                                onChange={(e) => setCustomerInfo({ ...customerInfo, nome: e.target.value })}
+                                                className="w-full bg-neutral-800 text-white px-5 py-5 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/50 border border-white/5 text-lg font-bold"
+                                            />
+                                        </div>
+                                        <div className="relative">
+                                            <input
+                                                type="tel"
+                                                placeholder="Telefone *"
+                                                value={customerInfo.telefone}
+                                                onChange={(e) => setCustomerInfo({ ...customerInfo, telefone: maskPhone(e.target.value) })}
+                                                maxLength={15}
+                                                className="w-full bg-neutral-800 text-white px-5 py-5 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/50 border border-white/5 text-lg font-bold"
+                                            />
+                                        </div>
+                                        <div className="relative">
+                                            <input
+                                                type="email"
+                                                placeholder="Email (Opcional)"
+                                                value={customerInfo.email}
+                                                onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
+                                                className="w-full bg-neutral-800 text-white px-5 py-5 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/50 border border-white/5 text-lg font-bold"
+                                            />
+                                        </div>
                                     </div>
 
-                                    <div className="flex justify-between text-xl font-bold pt-4 border-t border-neutral-800">
-                                        <span>Total</span>
+                                    <div className="flex justify-between text-3xl font-black pt-6 border-t border-neutral-800 text-white">
+                                        <span className="uppercase text-sm text-neutral-500 self-center tracking-widest">Total</span>
                                         <span>{formatBRL(cart.reduce((acc, item) => acc + item.preco, 0))}</span>
                                     </div>
                                     <button
                                         onClick={checkout}
                                         disabled={cart.length === 0}
-                                        className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                        className="w-full bg-blue-600 text-white font-black py-6 rounded-2xl hover:bg-blue-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-xl shadow-xl border border-blue-400/30 uppercase tracking-widest"
                                     >
-                                        Realizar Compra
+                                        Finalizar Pedido
                                     </button>
                                 </div>
                             </>
@@ -757,7 +783,7 @@ export default function CapturePage() {
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        exit={{ opacity: 0, }}
+                        exit={{ opacity: 0 }}
                         className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto"
                         onClick={() => setShowSearchModal(false)}
                     >
@@ -830,8 +856,6 @@ export default function CapturePage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-
-
-        </div>
+        </div >
     );
 }

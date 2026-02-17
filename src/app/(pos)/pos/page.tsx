@@ -895,9 +895,9 @@ export default function POSPage() {
             <main className="flex flex-grow overflow-hidden relative">
                 {currentView === 'sales' && (
                     <div className="flex h-full w-full gap-4 p-4">
-                        <div className="flex w-full flex-col gap-4 overflow-y-auto lg:w-2/3">
-                            <div className="rounded-xl border border-orange-200 bg-orange-50 shadow-sm p-4">
-                                <div className="flex justify-between items-center mb-3">
+                        <div className="flex w-full flex-col gap-4 overflow-hidden lg:w-2/3">
+                            <div className="rounded-xl border border-orange-200 bg-orange-50 shadow-sm p-4 flex flex-col max-h-[40%]">
+                                <div className="flex justify-between items-center mb-3 flex-shrink-0">
                                     <h3 className="font-bold text-orange-800 flex items-center gap-2">
                                         <span className="text-xl">📱</span> Pedidos do App ({filteredPendingOrders.length})
                                     </h3>
@@ -916,7 +916,7 @@ export default function POSPage() {
                                             : "Nenhum pedido encontrado com esse filtro."}
                                     </div>
                                 ) : (
-                                    <div className="space-y-2">
+                                    <div className="space-y-2 overflow-y-auto pr-1">
                                         {filteredPendingOrders.map((order: any) => (
                                             <div key={order.id} className="bg-white rounded-lg p-3 border border-orange-200">
                                                 <div className="flex justify-between items-start mb-2">
