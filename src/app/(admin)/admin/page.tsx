@@ -9,8 +9,7 @@ interface Sale {
     items: { desc: string; qty: number; price: number }[];
     payments: { method: string; amount: number }[];
     totalValue: number;
-    date: string;
-    timestamp: string;
+    createdAt: string;
     buyerName?: string;
     buyerPhone?: string;
     buyerEmail?: string;
@@ -56,9 +55,13 @@ export default function AdminDashboard() {
         }).format(value);
     };
 
-    const formatRelativeTime = (timestamp: string) => {
+    const formatRelativeTime = (dateString: string) => {
+        if (!dateString) return 'Data desconhecida';
         const now = new Date();
-        const saleDate = new Date(timestamp);
+        const saleDate = new Date(dateString);
+
+        if (isNaN(saleDate.getTime())) return 'Data inválida';
+
         const diffMs = now.getTime() - saleDate.getTime();
         const diffMins = Math.floor(diffMs / 60000);
         const diffHours = Math.floor(diffMs / 3600000);
@@ -186,7 +189,7 @@ export default function AdminDashboard() {
                                             {sale.buyerName || 'Cliente'} <span className="text-neutral-500 text-sm">• {sale.items.length} item{sale.items.length !== 1 ? 's' : ''}</span>
                                         </p>
                                         <p className="text-xs sm:text-sm text-neutral-400 flex flex-wrap gap-1">
-                                            {formatRelativeTime(sale.timestamp)}
+                                            {formatRelativeTime(sale.createdAt)}
                                             {sale.garageSaleId && garageSales.find(gs => gs.id === sale.garageSaleId) && (
                                                 <span className="hidden sm:inline">• {garageSales.find(gs => gs.id === sale.garageSaleId)?.nome}</span>
                                             )}
@@ -207,6 +210,6 @@ export default function AdminDashboard() {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
