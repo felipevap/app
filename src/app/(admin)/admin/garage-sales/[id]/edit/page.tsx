@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
+import Toast from "@/components/Toast";
 
 export default function EditGarageSalePage() {
     const router = useRouter();
@@ -21,6 +22,11 @@ export default function EditGarageSalePage() {
         regras: "",
         banner: "",
     });
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
+
+    const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+        setToast({ message, type, isVisible: true });
+    };
 
     useEffect(() => {
         if (id) {
@@ -79,11 +85,17 @@ export default function EditGarageSalePage() {
         reader.readAsDataURL(file);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        updateGarageSale(id, formData);
-        alert("Garage Sale atualizada com sucesso!");
-        router.push("/admin/garage-sales");
+        try {
+            await updateGarageSale(id, formData);
+            showToast("Garage Sale atualizada com sucesso!", "success");
+            setTimeout(() => {
+                router.push("/admin/garage-sales");
+            }, 1000);
+        } catch (error) {
+            showToast("Erro ao atualizar Garage Sale.", "error");
+        }
     };
 
     return (
@@ -275,7 +287,17 @@ export default function EditGarageSalePage() {
                         Salvar Alterações
                     </button>
                 </div>
+
             </form>
-        </div>
+            {
+                toast.isVisible && (
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast({ ...toast, isVisible: false })}
+                    />
+                )
+            }
+        </div >
     );
 }

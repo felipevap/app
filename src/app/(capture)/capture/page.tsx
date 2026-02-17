@@ -35,6 +35,21 @@ export default function CapturePage() {
         }
     }, [garageSales, selectedGarageSaleId]);
 
+    // Load customer info from local storage on mount
+    useEffect(() => {
+        const savedInfo = localStorage.getItem('customerInfo');
+        if (savedInfo) {
+            setCustomerInfo(JSON.parse(savedInfo));
+        }
+    }, []);
+
+    // Save customer info to local storage whenever it changes
+    useEffect(() => {
+        if (customerInfo.nome || customerInfo.telefone || customerInfo.email) {
+            localStorage.setItem('customerInfo', JSON.stringify(customerInfo));
+        }
+    }, [customerInfo]);
+
     const currentProducts = selectedGarageSaleId
         ? getProductsByGarageSale(selectedGarageSaleId)
         : products;
@@ -148,7 +163,10 @@ export default function CapturePage() {
             setTimeout(() => {
                 setShowSuccessMessage(false);
                 setCart([]);
-                setCustomerInfo({ nome: '', telefone: '', email: '' });
+                setShowSuccessMessage(false);
+                setCart([]);
+                // User data is preserved for next time
+                setIsCartOpen(false);
                 setIsCartOpen(false);
             }, 3000);
         } catch (error) {

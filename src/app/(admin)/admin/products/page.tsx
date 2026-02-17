@@ -4,6 +4,7 @@ import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import Toast from "@/components/Toast";
 
 import { Suspense } from "react";
 
@@ -14,6 +15,11 @@ function ProductsContent() {
     const [searchTerm, setSearchTerm] = useState("");
     const [filterCategoria, setFilterCategoria] = useState("");
     const [filterCondicao, setFilterCondicao] = useState("");
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
+
+    const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+        setToast({ message, type, isVisible: true });
+    };
 
     useEffect(() => {
         const garageSaleParam = searchParams?.get("garageSale");
@@ -34,9 +40,14 @@ function ProductsContent() {
         })
         : [];
 
-    const handleDelete = (id: string, nome: string) => {
+    const handleDelete = async (id: string, nome: string) => {
         if (confirm(`Tem certeza que deseja excluir o produto "${nome}"?`)) {
-            deleteProduct(id);
+            try {
+                await deleteProduct(id);
+                showToast("Produto excluído com sucesso!", "success");
+            } catch (error) {
+                showToast("Erro ao excluir produto. Tente novamente.", "error");
+            }
         }
     };
 
@@ -224,6 +235,13 @@ function ProductsContent() {
                     )}
                 </>
             )}
+            )}
+            {toast.isVisible && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast({ ...toast, isVisible: false })}
+                />
         </div>
     );
 }

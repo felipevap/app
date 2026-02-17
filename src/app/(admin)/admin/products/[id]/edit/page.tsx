@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Webcam from "react-webcam";
+import Toast from "@/components/Toast";
 
 export default function EditProductPage() {
     const router = useRouter();
@@ -25,6 +26,11 @@ export default function EditProductPage() {
         tags: [] as string[],
         garageSaleId: "",
     });
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
+
+    const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+        setToast({ message, type, isVisible: true });
+    };
 
     useEffect(() => {
         if (id) {
@@ -161,11 +167,17 @@ export default function EditProductPage() {
         });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        updateProduct(id, formData);
-        alert('Produto atualizado com sucesso!');
-        router.push(`/admin/products?garageSale=${formData.garageSaleId}`);
+        try {
+            await updateProduct(id, formData);
+            showToast('Produto atualizado com sucesso!', 'success');
+            setTimeout(() => {
+                router.push(`/admin/products?garageSale=${formData.garageSaleId}`);
+            }, 1000);
+        } catch (error) {
+            showToast('Erro ao atualizar produto.', 'error');
+        }
     };
 
     return (
@@ -409,6 +421,13 @@ export default function EditProductPage() {
                     💾 Salvar Alterações
                 </button>
             </form>
+            {toast.isVisible && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast({ ...toast, isVisible: false })}
+                />
+            )}
         </div>
     );
 }

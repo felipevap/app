@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
+import Toast from "@/components/Toast";
 
 export default function NewGarageSalePage() {
     const router = useRouter();
@@ -16,8 +17,14 @@ export default function NewGarageSalePage() {
         responsavel: "",
         email: "",
         regras: "",
+
         banner: "",
     });
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
+
+    const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+        setToast({ message, type, isVisible: true });
+    };
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -60,9 +67,15 @@ export default function NewGarageSalePage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        await addGarageSale(formData);
-        alert("Garage Sale criada com sucesso!");
-        router.push("/admin/garage-sales");
+        try {
+            await addGarageSale(formData);
+            showToast("Garage Sale criada com sucesso!", "success");
+            setTimeout(() => {
+                router.push("/admin/garage-sales");
+            }, 1000);
+        } catch (error) {
+            showToast("Erro ao criar Garage Sale.", "error");
+        }
     };
 
     return (
@@ -259,7 +272,17 @@ export default function NewGarageSalePage() {
                         Criar Garage Sale
                     </button>
                 </div>
+
             </form>
-        </div>
+            {
+                toast.isVisible && (
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast({ ...toast, isVisible: false })}
+                    />
+                )
+            }
+        </div >
     );
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Webcam from "react-webcam";
+import Toast from "@/components/Toast";
 
 import { Suspense } from "react";
 
@@ -26,6 +27,11 @@ function NewProductContent() {
         tags: [] as string[],
         garageSaleId: "",
     });
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
+
+    const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+        setToast({ message, type, isVisible: true });
+    };
 
     useEffect(() => {
         const garageSaleParam = searchParams?.get("garageSale");
@@ -157,13 +163,19 @@ function NewProductContent() {
         e.preventDefault();
 
         if (!formData.garageSaleId) {
-            alert('Por favor, selecione uma Garage Sale.');
+            showToast('Por favor, selecione uma Garage Sale.', 'error');
             return;
         }
 
-        await addProduct(formData);
-        alert('Produto cadastrado com sucesso!');
-        router.push(`/admin/products?garageSale=${formData.garageSaleId}`);
+        try {
+            await addProduct(formData);
+            showToast('Produto cadastrado com sucesso!', 'success');
+            setTimeout(() => {
+                router.push(`/admin/products?garageSale=${formData.garageSaleId}`);
+            }, 1000);
+        } catch (error) {
+            showToast('Erro ao cadastrar produto.', 'error');
+        }
     };
 
     if (garageSales.length === 0) {
@@ -431,8 +443,18 @@ function NewProductContent() {
                 >
                     💾 Salvar Produto
                 </button>
+
             </form>
-        </div>
+            {
+                toast.isVisible && (
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast({ ...toast, isVisible: false })}
+                    />
+                )
+            }
+        </div >
     );
 }
 
