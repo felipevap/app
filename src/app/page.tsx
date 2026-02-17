@@ -17,11 +17,11 @@ export default async function Home() {
       </h1>
       <p className="mt-4 text-xl text-gray-400">Sistema de Gerenciamento Premium de Garage Sales</p>
 
-      <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-3">
+      <div className="mt-12 flex flex-wrap justify-center gap-6 w-full max-w-5xl">
         {isLoggedIn && (
           <Link
             href="/admin"
-            className="group relative overflow-hidden rounded-2xl bg-neutral-900 p-8 transition-all hover:scale-105 hover:bg-neutral-800"
+            className="group relative overflow-hidden rounded-2xl bg-neutral-900 p-8 transition-all hover:scale-105 hover:bg-neutral-800 w-full sm:w-80"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
             <div className="relative z-10">
@@ -34,20 +34,20 @@ export default async function Home() {
 
         <Link
           href="/capture"
-          className="group relative overflow-hidden rounded-2xl bg-neutral-900 p-8 transition-all hover:scale-105 hover:bg-neutral-800"
+          className="group relative overflow-hidden rounded-2xl bg-neutral-900 p-8 transition-all hover:scale-105 hover:bg-neutral-800 w-full sm:w-80"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
           <div className="relative z-10">
             <span className="text-4xl">🤝</span>
             <h2 className="mt-4 text-2xl font-bold text-white">Amigo Garage</h2>
-            <p className="mt-2 text-sm text-gray-400">Capturar Itens</p>
+            <p className="mt-2 text-sm text-gray-400">Consultar Preços e Comprar</p>
           </div>
         </Link>
 
         {isLoggedIn && (
           <Link
             href="/pos"
-            className="group relative overflow-hidden rounded-2xl bg-neutral-900 p-8 transition-all hover:scale-105 hover:bg-neutral-800"
+            className="group relative overflow-hidden rounded-2xl bg-neutral-900 p-8 transition-all hover:scale-105 hover:bg-neutral-800 w-full sm:w-80"
           >
             <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
             <div className="relative z-10">
