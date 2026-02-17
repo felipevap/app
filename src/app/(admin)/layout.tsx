@@ -30,7 +30,7 @@ export default function AdminLayout({
                 <div className="flex items-center justify-between p-4">
                     {isSidebarOpen && (
                         <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                            Espinha Dorsal
+                            Gerenciador
                         </span>
                     )}
                     <button
@@ -76,12 +76,12 @@ export default function AdminLayout({
                         {isSidebarOpen && <span>Sair</span>}
                     </Link>
                 </div>
-            </aside>
+            </aside >
 
             {/* Main Content */}
-            <main className="flex-1 overflow-auto bg-neutral-900 p-8">
+            < main className="flex-1 overflow-auto bg-neutral-900 p-8" >
                 {children}
-            </main>
-        </div>
+            </main >
+        </div >
     );
 }

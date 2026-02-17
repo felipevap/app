@@ -26,7 +26,7 @@ export default function LoginPage() {
                     <h1 className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-4xl font-bold text-transparent">
                         Garage Sale
                     </h1>
-                    <p className="mt-2 text-gray-400">Acesso Espinha Dorsal</p>
+                    <p className="mt-2 text-gray-400">Acesso Gerenciador</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">
