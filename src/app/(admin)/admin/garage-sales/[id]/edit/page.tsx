@@ -20,7 +20,9 @@ export default function EditGarageSalePage() {
         responsavel: "",
         email: "",
         regras: "",
-        banner: "",
+        cep: "",
+        cpf: "",
+        pix: "",
     });
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
 
@@ -40,7 +42,9 @@ export default function EditGarageSalePage() {
                     responsavel: garageSale.responsavel || "",
                     email: garageSale.email || "",
                     regras: garageSale.regras || "",
-                    banner: garageSale.banner || "",
+                    cep: garageSale.cep || "",
+                    cpf: garageSale.cpf || "",
+                    pix: garageSale.pix || "",
                 });
             }
         }
@@ -51,38 +55,6 @@ export default function EditGarageSalePage() {
     ) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                const MAX_WIDTH = 1200;
-
-                if (width > MAX_WIDTH) {
-                    height *= MAX_WIDTH / width;
-                    width = MAX_WIDTH;
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                    ctx.drawImage(img, 0, 0, width, height);
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                    setFormData(prev => ({ ...prev, banner: dataUrl }));
-                }
-            };
-            img.src = event.target?.result as string;
-        };
-        reader.readAsDataURL(file);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -210,6 +182,59 @@ export default function EditGarageSalePage() {
 
                 <div className="space-y-4">
                     <h2 className="text-xl font-semibold text-green-400">Regras e Configuração</h2>
+
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                        <div>
+                            <label className="block text-sm font-medium text-neutral-300">
+                                CEP
+                            </label>
+                            <input
+                                type="text"
+                                name="cep"
+                                value={formData.cep}
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, '').replace(/^(\d{5})(\d)/, '$1-$2').substring(0, 9);
+                                    setFormData(prev => ({ ...prev, cep: val }));
+                                }}
+                                className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                placeholder="00000-000"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-neutral-300">
+                                CPF (Responsável)
+                            </label>
+                            <input
+                                type="text"
+                                name="cpf"
+                                value={formData.cpf}
+                                onChange={(e) => {
+                                    let val = e.target.value.replace(/\D/g, '');
+                                    if (val.length > 11) val = val.substring(0, 11);
+                                    val = val.replace(/(\d{3})(\d)/, '$1.$2');
+                                    val = val.replace(/(\d{3})(\d)/, '$1.$2');
+                                    val = val.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                                    setFormData(prev => ({ ...prev, cpf: val }));
+                                }}
+                                className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                placeholder="000.000.000-00"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-neutral-300">
+                                Chave PIX
+                            </label>
+                            <input
+                                type="text"
+                                name="pix"
+                                value={formData.pix}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                placeholder="Email, CPF, Telefone ou Aleatória"
+                            />
+                        </div>
+                    </div>
+
                     <div>
                         <label className="block text-sm font-medium text-neutral-300">
                             Regras e Termos
@@ -221,61 +246,6 @@ export default function EditGarageSalePage() {
                             rows={4}
                             className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
                         />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-neutral-300 mb-2">
-                            Imagem de Banner
-                        </label>
-                        {formData.banner ? (
-                            <div className="relative">
-                                <img
-                                    src={formData.banner}
-                                    alt="Banner preview"
-                                    className="w-full h-48 object-cover rounded-lg"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData(prev => ({ ...prev, banner: "" }))}
-                                    className="absolute top-2 right-2 rounded-full bg-red-500 p-2 text-white hover:bg-red-600"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-neutral-800 border-dashed rounded-lg hover:border-neutral-600 cursor-pointer bg-neutral-900/50">
-                                <div className="space-y-1 text-center">
-                                    <svg
-                                        className="mx-auto h-12 w-12 text-neutral-400"
-                                        stroke="currentColor"
-                                        fill="none"
-                                        viewBox="0 0 48 48"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                                            strokeWidth={2}
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
-                                    </svg>
-                                    <div className="flex text-sm text-neutral-400">
-                                        <label htmlFor="banner-upload" className="relative cursor-pointer rounded-md font-medium text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500 hover:text-blue-400">
-                                            <span>Enviar arquivo</span>
-                                            <input
-                                                id="banner-upload"
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleBannerUpload}
-                                                className="sr-only"
-                                            />
-                                        </label>
-                                        <p className="pl-1">ou arraste e solte</p>
-                                    </div>
-                                    <p className="text-xs text-neutral-500">PNG, JPG, GIF até 10MB</p>
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </div>
 

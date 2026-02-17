@@ -75,12 +75,12 @@ export default function LoginPage() {
                 </form>
 
                 <div className="mt-6 text-center">
-                    <Link
+                    <a
                         href="/"
                         className="text-sm text-gray-400 hover:text-white transition-colors"
                     >
                         ← Voltar para Início
-                    </Link>
+                    </a>
                 </div>
             </div>
         </div>
