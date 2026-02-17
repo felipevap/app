@@ -13,7 +13,7 @@ export default function LoginPage() {
         e.preventDefault();
         if (email === "leader.fabio@gmail.com" && password === "eamsjc73") {
             document.cookie = "auth=true; path=/";
-            router.push("/admin");
+            router.push("/");
         } else {
             setError("Credenciais inválidas");
         }

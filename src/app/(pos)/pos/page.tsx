@@ -78,6 +78,7 @@ export default function POSPage() {
         search: "",
         category: "",
         condition: "",
+        status: "",
         minPrice: "",
         maxPrice: ""
     });
@@ -627,11 +628,12 @@ export default function POSPage() {
 
         const matchesCategory = !productFilters.category || product.categoria === productFilters.category;
         const matchesCondition = !productFilters.condition || product.condicao === productFilters.condition;
+        const matchesStatus = !productFilters.status || product.status === productFilters.status;
 
         const matchesMinPrice = !productFilters.minPrice || product.preco >= parseFloat(productFilters.minPrice);
         const matchesMaxPrice = !productFilters.maxPrice || product.preco <= parseFloat(productFilters.maxPrice);
 
-        return matchesSearch && matchesCategory && matchesCondition && matchesMinPrice && matchesMaxPrice;
+        return matchesSearch && matchesCategory && matchesCondition && matchesStatus && matchesMinPrice && matchesMaxPrice;
     });
 
     const uniqueCategories = Array.from(new Set(products.map(p => p.categoria)));
@@ -1166,6 +1168,15 @@ export default function POSPage() {
                                         <option value="">Todas Condições</option>
                                         {uniqueConditions.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
+                                    <select
+                                        value={productFilters.status}
+                                        onChange={e => setProductFilters({ ...productFilters, status: e.target.value })}
+                                        className="rounded border p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                    >
+                                        <option value="">Todos Status</option>
+                                        <option value="disponível">Disponível</option>
+                                        <option value="vendido">Vendido</option>
+                                    </select>
                                     <div className="flex gap-2">
                                         <input
                                             placeholder="Min R$"
@@ -1183,7 +1194,7 @@ export default function POSPage() {
                                         />
                                     </div>
                                     <button
-                                        onClick={() => setProductFilters({ search: "", category: "", condition: "", minPrice: "", maxPrice: "" })}
+                                        onClick={() => setProductFilters({ search: "", category: "", condition: "", status: "", minPrice: "", maxPrice: "" })}
                                         className="rounded bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 transition-colors"
                                     >
                                         Limpar
@@ -1200,6 +1211,10 @@ export default function POSPage() {
                                             ) : (
                                                 <div className="flex h-full items-center justify-center text-gray-300 text-4xl">📷</div>
                                             )}
+                                            )}
+                                            <div className={`absolute top-2 left-2 rounded-full px-2 py-1 text-xs font-bold shadow-sm ${product.status === 'vendido' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                                                {product.status === 'vendido' ? 'VENDIDO' : 'DISPONÍVEL'}
+                                            </div>
                                             <div className="absolute top-2 right-2 rounded-full bg-white/90 px-2 py-1 text-xs font-bold text-gray-700 shadow-sm">
                                                 {formatCurrency(product.preco)}
                                             </div>
