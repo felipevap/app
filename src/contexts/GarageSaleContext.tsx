@@ -151,6 +151,12 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
     }, []);
 
     const deleteProduct = useCallback(async (id: string) => {
+        const res = await fetch(`/api/products/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (!res.ok) throw new Error('Failed to delete product');
+
         setProducts(prev => prev.filter(p => p.id !== id));
     }, []);
 

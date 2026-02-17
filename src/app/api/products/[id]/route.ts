@@ -18,3 +18,19 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
     }
 }
+
+export async function DELETE(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+    try {
+        const params = await props.params;
+        const id = params.id;
+
+        await prisma.product.delete({
+            where: { id }
+        });
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting product:', error);
+        return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });
+    }
+}

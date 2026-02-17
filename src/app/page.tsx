@@ -13,15 +13,7 @@ export default async function Home() {
         <AuthButton isLoggedIn={isLoggedIn} />
       </div>
 
-      <div className="mb-8 relative w-full max-w-2xl aspect-[16/9] rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-        <NextImage
-          src="/logo-premium.png"
-          alt="Garage Sale Premium Logo"
-          fill
-          className="object-cover transition-transform duration-700 hover:scale-105"
-          priority
-        />
-      </div>
+
 
       <h1 className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-6xl font-bold text-transparent">
         Garage Sale Premium

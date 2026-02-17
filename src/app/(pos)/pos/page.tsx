@@ -408,8 +408,8 @@ export default function POSPage() {
                 price: parseFloat(item.price),
                 // Try to infer original price if possible, otherwise assume net
                 // In future DB updates we should store originalPrice
-                originalPrice: parseFloat(item.price),
-                discountPercent: 0
+                originalPrice: item.originalPrice ? parseFloat(item.originalPrice) : parseFloat(item.price),
+                discountPercent: item.discountPercent ? parseFloat(item.discountPercent) : 0
             })) || [],
             payments: sale.payments || [],
             buyerName: sale.buyerName || "",
@@ -1040,13 +1040,49 @@ export default function POSPage() {
                                                     <select
                                                         value={tempPayment.method}
                                                         onChange={e => setTempPayment({ ...tempPayment, method: e.target.value })}
-                                                        className="w-1/3 rounded border p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                        className="w-[28%] rounded border p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                                                     >
                                                         <option value="pix">PIX</option>
                                                         <option value="money">Cash</option>
                                                         <option value="card_client">Cartão (Cli)</option>
                                                         <option value="card_garage">Cartão (Loja)</option>
                                                     </select>
+                                                    <div className="relative w-[18%]">
+                                                        <input
+                                                            type="number"
+                                                            value={globalDiscount || ''}
+                                                            onChange={(e) => {
+                                                                const val = parseFloat(e.target.value);
+                                                                const discount = isNaN(val) ? 0 : val;
+                                                                setGlobalDiscount(discount);
+                                                                if (currentSale.items) {
+                                                                    const updatedItems = currentSale.items.map(item => {
+                                                                        const original = item.originalPrice || item.price / (1 - (item.discountPercent || 0) / 100);
+                                                                        // Use existing logic from the top Global Discount input
+                                                                        // existing logic: 
+                                                                        // const original = item.originalPrice || item.price;
+                                                                        // return { ...item, originalPrice: original, discountPercent: val, price: original * (1 - val / 100) };
+
+                                                                        // We need to be careful not to double apply if originalPrice wasn't set.
+                                                                        // But in checkout mode, startEditSale sets originalPrice.
+                                                                        // And addItem sets originalPrice.
+                                                                        // So we should be safe using item.originalPrice.
+                                                                        const basePrice = item.originalPrice || item.price;
+                                                                        return {
+                                                                            ...item,
+                                                                            originalPrice: basePrice,
+                                                                            discountPercent: discount,
+                                                                            price: basePrice * (1 - discount / 100)
+                                                                        };
+                                                                    });
+                                                                    setCurrentSale(prev => ({ ...prev, items: updatedItems }));
+                                                                }
+                                                            }}
+                                                            className="w-full rounded border p-2 pr-4 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-center"
+                                                            placeholder="0"
+                                                        />
+                                                        <span className="absolute right-1 top-2 text-xs text-gray-500">%</span>
+                                                    </div>
                                                     <input
                                                         type="text"
                                                         inputMode="numeric"
@@ -1057,10 +1093,10 @@ export default function POSPage() {
                                                             const value = cents / 100;
                                                             setTempPayment({ ...tempPayment, amount: value });
                                                         }}
-                                                        className="w-1/3 rounded border p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right"
+                                                        className="w-[28%] rounded border p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-right"
                                                         placeholder="Valor"
                                                     />
-                                                    <button onClick={addPayment} className="w-1/3 rounded bg-blue-100 p-2 text-sm text-blue-700 font-bold hover:bg-blue-200 transition-colors">Adicionar</button>
+                                                    <button onClick={addPayment} className="w-[26%] rounded bg-blue-100 p-2 text-sm text-blue-700 font-bold hover:bg-blue-200 transition-colors">Adicionar</button>
                                                 </div>
                                                 <ul className="space-y-1 text-sm">
                                                     {currentSale.payments!.map((p, i) => (
