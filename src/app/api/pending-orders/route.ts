@@ -8,9 +8,23 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const garageSaleId = searchParams.get('garageSaleId');
 
-        const where = garageSaleId
-            ? { garageSaleId, status: 'pending' }
-            : { status: 'pending' };
+        const customerEmail = searchParams.get('customerEmail');
+        const customerPhone = searchParams.get('customerPhone');
+
+        const where: any = { status: 'pending' };
+
+        if (garageSaleId) {
+            where.garageSaleId = garageSaleId;
+        }
+
+        if (customerEmail) {
+            where.customerEmail = customerEmail;
+        }
+
+        if (customerPhone) {
+            // Basic normalization to ensure matching (optional but good practice)
+            where.customerPhone = customerPhone;
+        }
 
         const pendingOrders = await prisma.pendingOrder.findMany({
             where,

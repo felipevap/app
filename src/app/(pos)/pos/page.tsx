@@ -207,13 +207,16 @@ export default function POSPage() {
                 productId: item.productId,
                 desc: item.description,
                 qty: item.quantity,
-                price: item.price
+                price: item.price,
+                originalPrice: item.price,
+                discountPercent: 0
             })),
             payments: [],
             buyerName: order.customerName,
             buyerPhone: order.customerPhone,
             buyerEmail: order.customerEmail,
         });
+        setGlobalDiscount(0); // Reset global discount when loading new order
         setIsCheckoutMode(true);
 
         try {
@@ -845,6 +848,20 @@ export default function POSPage() {
                                                     const val = parseFloat(e.target.value) || 0;
                                                     setGlobalDiscount(val);
                                                     setNewItem(prev => ({ ...prev, discountPercent: val }));
+
+                                                    // Apply to all existing items in current sale
+                                                    if (currentSale.items && currentSale.items.length > 0) {
+                                                        const updatedItems = currentSale.items.map(item => {
+                                                            const original = item.originalPrice || item.price;
+                                                            return {
+                                                                ...item,
+                                                                originalPrice: original,
+                                                                discountPercent: val,
+                                                                price: original * (1 - val / 100)
+                                                            };
+                                                        });
+                                                        setCurrentSale(prev => ({ ...prev, items: updatedItems }));
+                                                    }
                                                 }}
                                                 className="w-12 text-xs bg-white border border-yellow-300 rounded px-1 text-center outline-none focus:ring-1 focus:ring-yellow-500"
                                             />
@@ -927,8 +944,8 @@ export default function POSPage() {
                                 <div className="border-t bg-gray-50 p-4">
                                     {!isCheckoutMode ? (
                                         <>
-                                            <div className="mb-4 flex gap-2 relative">
-                                                <div className="flex-grow relative">
+                                            <div className="mb-4 flex flex-wrap gap-2 relative items-end">
+                                                <div className="flex-grow relative min-w-[200px] w-full md:w-auto">
                                                     <input
                                                         type="text"
                                                         value={newItem.desc}
@@ -938,7 +955,7 @@ export default function POSPage() {
                                                         }}
                                                         onFocus={() => newItem.desc && setShowProductSuggestions(true)}
                                                         className="w-full rounded border border-gray-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
-                                                        placeholder="Descrição do item (digite para buscar produtos)"
+                                                        placeholder="Descrição do item"
                                                     />
                                                     {showProductSuggestions && filteredSuggestions.length > 0 && (
                                                         <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -956,7 +973,7 @@ export default function POSPage() {
                                                                         </div>
                                                                         <div className="text-right">
                                                                             <div className="font-bold text-blue-600">{formatCurrency(product.preco)}</div>
-                                                                            <div className="text-xs text-green-600">✓ Disponível</div>
+                                                                            <div className="text-xs text-green-600">✓ Disp</div>
                                                                         </div>
                                                                     </div>
                                                                 </button>
@@ -964,34 +981,36 @@ export default function POSPage() {
                                                         </div>
                                                     )}
                                                 </div>
-                                                <input
-                                                    type="number"
-                                                    value={newItem.qty}
-                                                    onChange={e => setNewItem({ ...newItem, qty: parseInt(e.target.value) || 1 })}
-                                                    className="w-20 rounded border border-gray-300 p-2 text-center focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
-                                                    placeholder="Qtd"
-                                                />
-                                                <input
-                                                    type="text"
-                                                    inputMode="numeric"
-                                                    value={formatPriceInput(newItem.price)}
-                                                    onChange={handlePriceChange}
-                                                    className="w-24 rounded border border-gray-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none transition-shadow text-right"
-                                                    placeholder="0,00"
-                                                />
-                                                <div className="relative">
+                                                <div className="flex gap-2 flex-grow md:flex-grow-0">
                                                     <input
                                                         type="number"
-                                                        value={newItem.discountPercent || ''}
-                                                        onChange={e => setNewItem({ ...newItem, discountPercent: parseFloat(e.target.value) || 0 })}
-                                                        className="w-16 rounded border border-gray-300 p-2 pr-1 text-center focus:ring-2 focus:ring-blue-500 outline-none transition-shadow text-red-600 font-bold"
-                                                        placeholder="%"
+                                                        value={newItem.qty}
+                                                        onChange={e => setNewItem({ ...newItem, qty: parseInt(e.target.value) || 1 })}
+                                                        className="w-16 rounded border border-gray-300 p-2 text-center focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
+                                                        placeholder="Qtd"
                                                     />
-                                                    <span className="absolute top-2 right-1 text-gray-400 text-xs mt-0.5">%</span>
+                                                    <input
+                                                        type="text"
+                                                        inputMode="numeric"
+                                                        value={formatPriceInput(newItem.price)}
+                                                        onChange={handlePriceChange}
+                                                        className="flex-grow md:w-24 rounded border border-gray-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none transition-shadow text-right"
+                                                        placeholder="0,00"
+                                                    />
+                                                    <div className="relative w-16">
+                                                        <input
+                                                            type="number"
+                                                            value={newItem.discountPercent || ''}
+                                                            onChange={e => setNewItem({ ...newItem, discountPercent: parseFloat(e.target.value) || 0 })}
+                                                            className="w-full rounded border border-gray-300 p-2 pr-1 text-center focus:ring-2 focus:ring-blue-500 outline-none transition-shadow text-red-600 font-bold"
+                                                            placeholder="%"
+                                                        />
+                                                        <span className="absolute top-2 right-1 text-gray-400 text-xs mt-0.5">%</span>
+                                                    </div>
+                                                    <button onClick={addItem} className="rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 transition-colors">
+                                                        +
+                                                    </button>
                                                 </div>
-                                                <button onClick={addItem} className="rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700 transition-colors">
-                                                    +
-                                                </button>
                                             </div>
                                             <div className="space-y-2 border-t border-gray-200 pt-3">
                                                 <div className="flex items-center justify-between text-sm text-gray-600">

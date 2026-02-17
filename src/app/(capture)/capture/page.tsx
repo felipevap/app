@@ -9,6 +9,7 @@ import { findMatchingProduct } from '@/utils/imageMatching';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import MyOrdersModal from './MyOrdersModal';
 
 export default function CapturePage() {
     const webcamRef = useRef<Webcam>(null);
@@ -23,7 +24,9 @@ export default function CapturePage() {
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     const [showSearchModal, setShowSearchModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<Product[]>([]);
+    const [showMyOrders, setShowMyOrders] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -286,6 +289,9 @@ export default function CapturePage() {
                     )}
                     <button onClick={() => setIsCartOpen(!isCartOpen)} className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-bold flex items-center gap-2 hover:bg-blue-600/80 transition-colors">
                         <span>🛒 {cart.length}</span>
+                    </button>
+                    <button onClick={() => setShowMyOrders(true)} className="ml-2 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-bold flex items-center gap-2 hover:bg-green-600/80 transition-colors">
+                        <span>📦</span>
                     </button>
                 </header>
 
@@ -576,6 +582,13 @@ export default function CapturePage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <MyOrdersModal
+                isOpen={showMyOrders}
+                onClose={() => setShowMyOrders(false)}
+                customerEmail={customerInfo.email}
+                customerPhone={customerInfo.telefone}
+            />
         </div>
     );
 }
