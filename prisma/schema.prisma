@@ -17,7 +17,7 @@ model GarageSale {
   responsavel   String?
   email         String?
   regras        String?
-  banner        String?
+  // banner removed
   discount       Float?   @default(0)
   cep           String?
   cpf           String?

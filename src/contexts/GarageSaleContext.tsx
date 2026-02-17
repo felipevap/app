@@ -11,7 +11,7 @@ export interface GarageSale {
     responsavel: string;
     email: string;
     regras: string;
-    banner?: string;
+    // banner removed
     criadoEm: number;
     deletedAt?: string | null;
     cep?: string | null;

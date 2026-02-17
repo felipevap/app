@@ -18,7 +18,6 @@ export default function NewGarageSalePage() {
         email: "",
         regras: "",
 
-        banner: "",
         cep: "",
         cpf: "",
         pix: "",
@@ -34,38 +33,6 @@ export default function NewGarageSalePage() {
     ) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                const MAX_WIDTH = 1200;
-
-                if (width > MAX_WIDTH) {
-                    height *= MAX_WIDTH / width;
-                    width = MAX_WIDTH;
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                    ctx.drawImage(img, 0, 0, width, height);
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                    setFormData(prev => ({ ...prev, banner: dataUrl }));
-                }
-            };
-            img.src = event.target?.result as string;
-        };
-        reader.readAsDataURL(file);
     };
 
     const isValidCPF = (cpf: string) => {
@@ -288,60 +255,6 @@ export default function NewGarageSalePage() {
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-neutral-300 mb-2">
-                            Imagem de Banner
-                        </label>
-                        {formData.banner ? (
-                            <div className="relative">
-                                <img
-                                    src={formData.banner}
-                                    alt="Banner preview"
-                                    className="w-full h-48 object-cover rounded-lg"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData(prev => ({ ...prev, banner: "" }))}
-                                    className="absolute top-2 right-2 rounded-full bg-red-500 p-2 text-white hover:bg-red-600"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-neutral-800 border-dashed rounded-lg hover:border-neutral-600 cursor-pointer bg-neutral-900/50">
-                                <div className="space-y-1 text-center">
-                                    <svg
-                                        className="mx-auto h-12 w-12 text-neutral-400"
-                                        stroke="currentColor"
-                                        fill="none"
-                                        viewBox="0 0 48 48"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                                            strokeWidth={2}
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        />
-                                    </svg>
-                                    <div className="flex text-sm text-neutral-400">
-                                        <label htmlFor="banner-upload" className="relative cursor-pointer rounded-md font-medium text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500 hover:text-blue-400">
-                                            <span>Enviar arquivo</span>
-                                            <input
-                                                id="banner-upload"
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleBannerUpload}
-                                                className="sr-only"
-                                            />
-                                        </label>
-                                        <p className="pl-1">ou arraste e solte</p>
-                                    </div>
-                                    <p className="text-xs text-neutral-500">PNG, JPG, GIF até 10MB</p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
                 </div>
 
                 <div className="flex justify-end pt-4">

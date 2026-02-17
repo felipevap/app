@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
                 responsavel,
                 email,
                 regras,
-                banner,
+                // banner removed
                 cep: body.cep,
                 cpf: body.cpf,
                 pix: body.pix
