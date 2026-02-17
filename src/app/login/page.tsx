@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
@@ -71,6 +72,15 @@ export default function LoginPage() {
                         Entrar
                     </button>
                 </form>
+
+                <div className="mt-6 text-center">
+                    <Link
+                        href="/"
+                        className="text-sm text-gray-400 hover:text-white transition-colors"
+                    >
+                        ← Voltar para Início
+                    </Link>
+                </div>
             </div>
         </div>
     );
