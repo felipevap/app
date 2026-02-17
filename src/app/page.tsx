@@ -1,7 +1,5 @@
 import Link from "next/link";
-import Link from "next/link";
 import NextImage from "next/image";
-import { cookies } from "next/headers";
 import { cookies } from "next/headers";
 import AuthButton from "@/components/AuthButton";
 
