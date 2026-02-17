@@ -207,14 +207,25 @@ export default function CapturePage() {
                     <Link href="/" className="mt-8 bg-neutral-700 px-6 py-2 rounded-full">Voltar ao Início</Link>
                 </div>
             ) : (
-                <Webcam
-                    ref={webcamRef}
-                    audio={false}
-                    screenshotFormat="image/jpeg"
-                    videoConstraints={{ facingMode: "environment" }}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    onUserMediaError={onUserMediaError}
-                />
+                <motion.div
+                    initial={{ scale: 1 }}
+                    animate={{ scale: isScanning ? 0.9 : 1 }}
+                    transition={{ duration: 0.4, type: "spring" }}
+                    className="absolute inset-0 w-full h-full bg-black"
+                >
+                    <Webcam
+                        ref={webcamRef}
+                        audio={false}
+                        screenshotFormat="image/jpeg"
+                        videoConstraints={{
+                            facingMode: "environment",
+                            width: { ideal: 1920 },
+                            height: { ideal: 1080 }
+                        }}
+                        className="w-full h-full object-cover"
+                        onUserMediaError={onUserMediaError}
+                    />
+                </motion.div>
             )}
 
             {/* Toast Notification */}
