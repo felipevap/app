@@ -1211,7 +1211,7 @@ export default function POSPage() {
                                             ) : (
                                                 <div className="flex h-full items-center justify-center text-gray-300 text-4xl">📷</div>
                                             )}
-                                            )}
+
                                             <div className={`absolute top-2 left-2 rounded-full px-2 py-1 text-xs font-bold shadow-sm ${product.status === 'vendido' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
                                                 {product.status === 'vendido' ? 'VENDIDO' : 'DISPONÍVEL'}
                                             </div>
