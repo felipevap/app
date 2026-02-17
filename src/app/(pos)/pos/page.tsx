@@ -896,7 +896,7 @@ export default function POSPage() {
                 {currentView === 'sales' && (
                     <div className="flex h-full w-full gap-4 p-4">
                         <div className="flex w-full flex-col gap-4 overflow-hidden lg:w-2/3">
-                            <div className="rounded-xl border border-orange-200 bg-orange-50 shadow-sm p-4 flex flex-col max-h-[40%]">
+                            <div className="rounded-xl border border-orange-200 bg-orange-50 shadow-sm p-4 flex flex-col max-h-[180px]">
                                 <div className="flex justify-between items-center mb-3 flex-shrink-0">
                                     <h3 className="font-bold text-orange-800 flex items-center gap-2">
                                         <span className="text-xl">📱</span> Pedidos do App ({filteredPendingOrders.length})
@@ -1000,7 +1000,7 @@ export default function POSPage() {
                                     />
                                 </div>
 
-                                <div className="min-h-[200px] flex-grow overflow-y-auto bg-white p-4">
+                                <div className="min-h-[100px] flex-grow overflow-y-auto bg-white p-4">
                                     {currentSale.items!.length === 0 ? (
                                         <div className="mt-8 text-center text-gray-400">Cesta vazia</div>
                                     ) : (
