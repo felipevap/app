@@ -449,80 +449,79 @@ export default function CapturePage() {
                 </header>
             </div>
 
-                {/* Scanner Frame - Improved Visuals */}
-                <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-4">
-                    <p className="text-white text-center text-lg md:text-xl font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] bg-black/60 backdrop-blur-md py-3 px-8 rounded-2xl border border-white/20 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                        {isScanning ? "Analisando..." : "Aponte e capture"}
-                    </p>
-                    <div className="relative w-full aspect-square max-w-[500px] max-h-[500px]">
-                        {/* Corner Markers */}
-                        <div className="absolute top-0 left-0 w-12 h-12 border-t-[6px] border-l-[6px] border-white rounded-tl-2xl drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"></div>
-                        <div className="absolute top-0 right-0 w-12 h-12 border-t-[6px] border-r-[6px] border-white rounded-tr-2xl drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"></div>
-                        <div className="absolute bottom-0 left-0 w-12 h-12 border-b-[6px] border-l-[6px] border-white rounded-bl-2xl drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"></div>
-                        <div className="absolute bottom-0 right-0 w-12 h-12 border-b-[6px] border-r-[6px] border-white rounded-br-2xl drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"></div>
+            {/* Scanner Frame - Improved Visuals */}
+            <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-4">
+                <p className="text-white text-center text-lg md:text-xl font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] bg-black/60 backdrop-blur-md py-3 px-8 rounded-2xl border border-white/20 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                    {isScanning ? "Analisando..." : "Aponte e capture"}
+                </p>
+                <div className="relative w-full aspect-square max-w-[500px] max-h-[500px]">
+                    {/* Corner Markers */}
+                    <div className="absolute top-0 left-0 w-12 h-12 border-t-[6px] border-l-[6px] border-white rounded-tl-2xl drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"></div>
+                    <div className="absolute top-0 right-0 w-12 h-12 border-t-[6px] border-r-[6px] border-white rounded-tr-2xl drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"></div>
+                    <div className="absolute bottom-0 left-0 w-12 h-12 border-b-[6px] border-l-[6px] border-white rounded-bl-2xl drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"></div>
+                    <div className="absolute bottom-0 right-0 w-12 h-12 border-b-[6px] border-r-[6px] border-white rounded-br-2xl drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"></div>
 
-                        {/* Scanning Animation */}
-                        {isScanning && (
-                            <>
-                                <motion.div
-                                    className="absolute inset-0 border-2 border-blue-500/50 rounded-xl"
-                                    initial={{ opacity: 0, scale: 1 }}
-                                    animate={{ opacity: [0, 1, 0], scale: 1.05 }}
-                                    transition={{ repeat: Infinity, duration: 1.5 }}
-                                />
-                                <motion.div
-                                    className="absolute w-full h-1 bg-blue-500/80 shadow-[0_0_20px_rgba(59,130,246,1)]"
-                                    initial={{ top: "0%" }}
-                                    animate={{ top: "100%" }}
-                                    transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                                />
-                            </>
-                        )}
-                    </div>
+                    {/* Scanning Animation */}
+                    {isScanning && (
+                        <>
+                            <motion.div
+                                className="absolute inset-0 border-2 border-blue-500/50 rounded-xl"
+                                initial={{ opacity: 0, scale: 1 }}
+                                animate={{ opacity: [0, 1, 0], scale: 1.05 }}
+                                transition={{ repeat: Infinity, duration: 1.5 }}
+                            />
+                            <motion.div
+                                className="absolute w-full h-1 bg-blue-500/80 shadow-[0_0_20px_rgba(59,130,246,1)]"
+                                initial={{ top: "0%" }}
+                                animate={{ top: "100%" }}
+                                transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                            />
+                        </>
+                    )}
+                </div>
+            </div>
+
+            {/* Scan Button & Bottom Bar */}
+            <div className="absolute bottom-0 inset-x-0 z-20 pointer-events-none">
+                <div className="flex justify-center mb-6">
+                    <button
+                        onClick={captureAndScan}
+                        disabled={isScanning}
+                        className="group relative pointer-events-auto"
+                    >
+                        <div className="absolute inset-0 bg-blue-500/30 rounded-full blur-2xl group-hover:bg-blue-500/50 transition-colors duration-500"></div>
+                        <div className="relative bg-white text-black p-8 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.4)] transform transition-all active:scale-90 border-[8px] border-white/30 bg-clip-padding group-hover:scale-110 group-hover:shadow-[0_0_50px_rgba(59,130,246,0.7)]">
+                            {isScanning ? (
+                                <svg className="w-12 h-12 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
+                            ) : (
+                                <div className="w-12 h-12 rounded-full border-[6px] border-neutral-900/80"></div>
+                            )}
+                        </div>
+                    </button>
                 </div>
 
-                {/* Scan Button & Bottom Bar */}
-                <div className="absolute bottom-0 inset-x-0 z-20 pointer-events-none">
-                    <div className="flex justify-center mb-6">
-                        <button
-                            onClick={captureAndScan}
-                            disabled={isScanning}
-                            className="group relative pointer-events-auto"
-                        >
-                            <div className="absolute inset-0 bg-blue-500/30 rounded-full blur-2xl group-hover:bg-blue-500/50 transition-colors duration-500"></div>
-                            <div className="relative bg-white text-black p-8 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.4)] transform transition-all active:scale-90 border-[8px] border-white/30 bg-clip-padding group-hover:scale-110 group-hover:shadow-[0_0_50px_rgba(59,130,246,0.7)]">
-                                {isScanning ? (
-                                    <svg className="w-12 h-12 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
-                                ) : (
-                                    <div className="w-12 h-12 rounded-full border-[6px] border-neutral-900/80"></div>
-                                )}
-                            </div>
-                        </button>
-                    </div>
+                <div className="bg-black/60 backdrop-blur-xl border-t border-white/10 p-4 pb-8 pointer-events-auto flex items-center gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+                    <button
+                        onClick={() => setIsCartOpen(true)}
+                        className="flex-1 bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all py-5 px-6 rounded-2xl text-white flex items-center justify-center gap-4 shadow-xl border border-blue-400/30"
+                    >
+                        <div className="relative">
+                            <span className="text-3xl">🛒</span>
+                            {cart.length > 0 && (
+                                <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-black w-7 h-7 flex items-center justify-center rounded-full border-2 border-white animate-bounce shadow-lg">
+                                    {cart.length}
+                                </span>
+                            )}
+                        </div>
+                        <span className="text-xl font-black uppercase tracking-tight">Ver Carrinho</span>
+                    </button>
 
-                    <div className="bg-black/60 backdrop-blur-xl border-t border-white/10 p-4 pb-8 pointer-events-auto flex items-center gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-                        <button
-                            onClick={() => setIsCartOpen(true)}
-                            className="flex-1 bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all py-5 px-6 rounded-2xl text-white flex items-center justify-center gap-4 shadow-xl border border-blue-400/30"
-                        >
-                            <div className="relative">
-                                <span className="text-3xl">🛒</span>
-                                {cart.length > 0 && (
-                                    <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-black w-7 h-7 flex items-center justify-center rounded-full border-2 border-white animate-bounce shadow-lg">
-                                        {cart.length}
-                                    </span>
-                                )}
-                            </div>
-                            <span className="text-xl font-black uppercase tracking-tight">Ver Carrinho</span>
-                        </button>
-
-                        <button
-                            onClick={() => setShowSearchModal(true)}
-                            className="bg-neutral-800 p-5 rounded-2xl text-white hover:bg-neutral-700 active:scale-95 transition-all border border-white/10"
-                        >
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => setShowSearchModal(true)}
+                        className="bg-neutral-800 p-5 rounded-2xl text-white hover:bg-neutral-700 active:scale-95 transition-all border border-white/10"
+                    >
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    </button>
                 </div>
             </div>
 
@@ -548,100 +547,101 @@ export default function CapturePage() {
                 )}
             </AnimatePresence>
 
-            {/* Found Product Modal */ }
-    <AnimatePresence>
-        {foundProduct && (
-            <motion.div
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
-                transition={{ type: "spring", damping: 20 }}
-                className="absolute bottom-0 left-0 right-0 z-30 bg-neutral-900 rounded-t-3xl p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-neutral-700 pointer-events-auto max-h-[85vh] overflow-y-auto"
-            >
-                <div className="w-16 h-2 bg-neutral-700 rounded-full mx-auto mb-8"></div>
+            {/* Found Product Modal */}
+            <AnimatePresence>
+                {foundProduct && (
 
-                <button onClick={addToCart} className="w-full bg-green-600 py-6 rounded-2xl font-black text-white hover:bg-green-500 active:scale-95 transition-all text-2xl mb-8 shadow-xl border border-green-400/30">
-                    ✓ ADICIONAR AO CARRINHO
-                </button>
+                    <motion.div
+                        initial={{ y: "100%" }}
+                        animate={{ y: 0 }}
+                        exit={{ y: "100%" }}
+                        transition={{ type: "spring", damping: 20 }}
+                        className="absolute bottom-0 left-0 right-0 z-30 bg-neutral-900 rounded-t-3xl p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-neutral-700 pointer-events-auto max-h-[85vh] overflow-y-auto"
+                    >
+                        <div className="w-16 h-2 bg-neutral-700 rounded-full mx-auto mb-8"></div>
 
-                <div className="flex gap-6 flex-col sm:flex-row">
-                    {foundProduct.imagens[0] && (
-                        <img src={foundProduct.imagens[0]} alt={foundProduct.nome} className="w-full sm:w-44 h-44 rounded-2xl object-cover bg-neutral-800 border border-white/10 shadow-lg" />
-                    )}
-                    <div className="flex-1">
-                        <div className="flex justify-between items-start gap-4">
-                            <h2 className="text-3xl font-black text-white leading-tight">{foundProduct.nome}</h2>
-                            <button onClick={() => setFoundProduct(null)} className="text-neutral-500 p-2 hover:text-white transition-colors bg-neutral-800 rounded-xl">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        <button onClick={addToCart} className="w-full bg-green-600 py-6 rounded-2xl font-black text-white hover:bg-green-500 active:scale-95 transition-all text-2xl mb-8 shadow-xl border border-green-400/30">
+                            ✓ ADICIONAR AO CARRINHO
+                        </button>
+
+                        <div className="flex gap-6 flex-col sm:flex-row">
+                            {foundProduct.imagens[0] && (
+                                <img src={foundProduct.imagens[0]} alt={foundProduct.nome} className="w-full sm:w-44 h-44 rounded-2xl object-cover bg-neutral-800 border border-white/10 shadow-lg" />
+                            )}
+                            <div className="flex-1">
+                                <div className="flex justify-between items-start gap-4">
+                                    <h2 className="text-3xl font-black text-white leading-tight">{foundProduct.nome}</h2>
+                                    <button onClick={() => setFoundProduct(null)} className="text-neutral-500 p-2 hover:text-white transition-colors bg-neutral-800 rounded-xl">
+                                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    </button>
+                                </div>
+                                <div className="mt-4 flex items-center gap-3 flex-wrap">
+                                    <span className="px-4 py-1.5 bg-blue-500 text-white text-sm font-black rounded-full uppercase tracking-wider">
+                                        {foundProduct.categoria}
+                                    </span>
+                                </div>
+                                <p className="mt-4 text-blue-400 font-black text-4xl">{formatBRL(foundProduct.preco)}</p>
+                            </div>
+                        </div>
+
+                        {/* Alternative Products / Suggestions */}
+                        {alternativeProducts.length > 0 && (
+                            <div className="mt-8">
+                                <h3 className="text-white font-bold mb-3 text-sm uppercase tracking-wider text-neutral-400">Outras opções similares</h3>
+                                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                                    {alternativeProducts.map((prod) => (
+                                        <button
+                                            key={prod.id}
+                                            onClick={() => setFoundProduct(prod)}
+                                            className="min-w-[140px] bg-neutral-800 rounded-xl p-3 flex flex-col items-start hover:bg-neutral-700 transition-colors"
+                                        >
+                                            <img
+                                                src={prod.imagens[0] || ''}
+                                                className="w-full h-24 object-cover rounded-lg mb-2 bg-neutral-700"
+                                            />
+                                            <span className="text-xs text-white font-bold line-clamp-2 text-left mb-1 h-8">{prod.nome}</span>
+                                            <span className="text-blue-400 text-sm font-bold">{formatBRL(prod.preco)}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="mt-6 pt-6 border-t border-neutral-800">
+                            <button
+                                onClick={() => {
+                                    setFoundProduct(null);
+                                    setShowSearchModal(true);
+                                }}
+                                className="w-full py-3 text-neutral-400 font-medium hover:text-white transition-colors flex items-center justify-center gap-2"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                Não é esse? Pesquisar por nome
                             </button>
                         </div>
-                        <div className="mt-4 flex items-center gap-3 flex-wrap">
-                            <span className="px-4 py-1.5 bg-blue-500 text-white text-sm font-black rounded-full uppercase tracking-wider">
-                                {foundProduct.categoria}
-                            </span>
-                        </div>
-                        <p className="mt-4 text-blue-400 font-black text-4xl">{formatBRL(foundProduct.preco)}</p>
-                    </div>
-                </div>
-
-                {/* Alternative Products / Suggestions */}
-                {alternativeProducts.length > 0 && (
-                    <div className="mt-8">
-                        <h3 className="text-white font-bold mb-3 text-sm uppercase tracking-wider text-neutral-400">Outras opções similares</h3>
-                        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                            {alternativeProducts.map((prod) => (
-                                <button
-                                    key={prod.id}
-                                    onClick={() => setFoundProduct(prod)}
-                                    className="min-w-[140px] bg-neutral-800 rounded-xl p-3 flex flex-col items-start hover:bg-neutral-700 transition-colors"
-                                >
-                                    <img
-                                        src={prod.imagens[0] || ''}
-                                        className="w-full h-24 object-cover rounded-lg mb-2 bg-neutral-700"
-                                    />
-                                    <span className="text-xs text-white font-bold line-clamp-2 text-left mb-1 h-8">{prod.nome}</span>
-                                    <span className="text-blue-400 text-sm font-bold">{formatBRL(prod.preco)}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                    </motion.div>
                 )}
+            </AnimatePresence>
 
-                <div className="mt-6 pt-6 border-t border-neutral-800">
-                    <button
-                        onClick={() => {
-                            setFoundProduct(null);
-                            setShowSearchModal(true);
-                        }}
-                        className="w-full py-3 text-neutral-400 font-medium hover:text-white transition-colors flex items-center justify-center gap-2"
+            {/* Success Message */}
+            <AnimatePresence>
+                {showSuccessMessage && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto"
                     >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        Não é esse? Pesquisar por nome
-                    </button>
-                </div>
-            </motion.div>
-        )}
-    </AnimatePresence>
+                        <div className="bg-green-600 text-white p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4">
+                            <div className="text-6xl mb-4">✓</div>
+                            <h3 className="text-2xl font-bold mb-2">Compra Registrada!</h3>
+                            <p className="text-lg">Por favor, dirija-se ao caixa para finalizar o pagamento.</p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-    {/* Success Message */ }
-    <AnimatePresence>
-        {showSuccessMessage && (
-            <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto"
-            >
-                <div className="bg-green-600 text-white p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4">
-                    <div className="text-6xl mb-4">✓</div>
-                    <h3 className="text-2xl font-bold mb-2">Compra Registrada!</h3>
-                    <p className="text-lg">Por favor, dirija-se ao caixa para finalizar o pagamento.</p>
-                </div>
-            </motion.div>
-        )}
-    </AnimatePresence>
-
-    {/* Cart Overlay */ }
+            {/* Cart Overlay */}
             <AnimatePresence>
                 {isCartOpen && (
                     <motion.div
@@ -856,6 +856,6 @@ export default function CapturePage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div >
+        </div>
     );
 }

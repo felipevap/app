@@ -16,7 +16,7 @@ export default async function Home() {
 
 
       <NextImage
-        src="/logo-home-v2.png" // Updated to use new logo
+        src="/logo-home-v3.png" // Updated to use new logo
         alt="Garage Sale Premium"
         width={600}
         height={300}
