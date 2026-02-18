@@ -26,14 +26,7 @@ function ProductsContent() {
         refreshData({ includeDeleted: showDeleted });
     }, [showDeleted, refreshData]);
 
-    if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[50vh] text-white">
-                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-neutral-400 font-medium">Carregando produtos...</p>
-            </div>
-        );
-    }
+
 
     useEffect(() => {
         const garageSaleParam = searchParams?.get("garageSale");
@@ -111,6 +104,15 @@ function ProductsContent() {
     const defaultCategories = ["Eletrônicos", "Roupas", "Móveis", "Livros", "Brinquedos", "Esportes", "Decoração", "CD", "DVD", "LP", "Itens cozinha", "Ferramentas", "Itens piscina", "Cama mesa e banho", "Eletrodomésticos", "Saúde", "Outros"];
     const categorias = Array.from(new Set([...defaultCategories, ...existingCategories])).sort();
     const condicoes = ["Novo", "Semi-novo", "Usado - Excelente", "Usado - Bom", "Usado - Regular"];
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[50vh] text-white">
+                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-neutral-400 font-medium">Carregando produtos...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
