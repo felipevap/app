@@ -458,19 +458,21 @@ export default function CapturePage() {
         setTimeout(() => setToast(null), 3000);
     };
 
-    const addToCart = async () => {
-        if (foundProduct && sessionId) {
+    const addToCart = async (productToAdd?: Product) => {
+        const targetProduct = productToAdd || foundProduct;
+
+        if (targetProduct && sessionId) {
             // Check local cart
-            const isAlreadyInCart = cart.some(item => item.id === foundProduct.id);
+            const isAlreadyInCart = cart.some(item => item.id === targetProduct.id);
             if (isAlreadyInCart) {
                 showToast('Este produto já está no seu carrinho!', 'info');
-                setFoundProduct(null);
+                if (!productToAdd) setFoundProduct(null); // Only clear if using modal
                 return;
             }
 
             // Reserve on server
             try {
-                const res = await fetch(`/api/products/${foundProduct.id}/reserve`, {
+                const res = await fetch(`/api/products/${targetProduct.id}/reserve`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ clientId: sessionId, action: 'reserve' })
@@ -483,7 +485,7 @@ export default function CapturePage() {
                     } else {
                         showToast('Erro ao reservar produto.', 'error');
                     }
-                    setFoundProduct(null);
+                    if (!productToAdd) setFoundProduct(null);
                     return;
                 }
             } catch (error) {
@@ -492,9 +494,13 @@ export default function CapturePage() {
                 return;
             }
 
-            setCart([...cart, { ...foundProduct, qty: 1 }]);
-            setFoundProduct(null);
-            setIsCartOpen(true);
+            setCart([...cart, { ...targetProduct, qty: 1 }]);
+            showToast('Produto adicionado ao carrinho!', 'success'); // Feedback for direct add
+
+            if (!productToAdd) {
+                setFoundProduct(null);
+                setIsCartOpen(true);
+            }
         }
     };
 
@@ -701,24 +707,42 @@ export default function CapturePage() {
                                             height: coords.height,
                                         }}
                                     />
-                                    <button
-                                        onClick={() => setFoundProduct(overlay.product)}
-                                        className="absolute z-40 bg-white/95 backdrop-blur-md rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.4)] border-2 border-green-500 p-3 flex flex-col items-start max-w-[200px] animate-in fade-in zoom-in duration-300 active:scale-95 transition-transform text-left"
+                                    <div
+                                        className="absolute z-40 bg-white/95 backdrop-blur-md rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.4)] border-2 border-green-500 p-3 flex flex-col items-start max-w-[200px] animate-in fade-in zoom-in duration-300 transition-transform text-left"
                                         style={{
                                             left: coords.left + coords.width / 2,
                                             top: coords.top - 10,
                                             transform: 'translate(-50%, -100%)'
                                         }}
+                                        onClick={() => setFoundProduct(overlay.product)}
                                     >
                                         <div className="font-bold text-black text-sm leading-tight mb-1 line-clamp-2">{overlay.product.nome}</div>
                                         {overlay.product.descricao && (
                                             <div className="text-gray-600 text-xs mb-2 line-clamp-2 leading-snug">{overlay.product.descricao}</div>
                                         )}
-                                        <div className="font-black text-blue-600 text-lg">{formatBRL(overlay.product.preco)}</div>
+                                        <div className="flex items-center justify-between w-full mt-1 gap-2">
+                                            <div className="font-black text-blue-600 text-lg whitespace-nowrap">{formatBRL(overlay.product.preco)}</div>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    addToCart(overlay.product);
+                                                }}
+                                                className="bg-green-600 hover:bg-green-700 text-white rounded-lg p-2 shadow-sm transition-colors flex items-center justify-center"
+                                                aria-label="Adicionar ao carrinho"
+                                            >
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <circle cx="9" cy="21" r="1" />
+                                                    <circle cx="20" cy="21" r="1" />
+                                                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                                                    <path d="M12 6v6" />
+                                                    <path d="M9 9h6" />
+                                                </svg>
+                                            </button>
+                                        </div>
 
                                         {/* Arrow pointer */}
                                         <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-b-2 border-r-2 border-green-500"></div>
-                                    </button>
+                                    </div>
                                 </div>
                             );
                         })}
