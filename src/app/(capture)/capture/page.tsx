@@ -1483,43 +1483,42 @@ export default function CapturePage() {
                                         ))
                                     )}
 
-                                    {cart.length > 0 && (
-                                        <div className="space-y-2 mt-4 pt-4 border-t border-white/5">
-                                            <div className="space-y-2">
-                                                <div className="relative">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Nome completo *"
-                                                        value={customerInfo.nome}
-                                                        onChange={(e) => setCustomerInfo({ ...customerInfo, nome: e.target.value })}
-                                                        className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 border border-white/5 text-sm font-bold"
-                                                    />
-                                                </div>
-                                                <div className="relative">
-                                                    <input
-                                                        type="tel"
-                                                        placeholder="Telefone *"
-                                                        value={customerInfo.telefone}
-                                                        onChange={(e) => setCustomerInfo({ ...customerInfo, telefone: maskPhone(e.target.value) })}
-                                                        maxLength={15}
-                                                        className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 border border-white/5 text-sm font-bold"
-                                                    />
-                                                </div>
-                                                <div className="relative">
-                                                    <input
-                                                        type="email"
-                                                        placeholder="Email (Opcional)"
-                                                        value={customerInfo.email}
-                                                        onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
-                                                        className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 border border-white/5 text-sm font-bold"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
+                                    {/* Inputs moved to footer */}
                                 </div>
 
                                 <div className="border-t border-neutral-800 pt-4 space-y-2 bg-neutral-900 z-10">
+                                    {/* Customer Inputs - Fixed at bottom */}
+                                    <div className="space-y-2 mb-2">
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                placeholder="Nome completo *"
+                                                value={customerInfo.nome}
+                                                onChange={(e) => setCustomerInfo({ ...customerInfo, nome: e.target.value })}
+                                                className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 border border-white/5 text-sm font-bold"
+                                            />
+                                        </div>
+                                        <div className="relative">
+                                            <input
+                                                type="tel"
+                                                placeholder="Telefone *"
+                                                value={customerInfo.telefone}
+                                                onChange={(e) => setCustomerInfo({ ...customerInfo, telefone: maskPhone(e.target.value) })}
+                                                maxLength={15}
+                                                className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 border border-white/5 text-sm font-bold"
+                                            />
+                                        </div>
+                                        <div className="relative">
+                                            <input
+                                                type="email"
+                                                placeholder="Email (Opcional)"
+                                                value={customerInfo.email}
+                                                onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
+                                                className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 border border-white/5 text-sm font-bold"
+                                            />
+                                        </div>
+                                    </div>
+
                                     <div className="pt-2">
                                         <button
                                             onClick={() => setIsCartOpen(false)}
@@ -1535,8 +1534,8 @@ export default function CapturePage() {
                                     </div>
                                     <button
                                         onClick={checkout}
-                                        disabled={cart.length === 0 || isSubmitting}
-                                        className="w-full bg-blue-600 text-white font-black py-3 rounded-xl hover:bg-blue-500 active:scale-95 disabled:opacity-50 transition-all text-sm shadow-lg border border-blue-400/20 uppercase tracking-widest flex items-center justify-center gap-2"
+                                        disabled={cart.length === 0 || isSubmitting || !customerInfo.nome?.trim() || !customerInfo.telefone?.trim()}
+                                        className="w-full bg-blue-600 text-white font-black py-3 rounded-xl hover:bg-blue-500 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm shadow-lg border border-blue-400/20 uppercase tracking-widest flex items-center justify-center gap-2"
                                     >
                                         {isSubmitting ? (
                                             <>
