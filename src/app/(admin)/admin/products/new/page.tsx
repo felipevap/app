@@ -340,6 +340,31 @@ function NewProductContent() {
         }
     };
 
+
+    const generateDescription = (name: string, category: string, condition: string) => {
+        if (!name) return "";
+
+        const templates = [
+            `Oportunidade incrível! ${name} em estado ${condition}. Perfeito para quem busca qualidade e economia na categoria ${category}.`,
+            `${name} disponível! Item ${condition}, ideal para seu uso diário. Aproveite esta oferta de ${category}.`,
+            `Confira este(a) ${name}! Produto ${condition} com ótimo custo-benefício. Destaque em nossa seção de ${category}.`,
+            `Vendo ${name} (${condition}). Ótimo estado de conservação, pronto para uso. Veja mais itens de ${category} em nossa Garage Sale.`,
+            `${category}: ${name} em condição ${condition}. Peça única, não perca!`
+        ];
+
+        return templates[Math.floor(Math.random() * templates.length)];
+    };
+
+    const handleSuggestDescription = () => {
+        const desc = generateDescription(formData.nome, formData.categoria, formData.condicao);
+        if (desc) {
+            setFormData(prev => ({ ...prev, descricao: desc }));
+            showToast("Descrição sugerida!", "success");
+        } else {
+            showToast("Preencha o nome do produto primeiro.", "info");
+        }
+    };
+
     const handleCropConfirm = () => {
         if (!currentImageForSelection || !cropBox) return;
 
@@ -360,6 +385,15 @@ function NewProductContent() {
 
                         if (!prev.nome) updates.nome = translatedName;
                         if (prev.categoria === "Outros") updates.categoria = suggestedCategory;
+
+                        // Auto-generate description if empty
+                        if (!prev.descricao) {
+                            updates.descricao = generateDescription(
+                                updates.nome || prev.nome || translatedName,
+                                updates.categoria || prev.categoria || suggestedCategory,
+                                prev.condicao
+                            );
+                        }
                     }
 
                     return { ...prev, ...updates };
@@ -368,6 +402,9 @@ function NewProductContent() {
             closeSelectionModal();
         };
     };
+
+    // ... (rest of the file)
+
 
     const handleKeepOriginal = () => {
         if (currentImageForSelection) {
@@ -693,7 +730,16 @@ function NewProductContent() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-neutral-300 mb-2">Descrição</label>
+                        <div className="flex items-center justify-between mb-2">
+                            <label className="block text-sm font-medium text-neutral-300">Descrição</label>
+                            <button
+                                type="button"
+                                onClick={handleSuggestDescription}
+                                className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
+                            >
+                                ✨ Sugerir Descrição
+                            </button>
+                        </div>
                         <textarea
                             required
                             rows={4}

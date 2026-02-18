@@ -951,7 +951,7 @@ export default function CapturePage() {
                                 <p className="mt-4 text-neutral-300 text-base leading-relaxed">{foundProduct.descricao}</p>
 
                                 <div className="mt-6 flex gap-2">
-                                    <button onClick={addToCart} className="flex-1 bg-green-600 py-4 rounded-xl font-black text-white hover:bg-green-500 active:scale-95 transition-all text-lg shadow-xl border border-green-400/30 flex items-center justify-center gap-2">
+                                    <button onClick={() => addToCart()} className="flex-1 bg-green-600 py-4 rounded-xl font-black text-white hover:bg-green-500 active:scale-95 transition-all text-lg shadow-xl border border-green-400/30 flex items-center justify-center gap-2">
                                         <span>✓</span> ADICIONAR
                                     </button>
                                     {foundProducts.length > 1 && (
