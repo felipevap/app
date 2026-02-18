@@ -1,102 +1,124 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
-const prisma = new PrismaClient();
-
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+    req: NextRequest,
+    context: { params: Promise<{ id: string }> }
+) {
     try {
-        const { id: paramId } = await params;
-        const id = parseInt(paramId);
-        const body = await req.json();
-        const { items, payments, totalValue, buyerName, buyerPhone, buyerEmail, garageSaleId } = body;
+        const { id } = await context.params;
+        const saleId = parseInt(id);
 
-        // Transaction to update sale:
-        // 1. Delete existing items and payments
-        // 2. Update sale details
-        // 3. Create new items and payments
+        if (isNaN(saleId)) {
+            return NextResponse.json({ error: 'Invalid sale ID' }, { status: 400 });
+        }
 
-        // Note: In a real production app, we might want to be more granular or use soft deletes, 
-        // but for this requirement "alterar tudo", replacing is cleaner.
-
-        const updatedSale = await prisma.$transaction(async (tx) => {
-            // Delete old relations
-            await tx.saleItem.deleteMany({ where: { saleId: id } });
-            await tx.payment.deleteMany({ where: { saleId: id } });
-
-            // Create new items data
-            const newItems = items.map((item: any) => ({
-                description: item.desc,
-                price: parseFloat(item.price),
-                quantity: parseInt(item.qty),
-            }));
-
-            // Create new payments data
-            const newPayments = payments.map((payment: any) => ({
-                method: payment.method,
-                amount: parseFloat(payment.amount),
-            }));
-
-            // Update sale and recreate relations
-            return await tx.sale.update({
-                where: { id },
-                data: {
-                    totalValue: parseFloat(totalValue),
-                    buyerName,
-                    buyerPhone,
-                    buyerEmail,
-                    garageSaleId,
-                    items: {
-                        create: newItems,
-                    },
-                    payments: {
-                        create: newPayments,
-                    },
-                },
-                include: {
-                    items: true,
-                    payments: true,
-                },
-            });
+        // 1. Fetch sale with items to get product IDs
+        const sale = await prisma.sale.findUnique({
+            where: { id: saleId },
+            include: { items: true }
         });
 
-        return NextResponse.json(updatedSale);
-    } catch (error) {
-        console.error('Error updating sale:', error);
-        return NextResponse.json({ error: 'Failed to update sale' }, { status: 500 });
-    }
-}
+        if (!sale) {
+            return NextResponse.json({ error: 'Sale not found' }, { status: 404 });
+        }
 
-export async function DELETE(req: NextRequest, props: { params: Promise<{ id: string }> }) {
-    try {
-        const params = await props.params;
-        const id = parseInt(params.id);
-
+        // 2. Restore products to 'disponível' & Delete Sale
         await prisma.$transaction(async (tx) => {
-            // 1. Fetch sale to identify items
-            const sale = await tx.sale.findUnique({
-                where: { id },
-                include: { items: true }
-            });
-
-            if (!sale) throw new Error("Sale not found");
-
-            // 2. Restore items to stock (status: disponível) if they have a productId
             for (const item of sale.items) {
                 if (item.productId) {
                     await tx.product.update({
                         where: { id: item.productId },
-                        data: { status: 'disponível' }
+                        data: {
+                            status: 'disponível',
+                            reservedBy: null,
+                            reservedByName: null,
+                            reservedByEmail: null,
+                            reservedByPhone: null,
+                            reservedAt: null
+                        }
                     });
                 }
             }
 
-            // 3. Delete sale (cascades items and payments)
-            await tx.sale.delete({ where: { id } });
+            await tx.sale.delete({
+                where: { id: saleId }
+            });
         });
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ message: 'Sale deleted successfully' });
     } catch (error) {
         console.error('Error deleting sale:', error);
         return NextResponse.json({ error: 'Failed to delete sale' }, { status: 500 });
+    }
+}
+
+export async function PUT(
+    req: NextRequest,
+    context: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await context.params;
+        const saleId = parseInt(id);
+        const body = await req.json();
+        const { buyerName, buyerPhone, buyerEmail, items: newItems, totalValue } = body;
+
+        if (isNaN(saleId)) {
+            return NextResponse.json({ error: 'Invalid sale ID' }, { status: 400 });
+        }
+
+        const currentSale = await prisma.sale.findUnique({
+            where: { id: saleId },
+            include: { items: true }
+        });
+
+        if (!currentSale) {
+            return NextResponse.json({ error: 'Sale not found' }, { status: 404 });
+        }
+
+        const updatedSale = await prisma.$transaction(async (tx) => {
+            // 1. Identify removed items
+            // newItems contains the list of items that should REMAIN
+            const newItemsIds = new Set(newItems.filter((i: any) => i.id).map((i: any) => i.id));
+
+            const itemsToRemove = currentSale.items.filter(item => !newItemsIds.has(item.id));
+
+            // Restore removed items
+            for (const item of itemsToRemove) {
+                if (item.productId) {
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: {
+                            status: 'disponível',
+                            reservedBy: null,
+                            reservedByName: null,
+                            reservedByEmail: null,
+                            reservedByPhone: null,
+                            reservedAt: null
+                        }
+                    });
+                }
+                // Delete SaleItem
+                await tx.saleItem.delete({ where: { id: item.id } });
+            }
+
+            // 2. Update Sale details
+            return await tx.sale.update({
+                where: { id: saleId },
+                data: {
+                    buyerName,
+                    buyerPhone,
+                    buyerEmail,
+                    totalValue: parseFloat(totalValue)
+                },
+                include: { items: true, payments: true }
+            });
+        });
+
+        return NextResponse.json(updatedSale);
+
+    } catch (error) {
+        console.error('Error updating sale:', error);
+        return NextResponse.json({ error: 'Failed to update sale' }, { status: 500 });
     }
 }

@@ -2,11 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
-import Link from "next/link";
+
+interface SaleItem {
+    id: number;
+    description: string;
+    quantity: number;
+    price: number;
+    productId?: string;
+    originalPrice?: number;
+    discountPercent?: number;
+}
 
 interface Sale {
     id: number;
-    items: { description: string; quantity: number; price: number }[];
+    items: SaleItem[];
     payments: { method: string; amount: number }[];
     totalValue: number;
     createdAt: string;
@@ -21,21 +30,49 @@ export default function AdminSalesPage() {
     const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("all");
     const [salesHistory, setSalesHistory] = useState<Sale[]>([]);
     const [expandedSaleId, setExpandedSaleId] = useState<number | null>(null);
+    const [editingSale, setEditingSale] = useState<Sale | null>(null);
 
     useEffect(() => {
-        const fetchSales = async () => {
-            try {
-                const res = await fetch('/api/sales');
-                if (res.ok) {
-                    const data = await res.json();
-                    setSalesHistory(data);
-                }
-            } catch (e) {
-                console.error("Failed to load sales history", e);
-            }
-        };
         fetchSales();
     }, []);
+
+    const fetchSales = async () => {
+        try {
+            const res = await fetch('/api/sales');
+            if (res.ok) {
+                const data = await res.json();
+                setSalesHistory(data);
+            }
+        } catch (e) {
+            console.error("Failed to load sales history", e);
+        }
+    };
+
+    const handleDelete = async (e: React.MouseEvent, saleId: number) => {
+        e.stopPropagation();
+        if (!confirm("Tem certeza que deseja excluir esta venda? Os produtos voltarão a ficar disponíveis no estoque.")) return;
+
+        try {
+            const res = await fetch(`/api/sales/${saleId}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                alert("Venda excluída com sucesso!");
+                fetchSales();
+            } else {
+                alert("Erro ao excluir venda.");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao excluir venda.");
+        }
+    };
+
+    const handleEditClick = (e: React.MouseEvent, sale: Sale) => {
+        e.stopPropagation();
+        setEditingSale(sale);
+    };
 
     const filteredSales = selectedGarageSaleId === "all"
         ? salesHistory
@@ -162,6 +199,27 @@ export default function AdminSalesPage() {
 
                                 {expandedSaleId === sale.id && (
                                     <div className="p-4 bg-neutral-950 border-t border-neutral-800">
+                                        <div className="flex justify-end gap-3 mb-4">
+                                            <button
+                                                onClick={(e) => handleEditClick(e, sale)}
+                                                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                                Editar
+                                            </button>
+                                            <button
+                                                onClick={(e) => handleDelete(e, sale.id)}
+                                                className="flex items-center gap-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm transition-colors"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                                Excluir
+                                            </button>
+                                        </div>
+
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
                                                 <h3 className="font-bold text-white mb-3">Itens Vendidos</h3>
@@ -207,6 +265,186 @@ export default function AdminSalesPage() {
                         ))}
                     </div>
                 )}
+            </div>
+
+            {editingSale && (
+                <EditSaleModal
+                    sale={editingSale}
+                    onClose={() => setEditingSale(null)}
+                    onSave={() => {
+                        setEditingSale(null);
+                        fetchSales();
+                    }}
+                />
+            )}
+        </div>
+    );
+}
+
+function EditSaleModal({ sale, onClose, onSave }: { sale: Sale, onClose: () => void, onSave: () => void }) {
+    const [buyerName, setBuyerName] = useState(sale.buyerName || "");
+    const [buyerPhone, setBuyerPhone] = useState(sale.buyerPhone || "");
+    const [buyerEmail, setBuyerEmail] = useState(sale.buyerEmail || "");
+    const [items, setItems] = useState(sale.items);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const totalValue = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    const handleRemoveItem = (indexToRemove: number) => {
+        if (!confirm("Remover este item da venda? Ele voltará para o estoque.")) return;
+        setItems(items.filter((_, idx) => idx !== indexToRemove));
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const res = await fetch(`/api/sales/${sale.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    buyerName,
+                    buyerPhone,
+                    buyerEmail,
+                    items, // Send remaining items
+                    totalValue
+                })
+            });
+
+            if (res.ok) {
+                alert("Venda atualizada com sucesso!");
+                onSave();
+            } else {
+                alert("Erro ao atualizar venda.");
+            }
+        } catch (error) {
+            console.error("Error updating sale", error);
+            alert("Erro ao atualizar venda.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const formatCurrency = (value: number) => {
+        return new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        }).format(value);
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+            <div className="bg-neutral-900 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-neutral-800 flex flex-col">
+                <div className="p-6 border-b border-neutral-800 flex justify-between items-center sticky top-0 bg-neutral-900 z-10">
+                    <h2 className="text-xl font-bold text-white">Editar Venda #{sale.id}</h2>
+                    <button onClick={onClose} className="text-neutral-400 hover:text-white">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div className="p-6 space-y-6 flex-1 overflow-y-auto">
+                    {/* Buyer Info */}
+                    <div className="space-y-4">
+                        <h3 className="font-bold text-neutral-300 border-b border-neutral-800 pb-2">Informações do Cliente</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm text-neutral-400 mb-1">Nome</label>
+                                <input
+                                    type="text"
+                                    value={buyerName}
+                                    onChange={e => setBuyerName(e.target.value)}
+                                    className="w-full bg-neutral-950 border border-neutral-700 rounded p-2 text-white"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-neutral-400 mb-1">Telefone</label>
+                                <input
+                                    type="text"
+                                    value={buyerPhone}
+                                    onChange={e => setBuyerPhone(e.target.value)}
+                                    className="w-full bg-neutral-950 border border-neutral-700 rounded p-2 text-white"
+                                />
+                            </div>
+                            <div className="md:col-span-2">
+                                <label className="block text-sm text-neutral-400 mb-1">Email</label>
+                                <input
+                                    type="email"
+                                    value={buyerEmail}
+                                    onChange={e => setBuyerEmail(e.target.value)}
+                                    className="w-full bg-neutral-950 border border-neutral-700 rounded p-2 text-white"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Items */}
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center border-b border-neutral-800 pb-2">
+                            <h3 className="font-bold text-neutral-300">Itens ({items.length})</h3>
+                            <span className="text-green-400 font-bold">{formatCurrency(totalValue)}</span>
+                        </div>
+
+                        {items.length === 0 && (
+                            <p className="text-red-400 text-sm">Atenção: remover todos os itens excluirá efetivamente os produtos da venda.</p>
+                        )}
+
+                        <div className="space-y-2">
+                            {items.map((item, idx) => (
+                                <div key={item.id || idx} className="flex items-center justify-between p-3 bg-neutral-950 border border-neutral-800 rounded-lg group hover:border-neutral-700">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-bold text-blue-400">{item.quantity}x</span>
+                                            <span className="text-white">{item.description}</span>
+                                        </div>
+                                        <div className="text-sm text-neutral-400 mt-1">
+                                            Original: {formatCurrency(item.price)}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <span className="font-bold text-white">{formatCurrency(item.price * item.quantity)}</span>
+                                        <button
+                                            onClick={() => handleRemoveItem(idx)}
+                                            className="p-2 text-red-500 hover:bg-neutral-800 rounded-full transition-colors"
+                                            title="Remover item"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-6 border-t border-neutral-800 flex justify-end gap-3 bg-neutral-900 sticky bottom-0">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 text-neutral-300 hover:text-white transition-colors"
+                        disabled={isSaving}
+                    >
+                        Cancelar
+                    </button>
+                    <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                        {isSaving ? (
+                            <>
+                                <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                Salvando...
+                            </>
+                        ) : (
+                            "Salvar Alterações"
+                        )}
+                    </button>
+                </div>
             </div>
         </div>
     );
