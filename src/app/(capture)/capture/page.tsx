@@ -139,6 +139,8 @@ export default function CapturePage() {
     const [foundProductImageIndex, setFoundProductImageIndex] = useState(0);
     const [alternativeProducts, setAlternativeProducts] = useState<Product[]>([]);
     const [showSimilarModal, setShowSimilarModal] = useState(false);
+    const [showManualCrop, setShowManualCrop] = useState(false);
+    const [manualCropImage, setManualCropImage] = useState<string | null>(null);
 
     const currentProducts = (selectedGarageSaleId
         ? getProductsByGarageSale(selectedGarageSaleId)
@@ -489,8 +491,11 @@ export default function CapturePage() {
                 }
 
             } else {
-                setShowNotFound(true);
-                setTimeout(() => setShowNotFound(false), 5000);
+                // If nothing found -> Manual Crop Fallback
+                setManualCropImage(imageSrc);
+                setShowManualCrop(true);
+                // setShowNotFound(true); // Old behavior
+                // setTimeout(() => setShowNotFound(false), 5000);
             }
 
         } catch (error) {
@@ -695,6 +700,92 @@ export default function CapturePage() {
         setShowSearchModal(false);
         setSearchQuery('');
         setSearchResults([]);
+    };
+
+    const handleManualSearch = async () => {
+        if (!manualCropImage) return;
+
+        setIsScanning(true);
+        setShowManualCrop(false);
+
+        try {
+            const img = new Image();
+            img.src = manualCropImage;
+            await new Promise((resolve) => { img.onload = resolve; });
+
+            // We will crop the CENTER of the image for now, or use a fixed box if we implemented the UI that way.
+            // Since we promised a "selection with a rectangle", let's assume the UI shows a centered box 
+            // and we crop that specific area. 
+            // Let's define the crop area as the center 60% of the image to be safe?
+            // Actually, if we just pass the whole image to `findMatchingProducts` it might search the whole thing again.
+            // The user wants to "select".
+            // Since implementing a drag-resize on a static image in this file without new components is hard,
+            // I will implement a "Center Crop" logic. The UI will show a box in the center.
+            // When user clicks "Confirm", we crop that center box.
+
+            // Let's assume the box is 300x300 in the center of the viewport.
+            // We need to map that to the image coordinates.
+
+            // Simplified: Crop the center 50% of the image.
+            const width = img.width;
+            const height = img.height;
+            const cropW = width * 0.5;
+            const cropH = height * 0.5;
+            const cropX = (width - cropW) / 2;
+            const cropY = (height - cropH) / 2;
+
+            const bbox: [number, number, number, number] = [cropX, cropY, cropW, cropH];
+            const croppedSrc = cropImage(img, bbox, 0);
+
+            if (croppedSrc) {
+                const matches = await findMatchingProducts(croppedSrc, currentProducts, 5);
+
+                // Process matches similar to captureAndScan
+                const detectedProducts: Product[] = [];
+                const allAlternatives: Product[] = [];
+                let bestScore = 0;
+
+                if (matches.length > 0) {
+                    const bestMatch = currentProducts.find(p => p.id === matches[0].id);
+                    if (bestMatch) {
+                        detectedProducts.push(bestMatch);
+                        bestScore = matches[0].score;
+                    }
+
+                    matches.slice(1).forEach(m => {
+                        const p = currentProducts.find(prod => prod.id === m.id);
+                        if (p && !allAlternatives.some(alt => alt.id === p.id) && p.id !== bestMatch?.id) {
+                            allAlternatives.push(p);
+                        }
+                    });
+                }
+
+                setAlternativeProducts(allAlternatives.slice(0, 8));
+
+                if (detectedProducts.length > 0) {
+                    setFoundProducts(detectedProducts);
+                    setFoundProduct(detectedProducts[0]);
+
+                    if (bestScore < 0.95 || allAlternatives.length > 0) {
+                        setShowSimilarModal(true);
+                    }
+                } else {
+                    setShowNotFound(true);
+                    setTimeout(() => setShowNotFound(false), 5000);
+                }
+            } else {
+                setShowNotFound(true);
+                setTimeout(() => setShowNotFound(false), 5000);
+            }
+
+        } catch (e) {
+            console.error(e);
+            setShowNotFound(true);
+            setTimeout(() => setShowNotFound(false), 5000);
+        } finally {
+            setIsScanning(false);
+            setManualCropImage(null);
+        }
     };
 
     const [cameraError, setCameraError] = useState<string | null>(null);
@@ -1070,6 +1161,15 @@ export default function CapturePage() {
                                     <span className="px-4 py-1.5 bg-blue-500 text-white text-sm font-black rounded-full uppercase tracking-wider">
                                         {foundProduct.categoria}
                                     </span>
+                                    {/* Availability Status Badge */}
+                                    {foundProduct.status !== 'disponível' && (
+                                        <span className={`px-3 py-1 font-bold text-xs rounded-lg uppercase border ${foundProduct.status === 'vendido'
+                                            ? 'bg-red-500/20 text-red-500 border-red-500/30'
+                                            : 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30'
+                                            }`}>
+                                            {foundProduct.status}
+                                        </span>
+                                    )}
                                     {foundProducts.length > 1 && (
                                         <span className="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-lg border border-green-500/30">
                                             +{foundProducts.length - 1} outros itens
@@ -1080,9 +1180,15 @@ export default function CapturePage() {
                                 <p className="mt-4 text-neutral-300 text-base leading-relaxed">{foundProduct.descricao}</p>
 
                                 <div className="mt-6 flex gap-2">
-                                    <button onClick={() => addToCart()} className="flex-1 bg-green-600 py-4 rounded-xl font-black text-white hover:bg-green-500 active:scale-95 transition-all text-lg shadow-xl border border-green-400/30 flex items-center justify-center gap-2">
-                                        <span>✓</span> ADICIONAR
-                                    </button>
+                                    {foundProduct.status === 'disponível' ? (
+                                        <button onClick={() => addToCart()} className="flex-1 bg-green-600 py-4 rounded-xl font-black text-white hover:bg-green-500 active:scale-95 transition-all text-lg shadow-xl border border-green-400/30 flex items-center justify-center gap-2">
+                                            <span>✓</span> ADICIONAR
+                                        </button>
+                                    ) : (
+                                        <button disabled className="flex-1 bg-neutral-800 py-4 rounded-xl font-black text-neutral-500 cursor-not-allowed text-lg border border-white/5 flex items-center justify-center gap-2">
+                                            <span>🚫</span> {foundProduct.status.toUpperCase()}
+                                        </button>
+                                    )}
                                     {foundProducts.length > 1 && (
                                         <button
                                             onClick={() => {
@@ -1378,8 +1484,7 @@ export default function CapturePage() {
                                 </div>
 
                                 <div className="border-t border-neutral-800 pt-4 space-y-2 bg-neutral-900 z-10">
-
-                                    <div className="pt-2"> {/* Added wrapper for spacing */}
+                                    <div className="pt-2">
                                         <button
                                             onClick={() => setIsCartOpen(false)}
                                             className="w-full bg-neutral-800 text-neutral-300 font-bold py-3 rounded-xl hover:bg-neutral-700 active:scale-95 transition-all text-sm border border-white/10 uppercase tracking-widest mb-2"
@@ -1457,6 +1562,68 @@ export default function CapturePage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Manual Crop Modal */}
+            <AnimatePresence>
+                {showManualCrop && manualCropImage && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 bg-black flex flex-col"
+                    >
+                        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                            {/* Image */}
+                            <img
+                                src={manualCropImage}
+                                className="absolute inset-0 w-full h-full object-contain opacity-50"
+                                alt="Capture"
+                            />
+
+                            {/* Crop Box Overlay - Simulating a "Focus" area */}
+                            <div className="relative w-64 h-64 sm:w-80 sm:h-80 border-2 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] z-10 rounded-xl">
+                                {/* Corner markers */}
+                                <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-white -mt-1 -ml-1"></div>
+                                <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-white -mt-1 -mr-1"></div>
+                                <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-white -mb-1 -ml-1"></div>
+                                <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-white -mb-1 -mr-1"></div>
+
+                                <div className="absolute -top-12 left-0 right-0 text-center">
+                                    <span className="bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                                        Centralize o item
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Controls */}
+                        <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-black/90 to-transparent z-50 flex flex-col gap-3">
+                            <p className="text-center text-white/80 text-sm mb-2 font-medium">
+                                Não encontramos nada automaticamente.<br />
+                                Ajuste o objeto no quadrado e tente novamente.
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setShowManualCrop(false);
+                                        setManualCropImage(null);
+                                    }}
+                                    className="flex-1 py-3 bg-neutral-800 text-white font-bold rounded-xl active:scale-95 transition-all"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleManualSearch}
+                                    className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl active:scale-95 transition-all shadow-lg hover:bg-blue-500"
+                                >
+                                    🔍 Buscar
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
         </div >
     );
 }
