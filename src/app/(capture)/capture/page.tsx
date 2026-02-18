@@ -439,6 +439,36 @@ export default function CapturePage() {
         }
     };
 
+    const handleRemoveItem = async (orderId: string, itemId: number, productId: string) => {
+        if (!confirm('Tem certeza que deseja desistir deste item? Ele voltará a ficar disponível para outros clientes.')) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/pending-orders/${orderId}/remove-item`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ itemId })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Erro ao remover item');
+            }
+
+            const data = await res.json();
+            if (data.deleted) {
+                showToast('Pedido removido pois ficou vazio.', 'info');
+            } else {
+                showToast('Item removido com sucesso.', 'success');
+            }
+            fetchPendingOrders();
+        } catch (error: any) {
+            console.error('Erro ao remover item:', error);
+            showToast(error.message || 'Erro ao remover item. Tente novamente.', 'error');
+        }
+    };
+
     const searchProducts = (query: string) => {
         setSearchQuery(query);
         setShowSearchModal(true); // Open modal when searching
@@ -1032,9 +1062,17 @@ export default function CapturePage() {
                                             </div>
                                             <div className="space-y-1">
                                                 {order.items.map((item: any, idx: number) => (
-                                                    <div key={idx} className="flex justify-between text-xs text-neutral-400">
-                                                        <span>{item.qty}x {item.desc}</span>
-                                                        <span>{formatBRL(item.price)}</span>
+                                                    <div key={idx} className="flex justify-between items-center text-xs text-neutral-400 py-1 border-b border-neutral-700/50 last:border-0">
+                                                        <span>{item.quantity}x {item.description}</span>
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="font-mono">{formatBRL(item.price)}</span>
+                                                            <button
+                                                                onClick={() => handleRemoveItem(order.id, item.id, item.productId)}
+                                                                className="text-red-500 hover:text-red-400 font-bold text-[10px] uppercase tracking-wider bg-red-500/10 px-2 py-1 rounded hover:bg-red-500/20 transition-colors"
+                                                            >
+                                                                Desistir
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
