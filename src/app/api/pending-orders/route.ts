@@ -6,6 +6,41 @@ const prisma = new PrismaClient();
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
+
+        // Check for expired orders and release products
+        const expirationTime = new Date(Date.now() - 30 * 60 * 1000); // 30 minutes ago
+        const expiredOrders = await prisma.pendingOrder.findMany({
+            where: {
+                status: 'pending',
+                isPaid: false,
+                createdAt: { lt: expirationTime }
+            },
+            include: { items: true }
+        });
+
+        for (const order of expiredOrders) {
+            await prisma.$transaction(async (tx) => {
+                await tx.pendingOrder.update({
+                    where: { id: order.id },
+                    data: { status: 'expired' }
+                });
+
+                for (const item of order.items) {
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: {
+                            status: 'disponível',
+                            reservedBy: null,
+                            reservedByName: null,
+                            reservedByEmail: null,
+                            reservedByPhone: null,
+                            reservedAt: null
+                        }
+                    });
+                }
+            });
+        }
+
         const garageSaleId = searchParams.get('garageSaleId');
 
         const customerEmail = searchParams.get('customerEmail');
@@ -164,9 +199,32 @@ export async function DELETE(req: NextRequest) {
             return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
         }
 
-        await prisma.pendingOrder.delete({
+        // Release products before deleting
+        const orderToDelete = await prisma.pendingOrder.findUnique({
             where: { id },
+            include: { items: true }
         });
+
+        if (orderToDelete) {
+            await prisma.$transaction(async (tx) => {
+                for (const item of orderToDelete.items) {
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: {
+                            status: 'disponível',
+                            reservedBy: null,
+                            reservedByName: null,
+                            reservedByEmail: null,
+                            reservedByPhone: null,
+                            reservedAt: null
+                        }
+                    });
+                }
+                await tx.pendingOrder.delete({
+                    where: { id },
+                });
+            });
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {

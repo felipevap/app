@@ -986,7 +986,7 @@ export default function POSPage() {
                                                         className="bg-red-50 text-red-500 p-2 rounded-lg hover:bg-red-100 transition-colors border border-red-200"
                                                         title="Excluir Pedido"
                                                     >
-                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
                                                     </button>
                                                 </div>
                                             </div>
@@ -1110,7 +1110,7 @@ export default function POSPage() {
                                     </div>
                                 )}
 
-                                <div className="border-t bg-gray-50 p-4">
+                                <div className="border-t bg-gray-50 p-2">
                                     {!isCheckoutMode ? (
                                         <>
                                             <div className="mb-4 flex flex-wrap gap-2 relative items-end">
@@ -1195,7 +1195,7 @@ export default function POSPage() {
                                                 <button
                                                     onClick={goToCheckout}
                                                     disabled={currentSale.items!.length === 0}
-                                                    className="rounded bg-blue-600 px-6 py-3 font-bold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-md hover:shadow-lg disabled:shadow-none"
+                                                    className="rounded bg-blue-600 px-6 py-2 font-bold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-md hover:shadow-lg disabled:shadow-none"
                                                 >
                                                     Finalizar
                                                 </button>
@@ -1286,7 +1286,7 @@ export default function POSPage() {
                                                 <button
                                                     onClick={finalizeSale}
                                                     disabled={remainingAmount > 0.01 || isSubmitting || (currentSale.items?.length || 0) === 0}
-                                                    className="w-full rounded bg-green-600 px-6 py-4 font-bold text-white hover:bg-green-700 disabled:opacity-50 transition-colors shadow-md hover:shadow-lg disabled:shadow-none flex items-center justify-center gap-2"
+                                                    className="w-full rounded bg-green-600 px-6 py-2 font-bold text-white hover:bg-green-700 disabled:opacity-50 transition-colors shadow-md hover:shadow-lg disabled:shadow-none flex items-center justify-center gap-2"
                                                 >
                                                     {isSubmitting ? (
                                                         <>

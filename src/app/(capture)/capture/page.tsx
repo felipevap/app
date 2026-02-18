@@ -11,6 +11,36 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 // import { loadModel, detectObjects, DetectionResult } from '@/utils/objectDetection';
 
+
+const RemainingTime = ({ createdAt }: { createdAt: string }) => {
+    const [timeLeft, setTimeLeft] = useState("");
+    const [expired, setExpired] = useState(false);
+
+    useEffect(() => {
+        const calculate = () => {
+            const created = new Date(createdAt).getTime();
+            const now = new Date().getTime();
+            const diff = created + 30 * 60 * 1000 - now; // 30 minutes
+
+            if (diff <= 0) {
+                setTimeLeft("00:00");
+                setExpired(true);
+                return;
+            }
+
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            setTimeLeft(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+        };
+        calculate();
+        const interval = setInterval(calculate, 1000);
+        return () => clearInterval(interval);
+    }, [createdAt]);
+
+    if (expired) return <span className="text-red-500 font-bold text-[10px]">EXPIRADO</span>;
+    return <span className="text-yellow-400 font-bold font-mono text-xs">⏱ {timeLeft}</span>;
+};
+
 export default function CapturePage() {
     const webcamRef = useRef<Webcam>(null);
     const { garageSales, products, getProductsByGarageSale } = useGarageSales();
@@ -454,7 +484,7 @@ export default function CapturePage() {
                 <p className="text-white text-center text-sm font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] bg-black/40 backdrop-blur-sm py-2 px-6 rounded-xl border border-white/10 mb-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
                     {isScanning ? "Analisando..." : "Aponte e capture"}
                 </p>
-                <div className="relative w-full h-[60vh] flex items-center justify-center">
+                <div className="relative w-full h-[80vh] flex items-center justify-center">
                     {/* Corner Markers */}
                     <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white/80 rounded-tl-xl drop-shadow-lg"></div>
                     <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white/80 rounded-tr-xl drop-shadow-lg"></div>
@@ -723,7 +753,7 @@ export default function CapturePage() {
 
                         {cartTab === 'current' ? (
                             <>
-                                <div className="flex-1 overflow-y-auto space-y-2 mb-6 pr-2 custom-scrollbar">
+                                <div className="flex-1 overflow-y-auto space-y-4 mb-0 pr-2 custom-scrollbar pb-4">
                                     {cart.length === 0 ? (
                                         <div className="text-center text-neutral-500 py-12 bg-neutral-800/50 rounded-3xl border border-dashed border-neutral-700">
                                             <div className="text-5xl mb-4">🛒</div>
@@ -745,10 +775,10 @@ export default function CapturePage() {
                                             </div>
                                         ))
                                     )}
-                                </div>
-
-                                <div className="border-t border-neutral-800 pt-6 space-y-4">
-                                    <div className="space-y-4">
+                                
+                                    {cart.length > 0 && (
+                                        <div className="space-y-2 mt-4 pt-4 border-t border-white/5">
+                                            <div className="space-y-2">
                                         <div className="relative">
                                             <input
                                                 type="text"
@@ -777,7 +807,12 @@ export default function CapturePage() {
                                                 className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 border border-white/5 text-sm font-bold"
                                             />
                                         </div>
-                                    </div>
+                                    </div> 
+                                        </div>
+                                    )}
+                 </div>
+
+                                <div className="border-t border-neutral-800 pt-4 space-y-2 bg-neutral-900 z-10">
 
                                     <div className="flex justify-between text-xl font-black pt-4 border-t border-neutral-800 text-white">
                                         <span className="uppercase text-[10px] text-neutral-500 self-center tracking-widest">Total</span>
@@ -806,7 +841,7 @@ export default function CapturePage() {
                                         <div key={order.id} className="bg-neutral-800 rounded-xl p-4 border border-neutral-700">
                                             <div className="flex justify-between items-start mb-2">
                                                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${order.isPaid ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                                    {order.isPaid ? 'PAGO' : 'AGUARDANDO'}
+                                                    {order.isPaid ? 'PAGO' : <RemainingTime createdAt={order.createdAt} />}
                                                 </span>
                                                 <span className="font-bold text-white">{formatBRL(order.total)}</span>
                                             </div>
