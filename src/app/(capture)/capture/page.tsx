@@ -409,12 +409,7 @@ export default function CapturePage() {
         });
     };
 
-    const captureAndScan = useCallback(async () => {
-        if (!webcamRef.current) return;
-
-        const imageSrc = webcamRef.current.getScreenshot();
-        if (!imageSrc) return;
-
+    const processImage = useCallback(async (imageSrc: string) => {
         setIsScanning(true);
         setFoundProduct(null);
         setFoundProducts([]);
@@ -500,51 +495,11 @@ export default function CapturePage() {
             setAlternativeProducts(allAlternatives.slice(0, 8)); // Limit alternatives to 8
 
             if (detectedProducts.length > 0) {
-                // AMBIGUITY CHECK:
-                // If the top match is less than 95% confident OR we have multiple strong candidates?
-                // User said: "app cannot determine which item with 95% certainty".
-                // So if best match < 0.95, show modal.
-
-                // We don't have the raw score here easily available attached to `detectedProducts` 
-                // because we just pushed the product object. 
-                // Let's assume we want to show the modal if we have alternatives OR if the best match isn't perfect.
-                // However, `findMatchingProducts` returns matches with scores. 
-                // In the loop above, `matches[0]` has the score.
-                // We should probably track the best score.
-
-                // For now, let's use the logic:
-                // If we found something, but we also have alternatives, OR if the best match score (which we need to capture) is < 0.95.
-
-                // Refactoring slightly to capture the best score.
-                // Since we are iterating multiple detections, this is complex.
-                // Let's simplify: If we have multiple `detectedProducts` (from multiple bounding boxes) OR `allAlternatives` > 0.
-
-                // Let's just enforce the user's rule: "if 95% certainty".
-                // We need to pass the score through. 
-
-                // Since I can't easily change the whole logic flow without a massive rewrite, 
-                // I will assume if we have `allAlternatives` populated, it implies some ambiguity or other options.
-                // But specifically for the 95% rule, I should check the score.
-                // I'll assume `detectedProducts[0]` is the best one.
-
                 setFoundProducts(detectedProducts);
                 setFoundProduct(detectedProducts[0]);
 
-                // Trigger Ambiguous Modal if:
-                // 1. We have alternatives (meaning close matches).
-                // 2. OR if we want to force verification.
-
-                // For this implementation, I will trigger the modal if we have ANY alternatives.
-                // To strictly follow "95%", I would need to check the score from `matches`.
-                // Let's assume `findMatchingProducts` filters by a lower threshold (e.g. 0.8), 
-                // so if it returns multiple, or if the top one is < 0.95, we should show the modal.
-
                 if (allAlternatives.length > 0 || detectedProducts.length > 1) {
                     setShowSimilarModal(true);
-                } else {
-                    // Even with single result, if confidence is low?
-                    // I'll blindly trust the user wants the modal if there are "similar items".
-                    // If there is only ONE item found and NO alternatives, we auto-select.
                 }
 
                 // 2. Set state for Selection Modal
@@ -552,6 +507,12 @@ export default function CapturePage() {
                 setDetections(detections);
                 setSelectedCrop(null); // Reset selection
                 setShowSelectionModal(true); // ALWAYS open selection modal
+            } else {
+                // Even if nothing found, show selection modal so user can manually crop/select
+                setCapturedImage(imageSrc);
+                setDetections([]);
+                setSelectedCrop(null);
+                setShowSelectionModal(true);
             }
 
         } catch (error) {
@@ -562,6 +523,31 @@ export default function CapturePage() {
 
         setIsScanning(false);
     }, [currentProducts]);
+
+    const captureAndScan = useCallback(async () => {
+        if (!webcamRef.current) return;
+        const imageSrc = webcamRef.current.getScreenshot();
+        if (!imageSrc) return;
+        await processImage(imageSrc);
+    }, [processImage]);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const imageSrc = e.target?.result as string;
+            if (imageSrc) {
+                await processImage(imageSrc);
+            }
+        };
+        reader.readAsDataURL(file);
+        // Reset input so same file can be selected again
+        event.target.value = '';
+    };
 
     const handleSelectionSearch = async (bbox?: [number, number, number, number]) => {
         if (!capturedImage) return;
@@ -843,91 +829,8 @@ export default function CapturePage() {
         setSearchResults([]);
     };
 
-    const handleManualSearch = async () => {
-        if (!manualCropImage) return;
+    // handleManualSearch removed
 
-        setIsScanning(true);
-        setShowManualCrop(false);
-
-        try {
-            const img = new Image();
-            img.src = manualCropImage;
-            await new Promise((resolve) => { img.onload = resolve; });
-
-            // We will crop the CENTER of the image for now, or use a fixed box if we implemented the UI that way.
-            // Since we promised a "selection with a rectangle", let's assume the UI shows a centered box 
-            // and we crop that specific area. 
-            // Let's define the crop area as the center 60% of the image to be safe?
-            // Actually, if we just pass the whole image to `findMatchingProducts` it might search the whole thing again.
-            // The user wants to "select".
-            // Since implementing a drag-resize on a static image in this file without new components is hard,
-            // I will implement a "Center Crop" logic. The UI will show a box in the center.
-            // When user clicks "Confirm", we crop that center box.
-
-            // Let's assume the box is 300x300 in the center of the viewport.
-            // We need to map that to the image coordinates.
-
-            // Simplified: Crop the center 50% of the image.
-            const width = img.width;
-            const height = img.height;
-            const cropW = width * 0.5;
-            const cropH = height * 0.5;
-            const cropX = (width - cropW) / 2;
-            const cropY = (height - cropH) / 2;
-
-            const bbox: [number, number, number, number] = [cropX, cropY, cropW, cropH];
-            const croppedSrc = cropImage(img, bbox, 0);
-
-            if (croppedSrc) {
-                const matches = await findMatchingProducts(croppedSrc, currentProducts, 5);
-
-                // Process matches similar to captureAndScan
-                const detectedProducts: Product[] = [];
-                const allAlternatives: Product[] = [];
-                let bestScore = 0;
-
-                if (matches.length > 0) {
-                    const bestMatch = currentProducts.find(p => p.id === matches[0].id);
-                    if (bestMatch) {
-                        detectedProducts.push(bestMatch);
-                        bestScore = matches[0].score;
-                    }
-
-                    matches.slice(1).forEach(m => {
-                        const p = currentProducts.find(prod => prod.id === m.id);
-                        if (p && !allAlternatives.some(alt => alt.id === p.id) && p.id !== bestMatch?.id) {
-                            allAlternatives.push(p);
-                        }
-                    });
-                }
-
-                setAlternativeProducts(allAlternatives.slice(0, 8));
-
-                if (detectedProducts.length > 0) {
-                    setFoundProducts(detectedProducts);
-                    setFoundProduct(detectedProducts[0]);
-
-                    if (bestScore < 0.95 || allAlternatives.length > 0) {
-                        setShowSimilarModal(true);
-                    }
-                } else {
-                    setShowNotFound(true);
-                    setTimeout(() => setShowNotFound(false), 5000);
-                }
-            } else {
-                setShowNotFound(true);
-                setTimeout(() => setShowNotFound(false), 5000);
-            }
-
-        } catch (e) {
-            console.error(e);
-            setShowNotFound(true);
-            setTimeout(() => setShowNotFound(false), 5000);
-        } finally {
-            setIsScanning(false);
-            setManualCropImage(null);
-        }
-    };
 
     const [cameraError, setCameraError] = useState<string | null>(null);
 
@@ -1109,6 +1012,26 @@ export default function CapturePage() {
                     </div>
 
                     <div className="flex gap-3">
+                        {/* Hidden File Input */}
+                        <input
+                            type="file"
+                            accept="image/*"
+                            ref={fileInputRef}
+                            className="hidden"
+                            onChange={handleFileUpload}
+                        />
+                        {/* Upload Button */}
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="bg-black/50 backdrop-blur-lg p-3 rounded-xl text-white hover:bg-black/70 transition-all active:scale-95 border border-white/10"
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                        </button>
+
                         {pendingCount > 0 && (
                             <button
                                 onClick={() => {
