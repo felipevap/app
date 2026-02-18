@@ -1393,8 +1393,8 @@ export default function CapturePage() {
                     >
                         <div className="bg-green-600 text-white p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4">
                             <div className="text-6xl mb-4">✓</div>
-                            <h3 className="text-2xl font-bold mb-2">Compra Registrada!</h3>
-                            <p className="text-lg">Por favor, dirija-se ao caixa para finalizar o pagamento.</p>
+                            <h3 className="text-2xl font-bold mb-2">Pedido Realizado com Sucesso!</h3>
+                            <p className="text-lg">Dirija-se ao caixa para realizar o pagamento.</p>
                         </div>
                     </motion.div>
                 )}
