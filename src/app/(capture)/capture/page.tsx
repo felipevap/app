@@ -41,12 +41,94 @@ const RemainingTime = ({ createdAt }: { createdAt: string }) => {
     return <span className="text-yellow-400 font-bold font-mono text-xs">⏱ {timeLeft}</span>;
 };
 
+interface ProductImageCarouselProps {
+    images: string[];
+    alt: string;
+    imageClassName: string;
+    currentIndex: number;
+    onChangeIndex: (nextIndex: number) => void;
+    showIndicators?: boolean;
+}
+
+const ProductImageCarousel = ({
+    images,
+    alt,
+    imageClassName,
+    currentIndex,
+    onChangeIndex,
+    showIndicators = false
+}: ProductImageCarouselProps) => {
+    if (!images.length) return null;
+
+    const safeIndex = Math.min(currentIndex, images.length - 1);
+    const hasMultipleImages = images.length > 1;
+
+    const goToPreviousImage = () => {
+        if (!hasMultipleImages) return;
+        onChangeIndex((safeIndex - 1 + images.length) % images.length);
+    };
+
+    const goToNextImage = () => {
+        if (!hasMultipleImages) return;
+        onChangeIndex((safeIndex + 1) % images.length);
+    };
+
+    return (
+        <div className="space-y-2">
+            <div className="relative">
+                <img src={images[safeIndex]} alt={alt} className={imageClassName} />
+                {hasMultipleImages && (
+                    <>
+                        <button
+                            type="button"
+                            onClick={goToPreviousImage}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 border border-white/20 text-white flex items-center justify-center transition-colors"
+                            aria-label="Foto anterior"
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={goToNextImage}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 border border-white/20 text-white flex items-center justify-center transition-colors"
+                            aria-label="Próxima foto"
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                        <span className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 rounded-full bg-black/70 border border-white/20 font-semibold">
+                            {safeIndex + 1}/{images.length}
+                        </span>
+                    </>
+                )}
+            </div>
+            {showIndicators && hasMultipleImages && (
+                <div className="flex items-center justify-center gap-1.5">
+                    {images.map((_, idx) => (
+                        <button
+                            key={idx}
+                            type="button"
+                            onClick={() => onChangeIndex(idx)}
+                            className={`h-1.5 rounded-full transition-all ${idx === safeIndex ? 'w-4 bg-blue-400' : 'w-2 bg-neutral-500 hover:bg-neutral-300'}`}
+                            aria-label={`Ir para foto ${idx + 1}`}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 export default function CapturePage() {
     const webcamRef = useRef<Webcam>(null);
     const { garageSales, products, getProductsByGarageSale } = useGarageSales();
     const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("");
     const [isScanning, setIsScanning] = useState(false);
     const [foundProduct, setFoundProduct] = useState<Product | null>(null);
+    const [foundProductImageIndex, setFoundProductImageIndex] = useState(0);
     const [alternativeProducts, setAlternativeProducts] = useState<Product[]>([]); // New state
     const [showNotFound, setShowNotFound] = useState(false);
     const [cart, setCart] = useState<any[]>([]);
@@ -98,6 +180,10 @@ export default function CapturePage() {
             fetchPendingOrders();
         }
     }, [customerInfo.nome, customerInfo.telefone]);
+
+    useEffect(() => {
+        setFoundProductImageIndex(0);
+    }, [foundProduct?.id]);
 
     const [searchResults, setSearchResults] = useState<Product[]>([]);
     // const [modelLoaded, setModelLoaded] = useState(false);
@@ -381,6 +467,8 @@ export default function CapturePage() {
         setCameraError("Acesso à câmera falhou. Certifique-se de estar em HTTPS ou localhost.");
     }, []);
 
+    const foundProductImages = foundProduct?.imagens.filter(Boolean) ?? [];
+
     return (
         <div className="h-[100dvh] w-full bg-black relative overflow-hidden font-sans text-white">
             {cameraError ? (
@@ -517,7 +605,8 @@ export default function CapturePage() {
             </div>
 
             {/* Scan Button & Bottom Bar */}
-            <div className="fixed bottom-0 inset-x-0 z-40 pointer-events-none">
+            {!isCartOpen && (
+                <div className="fixed bottom-0 inset-x-0 z-40 pointer-events-none">
                 <div className="flex justify-center mb-4">
                     <button
                         onClick={captureAndScan}
@@ -558,7 +647,8 @@ export default function CapturePage() {
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     </button>
                 </div>
-            </div>
+                </div>
+            )}
 
             <AnimatePresence>
                 {showNotFound && (
@@ -612,9 +702,13 @@ export default function CapturePage() {
                             </div>
 
                             <div className="flex gap-4 items-center">
-                                {foundProduct.imagens[0] && (
-                                    <img src={foundProduct.imagens[0]} alt={foundProduct.nome} className="w-24 h-24 rounded-xl object-cover bg-neutral-800 border border-white/10 shadow-lg" />
-                                )}
+                                <ProductImageCarousel
+                                    images={foundProductImages}
+                                    alt={foundProduct.nome}
+                                    imageClassName="w-24 h-24 rounded-xl object-cover bg-neutral-800 border border-white/10 shadow-lg"
+                                    currentIndex={foundProductImageIndex}
+                                    onChangeIndex={setFoundProductImageIndex}
+                                />
                                 <button onClick={addToCart} className="flex-1 bg-green-600 py-3 rounded-xl font-black text-white hover:bg-green-500 active:scale-95 transition-all text-base shadow-xl border border-green-400/30">
                                     ✓ ADICIONAR
                                 </button>
@@ -622,9 +716,14 @@ export default function CapturePage() {
                         </div>
 
                         <div className="flex gap-6 flex-col sm:flex-row">
-                            {foundProduct.imagens[0] && (
-                                <img src={foundProduct.imagens[0]} alt={foundProduct.nome} className="w-full sm:w-44 h-44 rounded-2xl object-cover bg-neutral-800 border border-white/10 shadow-lg" />
-                            )}
+                            <ProductImageCarousel
+                                images={foundProductImages}
+                                alt={foundProduct.nome}
+                                imageClassName="w-full sm:w-44 h-44 rounded-2xl object-cover bg-neutral-800 border border-white/10 shadow-lg"
+                                currentIndex={foundProductImageIndex}
+                                onChangeIndex={setFoundProductImageIndex}
+                                showIndicators
+                            />
                             <div className="flex-1">
                                 <div className="flex justify-between items-start gap-4">
                                     <h2 className="text-3xl font-black text-white leading-tight">{foundProduct.nome}</h2>
