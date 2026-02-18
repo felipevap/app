@@ -415,6 +415,13 @@ export default function CapturePage() {
         setFoundProducts([]);
         setAlternativeProducts([]);
         setShowNotFound(false);
+
+        // Show image immediately
+        setCapturedImage(imageSrc);
+        setShowSelectionModal(true);
+        setDetections([]); // Clear previous detections
+        setSelectedCrop(null);
+
         const allAlternatives: Product[] = [];
 
         // Allow UI update
@@ -502,17 +509,11 @@ export default function CapturePage() {
                     setShowSimilarModal(true);
                 }
 
-                // 2. Set state for Selection Modal
-                setCapturedImage(imageSrc);
+                // Update detections only
                 setDetections(detections);
-                setSelectedCrop(null); // Reset selection
-                setShowSelectionModal(true); // ALWAYS open selection modal
             } else {
-                // Even if nothing found, show selection modal so user can manually crop/select
-                setCapturedImage(imageSrc);
-                setDetections([]);
-                setSelectedCrop(null);
-                setShowSelectionModal(true);
+                // Even if nothing found, just update detections to empty (already done at start)
+                // and stop scanning
             }
 
         } catch (error) {
@@ -1744,7 +1745,12 @@ export default function CapturePage() {
                         {/* Controls & Thumbnails */}
                         <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-black/90 via-black/90 to-transparent z-50 flex flex-col gap-4">
 
-                            {detections.length > 0 ? (
+                            {isScanning ? (
+                                <div className="flex flex-col items-center justify-center p-4">
+                                    <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                                    <p className="text-white text-sm font-bold animate-pulse">Processando imagem...</p>
+                                </div>
+                            ) : detections.length > 0 ? (
                                 <div className="space-y-3">
                                     <p className="text-center text-white font-bold text-shadow">
                                         Identificamos {detections.length} objetos. Toque em um para pesquisar:
@@ -1790,7 +1796,7 @@ export default function CapturePage() {
                                 >
                                     Descartar
                                 </button>
-                                {detections.length === 0 && (
+                                {!isScanning && detections.length === 0 && (
                                     <button
                                         onClick={() => handleSelectionSearch()}
                                         className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl active:scale-95 transition-all shadow-lg hover:bg-blue-500"
