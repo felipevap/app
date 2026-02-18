@@ -131,7 +131,7 @@ const ProductImageCarousel = ({
 
 export default function CapturePage() {
     const webcamRef = useRef<Webcam>(null);
-    const { garageSales, products, getProductsByGarageSale } = useGarageSales();
+    const { garageSales, products, getProductsByGarageSale, loading } = useGarageSales();
     const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("");
     const [isScanning, setIsScanning] = useState(false);
     const [foundProduct, setFoundProduct] = useState<Product | null>(null);
@@ -273,8 +273,9 @@ export default function CapturePage() {
                         // Fast match: limit 1, use category boost
                         const matches = await findMatchingProducts(croppedSrc, currentProducts, 1, det.class);
 
-                        // Threshold for AR display (needs to be reasonably confident)
-                        if (matches.length > 0 && matches[0].score > 0.65) {
+                        // Threshold for AR display
+                        // Increased to 0.75 for high certainty as requested
+                        if (matches.length > 0 && matches[0].score > 0.75) {
                             const product = currentProducts.find(p => p.id === matches[0].id);
                             if (product) {
                                 newOverlays.push({
@@ -663,6 +664,13 @@ export default function CapturePage() {
                     transition={{ duration: 0.4 }}
                     className="absolute inset-0 w-full h-full bg-black"
                 >
+                    {/* Loading Overlay */}
+                    {loading && (
+                        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+                            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                            <p className="text-white font-bold text-lg animate-pulse">Carregando dados...</p>
+                        </div>
+                    )}
                     {/* Scanner Frame - Improved Visuals */}
                     <div className="absolute inset-0 overflow-hidden">
                         <Webcam
@@ -693,19 +701,20 @@ export default function CapturePage() {
                                             height: coords.height,
                                         }}
                                     />
-                                    {/* Product Tag Button */}
                                     <button
                                         onClick={() => setFoundProduct(overlay.product)}
-                                        className="absolute z-40 bg-white/90 backdrop-blur-md rounded-xl shadow-[0_0_15px_rgba(0,0,0,0.3)] border-2 border-green-500 p-3 flex flex-col items-center animate-in fade-in zoom-in duration-300 active:scale-95 transition-transform"
+                                        className="absolute z-40 bg-white/95 backdrop-blur-md rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.4)] border-2 border-green-500 p-3 flex flex-col items-start max-w-[200px] animate-in fade-in zoom-in duration-300 active:scale-95 transition-transform text-left"
                                         style={{
                                             left: coords.left + coords.width / 2,
                                             top: coords.top - 10,
                                             transform: 'translate(-50%, -100%)'
                                         }}
                                     >
-                                        <div className="text-[10px] font-black uppercase tracking-wider text-green-700 mb-1">É este?</div>
-                                        <div className="font-bold text-black text-sm leading-none whitespace-nowrap mb-1">{overlay.product.nome}</div>
-                                        <div className="font-black text-blue-600 text-sm">{formatBRL(overlay.product.preco)}</div>
+                                        <div className="font-bold text-black text-sm leading-tight mb-1 line-clamp-2">{overlay.product.nome}</div>
+                                        {overlay.product.descricao && (
+                                            <div className="text-gray-600 text-xs mb-2 line-clamp-2 leading-snug">{overlay.product.descricao}</div>
+                                        )}
+                                        <div className="font-black text-blue-600 text-lg">{formatBRL(overlay.product.preco)}</div>
 
                                         {/* Arrow pointer */}
                                         <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-b-2 border-r-2 border-green-500"></div>

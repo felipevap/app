@@ -5,49 +5,49 @@
 
 export const COCO_TO_CATEGORY_MAP: Record<string, string[]> = {
     // Furniture -> Móveis, Decoração
-    'chair': ['Móveis', 'Decoração'],
-    'couch': ['Móveis', 'Decoração'],
-    'potted plant': ['Decoração', 'Itens piscina'],
-    'bed': ['Móveis', 'Cama mesa e banho'],
-    'dining table': ['Móveis'],
-    'toilet': ['Móveis', 'Outros'],
-    'tv': ['Eletrônicos'],
-    'laptop': ['Eletrônicos'],
-    'mouse': ['Eletrônicos'],
-    'remote': ['Eletrônicos'],
-    'keyboard': ['Eletrônicos'],
-    'cell phone': ['Eletrônicos'],
-    'microwave': ['Eletrodomésticos', 'Itens cozinha'],
-    'oven': ['Eletrodomésticos', 'Itens cozinha'],
-    'toaster': ['Eletrodomésticos', 'Itens cozinha'],
-    'sink': ['Móveis', 'Itens cozinha'],
-    'refrigerator': ['Eletrodomésticos', 'Itens cozinha'],
-    'book': ['Livros'],
-    'clock': ['Decoração', 'Eletrônicos'],
-    'vase': ['Decoração'],
-    'scissors': ['Ferramentas', 'Outros'],
-    'teddy bear': ['Brinquedos'],
-    'hair drier': ['Eletrônicos', 'Saúde'],
-    'toothbrush': ['Saúde'],
-    'tie': ['Roupas'],
-    'suitcase': ['Outros'],
+    'chair': ['Móveis', 'Decoração', 'Cadeira'],
+    'couch': ['Móveis', 'Decoração', 'Sofá'],
+    'potted plant': ['Decoração', 'Itens piscina', 'Planta'],
+    'bed': ['Móveis', 'Cama mesa e banho', 'Cama'],
+    'dining table': ['Móveis', 'Mesa'],
+    'toilet': ['Móveis', 'Outros', 'Privada'],
+    'tv': ['Eletrônicos', 'TV', 'Televisão'],
+    'laptop': ['Eletrônicos', 'Notebook', 'Laptop', 'Computador'],
+    'mouse': ['Eletrônicos', 'Mouse'],
+    'remote': ['Eletrônicos', 'Controle'],
+    'keyboard': ['Eletrônicos', 'Teclado'],
+    'cell phone': ['Eletrônicos', 'Celular', 'Smartphone', 'iPhone', 'Android'],
+    'microwave': ['Eletrodomésticos', 'Itens cozinha', 'Microondas'],
+    'oven': ['Eletrodomésticos', 'Itens cozinha', 'Forno'],
+    'toaster': ['Eletrodomésticos', 'Itens cozinha', 'Torradeira'],
+    'sink': ['Móveis', 'Itens cozinha', 'Pia'],
+    'refrigerator': ['Eletrodomésticos', 'Itens cozinha', 'Geladeira'],
+    'book': ['Livros', 'Livro'],
+    'clock': ['Decoração', 'Eletrônicos', 'Relógio'],
+    'vase': ['Decoração', 'Vaso'],
+    'scissors': ['Ferramentas', 'Outros', 'Tesoura'],
+    'teddy bear': ['Brinquedos', 'Urso'],
+    'hair drier': ['Eletrônicos', 'Saúde', 'Secador'],
+    'toothbrush': ['Saúde', 'Escova'],
+    'tie': ['Roupas', 'Gravata'],
+    'suitcase': ['Outros', 'Mala'],
     'frisbee': ['Esportes', 'Brinquedos'],
     'skis': ['Esportes'],
     'snowboard': ['Esportes'],
-    'sports ball': ['Esportes', 'Brinquedos'],
-    'kite': ['Brinquedos'],
-    'baseball bat': ['Esportes'],
-    'baseball glove': ['Esportes'],
-    'skateboard': ['Esportes', 'Brinquedos'],
-    'surfboard': ['Esportes'],
-    'tennis racket': ['Esportes'],
-    'bottle': ['Itens cozinha', 'Decoração'],
-    'wine glass': ['Itens cozinha', 'Decoração'],
-    'cup': ['Itens cozinha'],
-    'fork': ['Itens cozinha'],
-    'knife': ['Itens cozinha'],
-    'spoon': ['Itens cozinha'],
-    'bowl': ['Itens cozinha'],
+    'sports ball': ['Esportes', 'Brinquedos', 'Bola'],
+    'kite': ['Brinquedos', 'Pipa'],
+    'baseball bat': ['Esportes', 'Taco'],
+    'baseball glove': ['Esportes', 'Luva'],
+    'skateboard': ['Esportes', 'Brinquedos', 'Skate'],
+    'surfboard': ['Esportes', 'Prancha'],
+    'tennis racket': ['Esportes', 'Raquete'],
+    'bottle': ['Itens cozinha', 'Decoração', 'Garrafa'],
+    'wine glass': ['Itens cozinha', 'Decoração', 'Taça'],
+    'cup': ['Itens cozinha', 'Copo', 'Xícara'],
+    'fork': ['Itens cozinha', 'Garfo'],
+    'knife': ['Itens cozinha', 'Faca'],
+    'spoon': ['Itens cozinha', 'Colher'],
+    'bowl': ['Itens cozinha', 'Tigela'],
     'banana': ['Outros'],
     'apple': ['Outros'],
     'sandwich': ['Outros'],
@@ -58,32 +58,32 @@ export const COCO_TO_CATEGORY_MAP: Record<string, string[]> = {
     'pizza': ['Outros'],
     'donut': ['Outros'],
     'cake': ['Outros'],
-    'bicycle': ['Esportes', 'Brinquedos'],
-    'car': ['Brinquedos', 'Outros'],
-    'motorcycle': ['Brinquedos', 'Outros'],
-    'airplane': ['Brinquedos'],
-    'bus': ['Brinquedos'],
-    'train': ['Brinquedos'],
-    'truck': ['Brinquedos'],
-    'boat': ['Brinquedos'],
+    'bicycle': ['Esportes', 'Brinquedos', 'Bicicleta'],
+    'car': ['Brinquedos', 'Outros', 'Carro'],
+    'motorcycle': ['Brinquedos', 'Outros', 'Moto'],
+    'airplane': ['Brinquedos', 'Avião'],
+    'bus': ['Brinquedos', 'Ônibus'],
+    'train': ['Brinquedos', 'Trem'],
+    'truck': ['Brinquedos', 'Caminhão'],
+    'boat': ['Brinquedos', 'Barco'],
     'traffic light': ['Outros'],
     'fire hydrant': ['Outros'],
     'stop sign': ['Outros'],
     'parking meter': ['Outros'],
-    'bench': ['Móveis'],
+    'bench': ['Móveis', 'Banco'],
     'bird': ['Decoração', 'Outros'],
     'cat': ['Decoração', 'Outros'],
     'dog': ['Decoração', 'Outros'],
-    'horse': ['Brinquedos', 'Decoração'],
-    'sheep': ['Brinquedos', 'Decoração'],
-    'cow': ['Brinquedos', 'Decoração'],
-    'elephant': ['Brinquedos', 'Decoração'],
-    'bear': ['Brinquedos', 'Decoração'],
-    'zebra': ['Brinquedos', 'Decoração'],
-    'giraffe': ['Brinquedos', 'Decoração'],
-    'backpack': ['Outros', 'Esportes'],
-    'umbrella': ['Outros'],
-    'handbag': ['Roupas', 'Outros'],
+    'horse': ['Brinquedos', 'Decoração', 'Cavalo'],
+    'sheep': ['Brinquedos', 'Decoração', 'Ovelha'],
+    'cow': ['Brinquedos', 'Decoração', 'Vaca'],
+    'elephant': ['Brinquedos', 'Decoração', 'Elefante'],
+    'bear': ['Brinquedos', 'Decoração', 'Urso'],
+    'zebra': ['Brinquedos', 'Decoração', 'Zebra'],
+    'giraffe': ['Brinquedos', 'Decoração', 'Girafa'],
+    'backpack': ['Outros', 'Esportes', 'Mochila'],
+    'umbrella': ['Outros', 'Guarda-chuva'],
+    'handbag': ['Roupas', 'Outros', 'Bolsa'],
 };
 
 export async function findMatchingProducts(
@@ -178,15 +178,27 @@ export async function findMatchingProducts(
             let finalScore = bestProductScore;
 
             if (detectedClass && product.categoria) {
-                // Boost if category matches
+                // Boost if category matches (Weak boost)
                 if (targetCategories?.includes(product.categoria)) {
-                    finalScore += 0.3; // Significant boost
+                    finalScore += 0.2;
                 }
 
-                // Boost if detected class name is in product name or tags
-                if (product.nome?.toLowerCase().includes(detectedClass.toLowerCase()) ||
-                    product.tags?.includes(detectedClass.toLowerCase())) {
-                    finalScore += 0.4; // Huge boost for direct keyword match
+                // Boost if detected class match Keywords/Translations in Product Name (Strong boost - "Training")
+                // Check if any keyword associated with the detected class is present in the product name
+                const keywords = targetCategories || [];
+                // Add the class itself as a keyword
+                keywords.push(detectedClass);
+
+                const productName = product.nome?.toLowerCase() || "";
+                const productTags = product.tags || [];
+
+                const hasKeywordMatch = keywords.some(kw =>
+                    productName.includes(kw.toLowerCase()) ||
+                    productTags.includes(kw.toLowerCase())
+                );
+
+                if (hasKeywordMatch) {
+                    finalScore += 0.5; // Huge boost for direct semantic match
                 }
             }
 

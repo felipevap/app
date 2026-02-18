@@ -9,7 +9,7 @@ import Toast from "@/components/Toast";
 import { Suspense } from "react";
 
 function ProductsContent() {
-    const { garageSales, products, getProductsByGarageSale, deleteProduct, restoreProduct, refreshData } = useGarageSales();
+    const { garageSales, products, getProductsByGarageSale, deleteProduct, restoreProduct, refreshData, loading } = useGarageSales();
     const searchParams = useSearchParams();
     const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("");
     const [searchTerm, setSearchTerm] = useState("");
@@ -25,6 +25,15 @@ function ProductsContent() {
     useEffect(() => {
         refreshData({ includeDeleted: showDeleted });
     }, [showDeleted, refreshData]);
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[50vh] text-white">
+                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-neutral-400 font-medium">Carregando produtos...</p>
+            </div>
+        );
+    }
 
     useEffect(() => {
         const garageSaleParam = searchParams?.get("garageSale");

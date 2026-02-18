@@ -99,7 +99,7 @@ const COCO_TRANSLATIONS: Record<string, string> = {
 function NewProductContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { garageSales, addProduct } = useGarageSales();
+    const { garageSales, addProduct, loading } = useGarageSales();
     const webcamRef = useRef<Webcam>(null);
 
     const [currentTag, setCurrentTag] = useState("");
@@ -150,6 +150,15 @@ function NewProductContent() {
     useEffect(() => {
         loadModel().then(loaded => setIsModelLoaded(loaded));
     }, []);
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[50vh] text-white">
+                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p className="text-neutral-400 font-medium">Carregando dados...</p>
+            </div>
+        );
+    }
 
     const processAddedImage = async (dataUrl: string) => {
         if (!isModelLoaded) {
