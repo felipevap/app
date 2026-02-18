@@ -940,10 +940,10 @@ export default function POSPage() {
                 {currentView === 'sales' && (
                     <div className="flex h-[calc(100vh-80px)] w-full gap-4 p-4 overflow-hidden">
                         <div className={`flex flex-col gap-4 overflow-hidden transition-all duration-300 ${isHistoryOpen ? 'w-full lg:w-2/3' : 'w-full'}`}>
-                            <div className="rounded-xl border border-orange-200 bg-orange-50 shadow-sm p-4 flex flex-col max-h-[180px]">
-                                <div className="flex justify-between items-center mb-3 flex-shrink-0">
-                                    <h3 className="font-bold text-orange-800 flex items-center gap-2">
-                                        <span className="text-xl">📱</span> Pedidos do App ({filteredPendingOrders.length})
+                            <div className="rounded-xl border border-orange-200 bg-orange-50 shadow-sm p-2 flex flex-col max-h-[180px]">
+                                <div className="flex justify-between items-center mb-2 flex-shrink-0">
+                                    <h3 className="font-bold text-orange-800 flex items-center gap-2 text-sm">
+                                        <span className="text-lg">📱</span> Pedidos App ({filteredPendingOrders.length})
                                     </h3>
                                     <input
                                         type="text"
@@ -962,31 +962,30 @@ export default function POSPage() {
                                 ) : (
                                     <div className="space-y-2 overflow-y-auto pr-1">
                                         {filteredPendingOrders.map((order: any) => (
-                                            <div key={order.id} className="bg-white rounded p-2 border border-orange-200 shadow-sm">
-                                                <div className="flex justify-between items-start mb-2">
+                                            <div key={order.id} className="bg-white rounded p-1.5 border border-orange-200 shadow-sm mb-1">
+                                                <div className="flex justify-between items-start mb-1">
                                                     <div>
-                                                        <div className="font-bold text-gray-800">{order.customerName}</div>
-                                                        <div className="text-sm text-gray-600">{order.customerPhone}</div>
-                                                        <div className="text-xs text-gray-500">{order.customerEmail}</div>
+                                                        <div className="font-bold text-gray-800 text-sm leading-tight">{order.customerName}</div>
+                                                        <div className="text-xs text-gray-600">{order.customerPhone}</div>
                                                     </div>
                                                     <div className="text-right">
-                                                        <div className="font-bold text-orange-600">{formatCurrency(order.total)}</div>
-                                                        <div className="text-xs text-gray-500">{order.items.length} {order.items.length === 1 ? 'item' : 'itens'}</div>
+                                                        <div className="font-bold text-orange-600 text-sm">{formatCurrency(order.total)}</div>
+                                                        <div className="text-[10px] text-gray-500">{order.items.length} it.</div>
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-2">
+                                                <div className="flex gap-1">
                                                     <button
                                                         onClick={() => loadPendingOrder(order)}
-                                                        className="flex-1 bg-orange-600 text-white py-1 px-2 rounded hover:bg-orange-700 transition-colors font-bold text-xs uppercase tracking-tight"
+                                                        className="flex-1 bg-orange-600 text-white py-0.5 px-2 rounded hover:bg-orange-700 transition-colors font-bold text-[10px] uppercase tracking-tight"
                                                     >
                                                         Processar
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeletePendingOrder(order.id)}
-                                                        className="bg-red-50 text-red-500 p-2 rounded-lg hover:bg-red-100 transition-colors border border-red-200"
+                                                        className="bg-red-50 text-red-500 p-1 rounded hover:bg-red-100 transition-colors border border-red-200"
                                                         title="Excluir Pedido"
                                                     >
-                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
                                                     </button>
                                                 </div>
                                             </div>
