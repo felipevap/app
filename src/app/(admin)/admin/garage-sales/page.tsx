@@ -6,7 +6,7 @@ import { useState } from "react";
 import { formatDate } from "@/utils/formatters";
 
 export default function GarageSalesPage() {
-    const { garageSales, deleteGarageSale, updateGarageSale, getProductsByGarageSale, refreshData } = useGarageSales();
+    const { garageSales, deleteGarageSale, updateGarageSale, getProductsByGarageSale, refreshData, loading } = useGarageSales();
     const [searchTerm, setSearchTerm] = useState("");
     const [showDeleted, setShowDeleted] = useState(false);
 
@@ -41,6 +41,14 @@ export default function GarageSalesPage() {
             refreshData({ includeDeleted: showDeleted });
         }
     };
+
+    if (loading && garageSales.length === 0) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">

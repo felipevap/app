@@ -20,6 +20,7 @@ export default function AdminDashboard() {
     const { garageSales, products } = useGarageSales();
     const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("all");
     const [salesHistory, setSalesHistory] = useState<Sale[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const fetchSales = async () => {
@@ -31,6 +32,8 @@ export default function AdminDashboard() {
                 }
             } catch (e) {
                 console.error("Failed to load sales history", e);
+            } finally {
+                setIsLoading(false);
             }
         };
         fetchSales();
@@ -72,6 +75,14 @@ export default function AdminDashboard() {
         if (diffHours < 24) return `há ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
         return `há ${diffDays} dia${diffDays > 1 ? 's' : ''}`;
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">

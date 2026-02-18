@@ -214,15 +214,40 @@ function NewProductContent() {
                 ] as [number, number, number, number]
             }));
 
+            setDetections(results); // Always set detections, even if empty
+
             if (results.length > 0) {
-                setCurrentImageForSelection(dataUrl);
-                setDetections(results);
-                setShowSelectionModal(true);
+                // Default to first detection
+                const first = results[0];
+                setCropBox({
+                    x: first.bbox[0],
+                    y: first.bbox[1],
+                    w: first.bbox[2],
+                    h: first.bbox[3]
+                });
+                setSelectedDetectionClass(first.class);
             } else {
-                console.log("No objects detected.");
-                showToast("Nenhum objeto identificado automaticamente.", "info");
-                setFormData(prev => ({ ...prev, imagens: [...prev.imagens, dataUrl] }));
+                // FALLBACK: Manual selection if no object detected
+                setSelectedDetectionClass(null); // No class detected
+
+                // Default box: 80% with centered
+                const defaultW = img.width * 0.8;
+                const defaultH = img.height * 0.8;
+                const defaultX = (img.width - defaultW) / 2;
+                const defaultY = (img.height - defaultH) / 2;
+
+                setCropBox({
+                    x: defaultX,
+                    y: defaultY,
+                    w: defaultW,
+                    h: defaultH
+                });
+
+                showToast("Nenhum objeto identificado automaticamente. Ajuste a seleção manualmente.", "info");
             }
+
+            setCurrentImageForSelection(dataUrl); // Use dataUrl from function parameter
+            setShowSelectionModal(true); // Use setShowSelectionModal
         } catch (error) {
             console.error("Detection error in processAddedImage:", error);
             showToast("Erro ao processar imagem.", "error");
@@ -853,16 +878,15 @@ function NewProductContent() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
                     <div className="w-full max-w-4xl bg-neutral-900 rounded-2xl overflow-hidden flex flex-col max-h-[90vh]">
                         <div className="p-4 border-b border-neutral-800 flex justify-between items-center">
-                            <div>
-                                <h2 className="text-xl font-bold text-white">Objetos Detectados</h2>
-                                <p className="text-neutral-400 text-sm">Clique em um objeto para recortar e salvar</p>
+                            <div className="flex justify-between items-center w-full">
+                                <h3 className="text-xl font-bold text-white">
+                                    {selectedDetectionClass
+                                        ? `Objeto Detectado: ${COCO_TRANSLATIONS[selectedDetectionClass] || selectedDetectionClass}`
+                                        : "Ajuste o Recorte (Seleção Manual)"
+                                    }
+                                </h3>
+                                <button onClick={closeSelectionModal} className="text-neutral-400 hover:text-white">✕</button>
                             </div>
-                            <button
-                                onClick={closeSelectionModal}
-                                className="text-neutral-400 hover:text-white"
-                            >
-                                ✕
-                            </button>
                         </div>
 
                         <div

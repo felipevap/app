@@ -31,6 +31,7 @@ export default function AdminSalesPage() {
     const [salesHistory, setSalesHistory] = useState<Sale[]>([]);
     const [expandedSaleId, setExpandedSaleId] = useState<number | null>(null);
     const [editingSale, setEditingSale] = useState<Sale | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         fetchSales();
@@ -45,6 +46,8 @@ export default function AdminSalesPage() {
             }
         } catch (e) {
             console.error("Failed to load sales history", e);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -141,7 +144,11 @@ export default function AdminSalesPage() {
                     </div>
                 </div>
 
-                {filteredSales.length === 0 ? (
+                {isLoading ? (
+                    <div className="flex h-64 items-center justify-center">
+                        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
+                    </div>
+                ) : filteredSales.length === 0 ? (
                     <div className="text-center py-12 text-neutral-400">
                         <div className="text-6xl mb-4">📊</div>
                         <p className="text-lg">Nenhuma venda registrada</p>

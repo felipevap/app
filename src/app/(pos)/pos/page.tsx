@@ -66,6 +66,7 @@ export default function POSPage() {
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; action?: { label: string; onClick: () => void } } | null>(null);
     const [clientId, setClientId] = useState<string>("");
     const [processingOrderId, setProcessingOrderId] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         let storedId = localStorage.getItem('pos_client_id');
@@ -110,6 +111,7 @@ export default function POSPage() {
 
     useEffect(() => {
         if (selectedGarageSaleId) {
+            setIsLoading(true);
             fetch(`/api/sales?garageSaleId=${selectedGarageSaleId}`)
                 .then(res => res.json())
                 .then(data => {
@@ -117,7 +119,8 @@ export default function POSPage() {
                         setSalesHistory(data);
                     }
                 })
-                .catch(err => console.error("Failed to fetch sales history", err));
+                .catch(err => console.error("Failed to fetch sales history", err))
+                .finally(() => setIsLoading(false));
         } else {
             setSalesHistory([]);
         }
@@ -788,6 +791,11 @@ export default function POSPage() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {isLoading && (
+                                <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10">
+                                    <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
+                                </div>
+                            )}
                             {garageSales.map(gs => {
                                 const productCount = getProductsByGarageSale(gs.id).length;
                                 // Need to count sales from API loaded history
