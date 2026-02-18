@@ -238,11 +238,64 @@ export default function CapturePage() {
         }
     }, [customerInfo]);
 
-    // Load AI Model
+    // Load AI Model & Process Embeddings
     const [isModelLoading, setIsModelLoading] = useState(true);
+    const [isEmbeddingProcessing, setIsEmbeddingProcessing] = useState(false);
+    const [embeddingProgress, setEmbeddingProgress] = useState(0);
+
     useEffect(() => {
         loadModel().then(() => setIsModelLoading(false));
-    }, []);
+
+        // Start processing embeddings for products that don't have them
+        const processEmbeddings = async () => {
+            // We need to import the generator dynamically
+            const { getMobileNetEmbedding } = await import('@/utils/mobileNetEmbedding');
+
+            setIsEmbeddingProcessing(true);
+            let processed = 0;
+            const total = currentProducts.length;
+
+            for (const product of currentProducts) {
+                // Optimization: Skip if already has embedding (not persisted yet, but for in-session refetch)
+                if ((product as any).embedding) {
+                    processed++;
+                    continue;
+                }
+
+                if (product.imagens && product.imagens.length > 0) {
+                    try {
+                        const img = new Image();
+                        img.crossOrigin = 'Anonymous';
+                        img.src = product.imagens[0];
+                        await new Promise((resolve) => {
+                            img.onload = resolve;
+                            img.onerror = resolve; // skip on error
+                        });
+
+                        const embeddingTensor = await getMobileNetEmbedding(img);
+                        if (embeddingTensor) {
+                            (product as any).embedding = await embeddingTensor.array();
+                            embeddingTensor.dispose();
+                        }
+                    } catch (e) {
+                        // console.error("Error generating embedding for", product.nome);
+                    }
+                }
+                processed++;
+                setEmbeddingProgress(Math.floor((processed / total) * 100));
+
+                // Yield to UI every few items to not freeze
+                if (processed % 5 === 0) await new Promise(r => setTimeout(r, 20));
+            }
+            setIsEmbeddingProcessing(false);
+        };
+
+        // Only run if products are loaded and model is likely ready (or loading)
+        if (currentProducts.length > 0) {
+            processEmbeddings();
+        }
+
+    }, [currentProducts]); // Re-run when products change (e.g. selected garage sale)
 
     // Run Object Detection Loop
     useEffect(() => {
@@ -987,7 +1040,9 @@ export default function CapturePage() {
             {/* Scanner Frame - Improved Visuals */}
             <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-4">
                 <p className="text-white text-center text-sm font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] bg-black/40 backdrop-blur-sm py-2 px-6 rounded-xl border border-white/10 mb-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                    {isModelLoading ? "Carregando IA..." : isScanning ? "Analisando..." : "Aponte e capture"}
+                    {isModelLoading ? "Carregando IA..." :
+                        isEmbeddingProcessing ? `Otimizando busca... ${embeddingProgress}%` :
+                            isScanning ? "Analisando..." : "Aponte e capture"}
                 </p>
                 <div className="relative w-full h-[65vh] flex items-center justify-center">
                     {/* Corner Markers */}
