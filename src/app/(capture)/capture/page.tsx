@@ -729,6 +729,7 @@ export default function CapturePage() {
                                     </span>
                                     <span className="text-blue-400 font-black text-xl">{formatBRL(foundProduct.preco)}</span>
                                 </div>
+                                <p className="text-neutral-400 text-sm mt-2 line-clamp-3">{foundProduct.descricao}</p>
                             </div>
 
                             <div className="flex gap-4 items-center">
@@ -767,6 +768,7 @@ export default function CapturePage() {
                                     </span>
                                 </div>
                                 <p className="mt-4 text-blue-400 font-black text-4xl">{formatBRL(foundProduct.preco)}</p>
+                                <p className="mt-4 text-neutral-300 text-base leading-relaxed">{foundProduct.descricao}</p>
                             </div>
                         </div>
 
