@@ -863,23 +863,39 @@ export default function CapturePage() {
                                             <div className="text-gray-600 text-xs mb-2 line-clamp-2 leading-snug">{overlay.product.descricao}</div>
                                         )}
                                         <div className="flex items-center justify-between w-full mt-1 gap-2">
-                                            <div className="font-black text-blue-600 text-lg whitespace-nowrap">{formatBRL(overlay.product.preco)}</div>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    addToCart(overlay.product);
-                                                }}
-                                                className="bg-green-600 hover:bg-green-700 text-white rounded-lg p-2 shadow-sm transition-colors flex items-center justify-center"
-                                                aria-label="Adicionar ao carrinho"
-                                            >
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                    <circle cx="9" cy="21" r="1" />
-                                                    <circle cx="20" cy="21" r="1" />
-                                                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                                                    <path d="M12 6v6" />
-                                                    <path d="M9 9h6" />
-                                                </svg>
-                                            </button>
+                                            <div className="flex flex-col">
+                                                <span className="font-black text-blue-600 text-lg whitespace-nowrap">{formatBRL(overlay.product.preco)}</span>
+                                                {overlay.product.status !== 'disponível' && (
+                                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase w-fit ${overlay.product.status === 'vendido' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'}`}>
+                                                        {overlay.product.status}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {overlay.product.status === 'disponível' ? (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        addToCart(overlay.product);
+                                                    }}
+                                                    className="bg-green-600 hover:bg-green-700 text-white rounded-lg p-2 shadow-sm transition-colors flex items-center justify-center"
+                                                    aria-label="Adicionar ao carrinho"
+                                                >
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                        <circle cx="9" cy="21" r="1" />
+                                                        <circle cx="20" cy="21" r="1" />
+                                                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                                                        <path d="M12 6v6" />
+                                                        <path d="M9 9h6" />
+                                                    </svg>
+                                                </button>
+                                            ) : (
+                                                <div className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-gray-400 cursor-not-allowed">
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                                                    </svg>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Arrow pointer */}
