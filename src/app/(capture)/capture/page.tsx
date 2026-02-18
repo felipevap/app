@@ -715,37 +715,6 @@ export default function CapturePage() {
                     >
                         <div className="w-16 h-2 bg-neutral-700 rounded-full mx-auto mb-8"></div>
 
-                        <div className="flex gap-4 flex-col">
-                            <div className="flex-1">
-                                <div className="flex justify-between items-start gap-2">
-                                    <h2 className="text-lg font-black text-white leading-tight">{foundProduct.nome}</h2>
-                                    <button onClick={() => setFoundProduct(null)} className="text-neutral-500 p-1 hover:text-white transition-colors bg-neutral-800 rounded-lg">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                    </button>
-                                </div>
-                                <div className="mt-1 flex items-center gap-2 flex-wrap">
-                                    <span className="px-2 py-0.5 bg-blue-500 text-white text-[8px] font-black rounded-full uppercase tracking-wider">
-                                        {foundProduct.categoria}
-                                    </span>
-                                    <span className="text-blue-400 font-black text-xl">{formatBRL(foundProduct.preco)}</span>
-                                </div>
-                                <p className="text-neutral-400 text-sm mt-2 line-clamp-3">{foundProduct.descricao}</p>
-                            </div>
-
-                            <div className="flex gap-4 items-center">
-                                <ProductImageCarousel
-                                    images={foundProductImages}
-                                    alt={foundProduct.nome}
-                                    imageClassName="w-24 h-24 rounded-xl object-cover bg-neutral-800 border border-white/10 shadow-lg"
-                                    currentIndex={foundProductImageIndex}
-                                    onChangeIndex={setFoundProductImageIndex}
-                                />
-                                <button onClick={addToCart} className="flex-1 bg-green-600 py-3 rounded-xl font-black text-white hover:bg-green-500 active:scale-95 transition-all text-base shadow-xl border border-green-400/30">
-                                    ✓ ADICIONAR
-                                </button>
-                            </div>
-                        </div>
-
                         <div className="flex gap-6 flex-col sm:flex-row">
                             <ProductImageCarousel
                                 images={foundProductImages}
@@ -769,6 +738,10 @@ export default function CapturePage() {
                                 </div>
                                 <p className="mt-4 text-blue-400 font-black text-4xl">{formatBRL(foundProduct.preco)}</p>
                                 <p className="mt-4 text-neutral-300 text-base leading-relaxed">{foundProduct.descricao}</p>
+
+                                <button onClick={addToCart} className="mt-6 w-full bg-green-600 py-4 rounded-xl font-black text-white hover:bg-green-500 active:scale-95 transition-all text-lg shadow-xl border border-green-400/30 flex items-center justify-center gap-2">
+                                    <span>✓</span> ADICIONAR AO CARRINHO
+                                </button>
                             </div>
                         </div>
 
@@ -1016,6 +989,15 @@ export default function CapturePage() {
                                 </div>
 
                                 <div className="border-t border-neutral-800 pt-4 space-y-2 bg-neutral-900 z-10">
+
+                                    <div className="pt-2"> {/* Added wrapper for spacing */}
+                                        <button
+                                            onClick={() => setIsCartOpen(false)}
+                                            className="w-full bg-neutral-800 text-neutral-300 font-bold py-3 rounded-xl hover:bg-neutral-700 active:scale-95 transition-all text-sm border border-white/10 uppercase tracking-widest mb-2"
+                                        >
+                                            CONTINUAR COMPRANDO
+                                        </button>
+                                    </div>
 
                                     <div className="flex justify-between text-xl font-black pt-4 border-t border-neutral-800 text-white">
                                         <span className="uppercase text-[10px] text-neutral-500 self-center tracking-widest">Total</span>
