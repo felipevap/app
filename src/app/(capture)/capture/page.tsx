@@ -472,7 +472,7 @@ export default function CapturePage() {
     const searchProducts = (query: string) => {
         setSearchQuery(query);
         setShowSearchModal(true); // Open modal when searching
-        if (query.length >= 3) {
+        if (query.length >= 1) {
             const filtered = currentProducts.filter((p: Product) =>
                 p.nome.toLowerCase().includes(query.toLowerCase()) ||
                 p.descricao.toLowerCase().includes(query.toLowerCase())
