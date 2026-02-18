@@ -158,24 +158,69 @@ function NewProductContent() {
         }
 
         setProcessingImage(true);
-        console.log("Processing image for detection...", dataUrl.slice(0, 50));
         const img = new Image();
         img.src = dataUrl;
         await new Promise((resolve) => { img.onload = resolve; });
-        console.log("Image loaded, running detection...", img.width, img.height);
 
-        const results = await detectObjects(img);
-        console.log("Detection results:", results);
+        // Resize for stable detection (Max 640px)
+        const MAX_DETECTION_SIZE = 640;
+        let dWidth = img.width;
+        let dHeight = img.height;
+        let scale = 1;
 
-        if (results.length > 0) {
-            setCurrentImageForSelection(dataUrl);
-            setDetections(results);
-            setShowSelectionModal(true);
-        } else {
-            console.log("No objects detected, adding image directly.");
-            setFormData(prev => ({ ...prev, imagens: [...prev.imagens, dataUrl] }));
+        if (dWidth > MAX_DETECTION_SIZE || dHeight > MAX_DETECTION_SIZE) {
+            if (dWidth > dHeight) {
+                scale = MAX_DETECTION_SIZE / dWidth;
+                dWidth = MAX_DETECTION_SIZE;
+                dHeight = img.height * scale;
+            } else {
+                scale = MAX_DETECTION_SIZE / dHeight;
+                dHeight = MAX_DETECTION_SIZE;
+                dWidth = img.width * scale;
+            }
         }
-        setProcessingImage(false);
+
+        const detectionCanvas = document.createElement('canvas');
+        detectionCanvas.width = dWidth;
+        detectionCanvas.height = dHeight;
+        const ctx = detectionCanvas.getContext('2d');
+        if (ctx) {
+            ctx.drawImage(img, 0, 0, dWidth, dHeight);
+        }
+
+        console.log(`Running detection on resized image: ${dWidth}x${dHeight} (Original: ${img.width}x${img.height})`);
+
+        try {
+            const rawResults = await detectObjects(detectionCanvas);
+            console.log("Detection raw results:", rawResults);
+
+            // Scale results back to original image size
+            const results = rawResults.map(res => ({
+                ...res,
+                bbox: [
+                    res.bbox[0] / scale,
+                    res.bbox[1] / scale,
+                    res.bbox[2] / scale,
+                    res.bbox[3] / scale
+                ] as [number, number, number, number]
+            }));
+
+            if (results.length > 0) {
+                setCurrentImageForSelection(dataUrl);
+                setDetections(results);
+                setShowSelectionModal(true);
+            } else {
+                console.log("No objects detected.");
+                showToast("Nenhum objeto identificado automaticamente.", "info");
+                setFormData(prev => ({ ...prev, imagens: [...prev.imagens, dataUrl] }));
+            }
+        } catch (error) {
+            console.error("Detection error in processAddedImage:", error);
+            showToast("Erro ao processar imagem.", "error");
+            setFormData(prev => ({ ...prev, imagens: [...prev.imagens, dataUrl] }));
+        } finally {
+            setProcessingImage(false);
+        }
     };
 
     // --- Interactive Cropping Logic ---
