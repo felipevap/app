@@ -90,7 +90,8 @@ export async function findMatchingProducts(
     capturedImageBase64: string,
     products: { id: string, imagens: string[], categoria?: string, tags?: string[], nome?: string }[], // Added optional fields
     limit = 5,
-    detectedClass?: string // Optional class from coco-ssd
+    detectedClass?: string, // Optional class from coco-ssd
+    minScore = 0.65 // NEW: Minimum score to be considered a match
 ): Promise<{ id: string, score: number }[]> {
     if (products.length === 0) return [];
 
@@ -179,12 +180,14 @@ export async function findMatchingProducts(
 
             if (detectedClass && product.categoria) {
                 // Boost if category matches (Weak boost)
+                // REDUCED from 0.2 to 0.1 to rely more on visual match
                 if (targetCategories?.includes(product.categoria)) {
-                    finalScore += 0.2;
+                    finalScore += 0.1;
                 }
 
                 // Boost if detected class match Keywords/Translations in Product Name (Strong boost - "Training")
-                // Check if any keyword associated with the detected class is present in the product name
+                // REDUCED from 0.5 to 0.2. 
+                // Previous 0.5 was too aggressive, causing "any cup" to match "the captured cup" even if visually distinct.
                 const keywords = targetCategories || [];
                 // Add the class itself as a keyword
                 keywords.push(detectedClass);
@@ -198,18 +201,25 @@ export async function findMatchingProducts(
                 );
 
                 if (hasKeywordMatch) {
-                    finalScore += 0.5; // Huge boost for direct semantic match
+                    finalScore += 0.2;
                 }
             }
 
+            // Only add if it meets a base threshold (before sort) to save memory? 
+            // Actually, we filter at the end.
             matches.push({ id: product.id, score: finalScore });
         }
 
         // Sort by score DESCENDING (higher is better)
         matches.sort((a, b) => b.score - a.score);
 
+        // Filter by minimum score
+        // This stops "everything" from showing up.
+        // If the best match is 0.4, it returns empty (Not Found), forcing manual search or retry.
+        const filteredMatches = matches.filter(m => m.score >= minScore);
+
         // Return top results
-        return matches.slice(0, limit);
+        return filteredMatches.slice(0, limit);
 
     } catch (e) {
         console.error("Comparison error", e);

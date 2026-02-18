@@ -853,8 +853,8 @@ export default function CapturePage() {
 
                             return (
                                 <div key={overlay.id}>
-                                    {/* Bounding Box */}
-                                    <div
+                                    {/* Bounding Box Removed as per user request */}
+                                    {/* <div
                                         className="absolute border-2 border-green-500/70 rounded-lg pointer-events-none transition-all duration-300"
                                         style={{
                                             left: coords.left,
@@ -862,7 +862,7 @@ export default function CapturePage() {
                                             width: coords.width,
                                             height: coords.height,
                                         }}
-                                    />
+                                    /> */}
                                     <div
                                         className="absolute z-40 bg-white/95 backdrop-blur-md rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.4)] border-2 border-green-500 p-3 flex flex-col items-start w-[200px] animate-in fade-in zoom-in duration-300 transition-all text-left"
                                         style={{
@@ -874,9 +874,15 @@ export default function CapturePage() {
                                     >
                                         <div className="font-bold text-black text-sm leading-tight mb-1 line-clamp-2">{overlay.product.nome}</div>
 
-                                        {/* Status Line */}
-                                        <div className={`text-[10px] font-black uppercase mb-2 ${overlay.product.status === 'disponível' ? 'text-green-600' :
-                                                overlay.product.status === 'vendido' ? 'text-red-600' : 'text-yellow-600'
+                                        {/* Description */}
+                                        {overlay.product.descricao && (
+                                            <div className="text-gray-600 text-[10px] mb-1 line-clamp-2 leading-snug font-medium">
+                                                {overlay.product.descricao}
+                                            </div>
+                                        )}
+
+                                        {/* Status Line */}                <div className={`text-[10px] font-black uppercase mb-2 ${overlay.product.status === 'disponível' ? 'text-green-600' :
+                                            overlay.product.status === 'vendido' ? 'text-red-600' : 'text-yellow-600'
                                             }`}>
                                             STATUS: {overlay.product.status}
                                         </div>
