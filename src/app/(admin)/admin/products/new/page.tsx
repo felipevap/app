@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Webcam from "react-webcam";
 import Toast from "@/components/Toast";
-
+import { loadModel, detectObjects, cropImage, DetectionResult } from "@/utils/objectDetection";
 import { Suspense } from "react";
 
 const CATEGORIES = ["Eletrônicos", "Roupas", "Móveis", "Livros", "Brinquedos", "Esportes", "Decoração", "CD", "DVD", "LP", "Itens cozinha", "Ferramentas", "Itens piscina", "Cama mesa e banho", "Eletrodomésticos", "Saúde", "Outros"];
@@ -31,6 +31,15 @@ function NewProductContent() {
     });
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
 
+    // Object Detection State
+    const [isModelLoaded, setIsModelLoaded] = useState(false);
+    const [processingImage, setProcessingImage] = useState(false);
+    const [showSelectionModal, setShowSelectionModal] = useState(false);
+    const [currentImageForSelection, setCurrentImageForSelection] = useState<string | null>(null);
+    const [detections, setDetections] = useState<DetectionResult[]>([]);
+    const imageRef = useRef<HTMLImageElement>(null);
+    const [containerWidth, setContainerWidth] = useState(0);
+
     const showToast = (message: string, type: 'success' | 'error' | 'info') => {
         setToast({ message, type, isVisible: true });
     };
@@ -43,6 +52,61 @@ function NewProductContent() {
             setFormData(prev => ({ ...prev, garageSaleId: garageSales[0].id }));
         }
     }, [searchParams, garageSales]);
+
+    useEffect(() => {
+        loadModel().then(loaded => setIsModelLoaded(loaded));
+    }, []);
+
+    const processAddedImage = async (dataUrl: string) => {
+        if (!isModelLoaded) {
+            setFormData(prev => ({ ...prev, imagens: [...prev.imagens, dataUrl] }));
+            return;
+        }
+
+        setProcessingImage(true);
+        const img = new Image();
+        img.src = dataUrl;
+        await new Promise((resolve) => { img.onload = resolve; });
+
+        const results = await detectObjects(img);
+
+        if (results.length > 0) {
+            setCurrentImageForSelection(dataUrl);
+            setDetections(results);
+            setShowSelectionModal(true);
+        } else {
+            setFormData(prev => ({ ...prev, imagens: [...prev.imagens, dataUrl] }));
+        }
+        setProcessingImage(false);
+    };
+
+    const handleObjectSelect = (detection: DetectionResult) => {
+        if (!currentImageForSelection) return;
+
+        const img = new Image();
+        img.src = currentImageForSelection;
+        img.onload = () => {
+            // Add padding to crop (e.g., 20px)
+            const croppedUrl = cropImage(img, detection.bbox, 20);
+            if (croppedUrl) {
+                setFormData(prev => ({ ...prev, imagens: [...prev.imagens, croppedUrl] }));
+            }
+            closeSelectionModal();
+        };
+    };
+
+    const handleKeepOriginal = () => {
+        if (currentImageForSelection) {
+            setFormData(prev => ({ ...prev, imagens: [...prev.imagens, currentImageForSelection] }));
+        }
+        closeSelectionModal();
+    };
+
+    const closeSelectionModal = () => {
+        setShowSelectionModal(false);
+        setCurrentImageForSelection(null);
+        setDetections([]);
+    };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
@@ -76,7 +140,7 @@ function NewProductContent() {
                     if (ctx) {
                         ctx.drawImage(img, 0, 0, width, height);
                         const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-                        setFormData(prev => ({ ...prev, imagens: [...prev.imagens, dataUrl] }));
+                        processAddedImage(dataUrl);
                     }
                 };
                 img.src = event.target?.result as string;
@@ -115,7 +179,8 @@ function NewProductContent() {
             if (ctx) {
                 ctx.drawImage(img, 0, 0, width, height);
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-                setFormData(prev => ({ ...prev, imagens: [...prev.imagens, dataUrl] }));
+                processAddedImage(dataUrl);
+                setShowCamera(false);
             }
         };
         img.src = imageSrc;
@@ -460,7 +525,79 @@ function NewProductContent() {
                     💾 Salvar Produto
                 </button>
 
-            </form >
+            </form>
+
+            {/* Selection Modal */}
+            {showSelectionModal && currentImageForSelection && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+                    <div className="w-full max-w-4xl bg-neutral-900 rounded-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="p-4 border-b border-neutral-800 flex justify-between items-center">
+                            <div>
+                                <h2 className="text-xl font-bold text-white">Objetos Detectados</h2>
+                                <p className="text-neutral-400 text-sm">Clique em um objeto para recortar e salvar</p>
+                            </div>
+                            <button
+                                onClick={closeSelectionModal}
+                                className="text-neutral-400 hover:text-white"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-black/50 relative">
+                            <div className="relative inline-block">
+                                <img
+                                    ref={imageRef}
+                                    src={currentImageForSelection}
+                                    alt="Selection"
+                                    className="max-w-full max-h-[60vh] object-contain"
+                                    onLoad={(e) => setContainerWidth(e.currentTarget.clientWidth)}
+                                />
+                                {detections.map((det, idx) => {
+                                    // Calculate scaling logic if image is resized by CSS
+                                    // For simplicity in this iteration, we assume strict relative positioning 
+                                    // We need to know the rendered size vs natural size to scale detections
+                                    const imgEl = imageRef.current;
+                                    if (!imgEl) return null;
+
+                                    const scaleX = imgEl.clientWidth / imgEl.naturalWidth;
+                                    const scaleY = imgEl.clientHeight / imgEl.naturalHeight;
+
+                                    const [x, y, w, h] = det.bbox;
+
+                                    return (
+                                        <button
+                                            key={idx}
+                                            onClick={() => handleObjectSelect(det)}
+                                            className="absolute border-2 border-green-500 bg-green-500/20 hover:bg-green-500/40 transition-colors group"
+                                            style={{
+                                                left: `${x * scaleX}px`,
+                                                top: `${y * scaleY}px`,
+                                                width: `${w * scaleX}px`,
+                                                height: `${h * scaleY}px`,
+                                            }}
+                                        >
+                                            <span className="absolute -top-7 left-0 bg-green-500 text-black text-xs font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                                {det.class} ({Math.round(det.score * 100)}%)
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="p-4 border-t border-neutral-800 flex justify-end gap-3 bg-neutral-900">
+                            <button
+                                onClick={handleKeepOriginal}
+                                className="px-4 py-2 rounded-lg border border-neutral-700 hover:bg-neutral-800 text-white transition-colors"
+                            >
+                                Manter Original (Sem Recorte)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {
                 toast.isVisible && (
                     <Toast
