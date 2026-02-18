@@ -55,6 +55,7 @@ export default function CapturePage() {
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     const [showSearchModal, setShowSearchModal] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [cartTab, setCartTab] = useState<'current' | 'pending'>('current');
     const [pendingOrders, setPendingOrders] = useState<any[]>([]);
@@ -288,6 +289,8 @@ export default function CapturePage() {
             return;
         }
 
+        setIsSubmitting(true);
+
         try {
             const orderData = {
                 customerName: customerInfo.nome,
@@ -330,6 +333,8 @@ export default function CapturePage() {
         } catch (error: any) {
             console.error('Erro ao salvar pedido:', error);
             showToast(error.message || 'Erro ao salvar pedido. Tente novamente.', 'error');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -377,7 +382,7 @@ export default function CapturePage() {
     }, []);
 
     return (
-        <div className="h-screen w-full bg-black relative overflow-hidden font-sans text-white">
+        <div className="h-[100dvh] w-full bg-black relative overflow-hidden font-sans text-white">
             {cameraError ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-6 text-center z-50 bg-neutral-900">
                     <p className="text-red-500 font-bold mb-4 text-xl">Câmera Indisponível</p>
@@ -484,7 +489,7 @@ export default function CapturePage() {
                 <p className="text-white text-center text-sm font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] bg-black/40 backdrop-blur-sm py-2 px-6 rounded-xl border border-white/10 mb-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
                     {isScanning ? "Analisando..." : "Aponte e capture"}
                 </p>
-                <div className="relative w-full h-[80vh] flex items-center justify-center">
+                <div className="relative w-full h-[65vh] flex items-center justify-center">
                     {/* Corner Markers */}
                     <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white/80 rounded-tl-xl drop-shadow-lg"></div>
                     <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white/80 rounded-tr-xl drop-shadow-lg"></div>
@@ -512,45 +517,45 @@ export default function CapturePage() {
             </div>
 
             {/* Scan Button & Bottom Bar */}
-            <div className="absolute bottom-0 inset-x-0 z-20 pointer-events-none">
-                <div className="flex justify-center mb-6">
+            <div className="fixed bottom-0 inset-x-0 z-40 pointer-events-none">
+                <div className="flex justify-center mb-4">
                     <button
                         onClick={captureAndScan}
                         disabled={isScanning}
                         className="group relative pointer-events-auto"
                     >
                         <div className="absolute inset-0 bg-blue-500/30 rounded-full blur-2xl group-hover:bg-blue-500/50 transition-colors duration-500"></div>
-                        <div className="relative bg-white text-black p-8 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.4)] transform transition-all active:scale-90 border-[8px] border-white/30 bg-clip-padding group-hover:scale-110 group-hover:shadow-[0_0_50px_rgba(59,130,246,0.7)]">
+                        <div className="relative bg-white text-black p-6 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.4)] transform transition-all active:scale-90 border-[6px] border-white/30 bg-clip-padding group-hover:scale-110 group-hover:shadow-[0_0_50px_rgba(59,130,246,0.7)]">
                             {isScanning ? (
-                                <svg className="w-12 h-12 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
+                                <svg className="w-8 h-8 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
                             ) : (
-                                <div className="w-12 h-12 rounded-full border-[6px] border-neutral-900/80"></div>
+                                <div className="w-8 h-8 rounded-full border-[4px] border-neutral-900/80"></div>
                             )}
                         </div>
                     </button>
                 </div>
 
-                <div className="bg-black/60 backdrop-blur-xl border-t border-white/10 p-4 pb-8 pointer-events-auto flex items-center gap-4 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+                <div className="bg-black/80 backdrop-blur-xl border-t border-white/10 p-3 pb-6 pointer-events-auto flex items-center gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
                     <button
                         onClick={() => setIsCartOpen(true)}
-                        className="flex-1 bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all py-5 px-6 rounded-2xl text-white flex items-center justify-center gap-4 shadow-xl border border-blue-400/30"
+                        className="flex-1 bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all py-3 px-4 rounded-xl text-white flex items-center justify-center gap-3 shadow-xl border border-blue-400/30"
                     >
                         <div className="relative">
-                            <span className="text-3xl">🛒</span>
+                            <span className="text-2xl">🛒</span>
                             {cart.length > 0 && (
-                                <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-black w-7 h-7 flex items-center justify-center rounded-full border-2 border-white animate-bounce shadow-lg">
+                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border border-white animate-bounce shadow-lg">
                                     {cart.length}
                                 </span>
                             )}
                         </div>
-                        <span className="text-lg font-black uppercase tracking-tight">Carrinho</span>
+                        <span className="text-sm font-black uppercase tracking-tight">Carrinho</span>
                     </button>
 
                     <button
                         onClick={() => setShowSearchModal(true)}
-                        className="bg-neutral-800 p-5 rounded-2xl text-white hover:bg-neutral-700 active:scale-95 transition-all border border-white/10"
+                        className="bg-neutral-800 p-3 rounded-xl text-white hover:bg-neutral-700 active:scale-95 transition-all border border-white/10"
                     >
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     </button>
                 </div>
             </div>
@@ -610,7 +615,7 @@ export default function CapturePage() {
                                 {foundProduct.imagens[0] && (
                                     <img src={foundProduct.imagens[0]} alt={foundProduct.nome} className="w-24 h-24 rounded-xl object-cover bg-neutral-800 border border-white/10 shadow-lg" />
                                 )}
-                                <button onClick={addToCart} className="flex-1 bg-green-600 py-4 rounded-xl font-black text-white hover:bg-green-500 active:scale-95 transition-all text-lg shadow-xl border border-green-400/30">
+                                <button onClick={addToCart} className="flex-1 bg-green-600 py-3 rounded-xl font-black text-white hover:bg-green-500 active:scale-95 transition-all text-base shadow-xl border border-green-400/30">
                                     ✓ ADICIONAR
                                 </button>
                             </div>
@@ -775,42 +780,42 @@ export default function CapturePage() {
                                             </div>
                                         ))
                                     )}
-                                
+
                                     {cart.length > 0 && (
                                         <div className="space-y-2 mt-4 pt-4 border-t border-white/5">
                                             <div className="space-y-2">
-                                        <div className="relative">
-                                            <input
-                                                type="text"
-                                                placeholder="Nome completo *"
-                                                value={customerInfo.nome}
-                                                onChange={(e) => setCustomerInfo({ ...customerInfo, nome: e.target.value })}
-                                                className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 border border-white/5 text-sm font-bold"
-                                            />
-                                        </div>
-                                        <div className="relative">
-                                            <input
-                                                type="tel"
-                                                placeholder="Telefone *"
-                                                value={customerInfo.telefone}
-                                                onChange={(e) => setCustomerInfo({ ...customerInfo, telefone: maskPhone(e.target.value) })}
-                                                maxLength={15}
-                                                className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 border border-white/5 text-sm font-bold"
-                                            />
-                                        </div>
-                                        <div className="relative">
-                                            <input
-                                                type="email"
-                                                placeholder="Email (Opcional)"
-                                                value={customerInfo.email}
-                                                onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
-                                                className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 border border-white/5 text-sm font-bold"
-                                            />
-                                        </div>
-                                    </div> 
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Nome completo *"
+                                                        value={customerInfo.nome}
+                                                        onChange={(e) => setCustomerInfo({ ...customerInfo, nome: e.target.value })}
+                                                        className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 border border-white/5 text-sm font-bold"
+                                                    />
+                                                </div>
+                                                <div className="relative">
+                                                    <input
+                                                        type="tel"
+                                                        placeholder="Telefone *"
+                                                        value={customerInfo.telefone}
+                                                        onChange={(e) => setCustomerInfo({ ...customerInfo, telefone: maskPhone(e.target.value) })}
+                                                        maxLength={15}
+                                                        className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 border border-white/5 text-sm font-bold"
+                                                    />
+                                                </div>
+                                                <div className="relative">
+                                                    <input
+                                                        type="email"
+                                                        placeholder="Email (Opcional)"
+                                                        value={customerInfo.email}
+                                                        onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
+                                                        className="w-full bg-neutral-800 text-white px-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 border border-white/5 text-sm font-bold"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
-                 </div>
+                                </div>
 
                                 <div className="border-t border-neutral-800 pt-4 space-y-2 bg-neutral-900 z-10">
 
@@ -820,15 +825,29 @@ export default function CapturePage() {
                                     </div>
                                     <button
                                         onClick={checkout}
-                                        disabled={cart.length === 0}
-                                        className="w-full bg-blue-600 text-white font-black py-4 rounded-xl hover:bg-blue-500 active:scale-95 disabled:opacity-50 transition-all text-sm shadow-lg border border-blue-400/20 uppercase tracking-widest"
+                                        disabled={cart.length === 0 || isSubmitting}
+                                        className="w-full bg-blue-600 text-white font-black py-3 rounded-xl hover:bg-blue-500 active:scale-95 disabled:opacity-50 transition-all text-sm shadow-lg border border-blue-400/20 uppercase tracking-widest flex items-center justify-center gap-2"
                                     >
-                                        Finalizar Pedido
+                                        {isSubmitting ? (
+                                            <>
+                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                                <span>PROCESSANDO...</span>
+                                            </>
+                                        ) : (
+                                            <span>FINALIZAR PEDIDO</span>
+                                        )}
                                     </button>
                                 </div>
                             </>
                         ) : (
                             <div className="flex-1 overflow-y-auto space-y-4">
+                                <div className="bg-yellow-500/10 border border-yellow-500/30 p-3 rounded-xl mb-2 mx-1">
+                                    <p className="text-yellow-400 text-xs font-bold text-center leading-relaxed">
+                                        <span className="block mb-1 text-sm text-yellow-300">⚠ DIRIJA-SE AO CAIXA</span>
+                                        Você tem <span className="text-white">30 minutos</span> para efetuar o pagamento.
+                                        <span className="block mt-1 text-[10px] text-neutral-400">Após esse tempo, os produtos voltarão a ficar disponíveis.</span>
+                                    </p>
+                                </div>
                                 {isLoadingPending ? (
                                     <div className="text-center py-8 text-neutral-400">Carregando...</div>
                                 ) : pendingOrders.length === 0 ? (
@@ -848,7 +867,8 @@ export default function CapturePage() {
                                             <div className="space-y-1">
                                                 {order.items.map((item: any, idx: number) => (
                                                     <div key={idx} className="flex justify-between text-xs text-neutral-400">
-                                                        <span>{item.quantity}x {item.description}</span>
+                                                        <span>{item.qty}x {item.desc}</span>
+                                                        <span>{formatBRL(item.price)}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -857,85 +877,6 @@ export default function CapturePage() {
                                 )}
                             </div>
                         )}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            <AnimatePresence>
-                {showSearchModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 pointer-events-auto"
-                        onClick={() => setShowSearchModal(false)}
-                    >
-                        <motion.div
-                            initial={{ scale: 0.9, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 20 }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="bg-neutral-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col"
-                        >
-                            <div className="p-6 border-b border-neutral-800">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-2xl font-bold text-white">Buscar Produto</h2>
-                                    <button
-                                        onClick={() => setShowSearchModal(false)}
-                                        className="text-neutral-400 hover:text-white transition-colors"
-                                    >
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                        </svg>
-                                    </button>
-                                </div>
-                                <input
-                                    type="text"
-                                    placeholder="Digite o nome do produto (mín. 3 caracteres)"
-                                    value={searchQuery}
-                                    onChange={(e) => searchProducts(e.target.value)}
-                                    autoFocus
-                                    className="w-full bg-neutral-800 text-white px-4 py-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto p-6">
-                                {searchQuery.length < 3 ? (
-                                    <div className="text-center text-neutral-400 py-12">
-                                        <div className="text-6xl mb-4">🔍</div>
-                                        <p>Digite pelo menos 3 caracteres para buscar</p>
-                                    </div>
-                                ) : searchResults.length === 0 ? (
-                                    <div className="text-center text-neutral-400 py-12">
-                                        <div className="text-6xl mb-4">😕</div>
-                                        <p>Nenhum produto encontrado</p>
-                                        <p className="text-sm mt-2">Tente buscar com outro termo</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {searchResults.map((product) => (
-                                            <button
-                                                key={product.id}
-                                                onClick={() => selectProductFromSearch(product)}
-                                                className="bg-neutral-800 rounded-xl p-4 hover:bg-neutral-700 transition-colors text-left"
-                                            >
-                                                {product.imagens[0] && (
-                                                    <img
-                                                        src={product.imagens[0]}
-                                                        alt={product.nome}
-                                                        className="w-full h-32 object-cover rounded-lg mb-3"
-                                                    />
-                                                )}
-                                                <h3 className="font-bold text-white mb-1 line-clamp-1">{product.nome}</h3>
-                                                <p className="text-sm text-neutral-400 mb-2 line-clamp-1">{product.categoria}</p>
-                                                <p className="text-lg font-bold text-blue-400">{formatBRL(product.preco)}</p>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
