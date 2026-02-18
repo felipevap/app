@@ -133,7 +133,7 @@ export async function PUT(req: NextRequest) {
             return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
         }
 
-        const data = { status };
+        const data: { status: string; isPaid?: boolean } = { status };
         if (status === 'paid') {
             data.isPaid = true;
         } else if (status === 'pending' || status === 'processing') {
