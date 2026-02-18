@@ -16,12 +16,25 @@ let model: cocoSsd.ObjectDetection | null = null;
  */
 export async function loadModel(): Promise<boolean> {
     try {
-        if (model) return true;
+        if (model) {
+            console.log('Model already loaded.');
+            return true;
+        }
 
         console.log('Loading TensorFlow.js model...');
         await tf.ready();
-        model = await cocoSsd.load();
-        console.log('TensorFlow.js model loaded.');
+        console.log('TensorFlow backend:', tf.getBackend());
+
+        // Try setting backend to 'webgl' if available, otherwise 'cpu'
+        if (!tf.getBackend()) {
+            await tf.setBackend('webgl');
+            console.log('Set backend to webgl');
+        }
+
+        model = await cocoSsd.load({
+            base: 'lite_mobilenet_v2' // Use a lighter model for mobile compatibility
+        });
+        console.log('TensorFlow.js model loaded successfully.');
         return true;
     } catch (error) {
         console.error('Failed to load TensorFlow.js model:', error);
@@ -36,12 +49,18 @@ export async function detectObjects(
     img: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement
 ): Promise<DetectionResult[]> {
     if (!model) {
-        console.warn('Model not loaded yet.');
-        return [];
+        console.warn('Model not loaded yet. Calling loadModel()...');
+        const loaded = await loadModel();
+        if (!loaded || !model) {
+            console.error('Model failed to load on demand.');
+            return [];
+        }
     }
 
     try {
+        // console.log('Detecting objects...');
         const predictions = await model.detect(img);
+        // console.log(`Found ${predictions.length} objects`);
         return predictions.map(pred => ({
             bbox: pred.bbox,
             class: pred.class,

@@ -158,17 +158,21 @@ function NewProductContent() {
         }
 
         setProcessingImage(true);
+        console.log("Processing image for detection...", dataUrl.slice(0, 50));
         const img = new Image();
         img.src = dataUrl;
         await new Promise((resolve) => { img.onload = resolve; });
+        console.log("Image loaded, running detection...", img.width, img.height);
 
         const results = await detectObjects(img);
+        console.log("Detection results:", results);
 
         if (results.length > 0) {
             setCurrentImageForSelection(dataUrl);
             setDetections(results);
             setShowSelectionModal(true);
         } else {
+            console.log("No objects detected, adding image directly.");
             setFormData(prev => ({ ...prev, imagens: [...prev.imagens, dataUrl] }));
         }
         setProcessingImage(false);
