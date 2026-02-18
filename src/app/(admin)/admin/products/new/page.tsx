@@ -56,7 +56,7 @@ function NewProductContent() {
                     const canvas = document.createElement('canvas');
                     let width = img.width;
                     let height = img.height;
-                    const MAX_SIZE = 512;
+                    const MAX_SIZE = 1920;
 
                     if (width > height) {
                         if (width > MAX_SIZE) {
@@ -75,7 +75,7 @@ function NewProductContent() {
                     const ctx = canvas.getContext('2d');
                     if (ctx) {
                         ctx.drawImage(img, 0, 0, width, height);
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
                         setFormData(prev => ({ ...prev, imagens: [...prev.imagens, dataUrl] }));
                     }
                 };
@@ -95,7 +95,7 @@ function NewProductContent() {
             const canvas = document.createElement('canvas');
             let width = img.width;
             let height = img.height;
-            const MAX_SIZE = 512;
+            const MAX_SIZE = 1920;
 
             if (width > height) {
                 if (width > MAX_SIZE) {
@@ -114,7 +114,7 @@ function NewProductContent() {
             const ctx = canvas.getContext('2d');
             if (ctx) {
                 ctx.drawImage(img, 0, 0, width, height);
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
                 setFormData(prev => ({ ...prev, imagens: [...prev.imagens, dataUrl] }));
             }
         };
@@ -284,6 +284,7 @@ function NewProductContent() {
                                 ref={webcamRef}
                                 audio={false}
                                 screenshotFormat="image/jpeg"
+                                screenshotQuality={1}
                                 videoConstraints={{
                                     facingMode: "environment",
                                     width: { ideal: 1920 },
