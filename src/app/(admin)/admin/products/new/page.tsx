@@ -204,20 +204,20 @@ function NewProductContent() {
 
     return (
         <div className="max-w-2xl mx-auto">
-            <header className="flex items-center justify-between mb-8">
+            <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Novo Produto</h1>
-                    <p className="text-neutral-400">Adicione um produto à Garage Sale</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white">Novo Produto</h1>
+                    <p className="text-neutral-400 text-sm sm:text-base">Adicione um produto à Garage Sale</p>
                 </div>
                 <Link
                     href={`/admin/products${formData.garageSaleId ? `?garageSale=${formData.garageSaleId}` : ''}`}
-                    className="rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-700"
+                    className="w-full sm:w-auto text-center rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-700"
                 >
                     Cancelar
                 </Link>
             </header>
 
-            <form onSubmit={handleSubmit} className="space-y-6 bg-neutral-950 border border-neutral-800 p-8 rounded-2xl">
+            <form onSubmit={handleSubmit} className="space-y-6 bg-neutral-950 border border-neutral-800 p-4 sm:p-8 rounded-2xl">
                 <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-2">
                         Garage Sale
@@ -225,7 +225,7 @@ function NewProductContent() {
                     <select
                         value={formData.garageSaleId}
                         onChange={e => setFormData({ ...formData, garageSaleId: e.target.value })}
-                        className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                        className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-base"
                         required
                     >
                         {garageSales.map((gs) => (
@@ -241,7 +241,7 @@ function NewProductContent() {
                         Imagens do Produto
                     </label>
 
-                    <div className="flex gap-2 mb-4">
+                    <div className="flex flex-col sm:flex-row gap-2 mb-4">
                         <label className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-neutral-600 rounded-xl p-6 hover:border-blue-500 transition-colors cursor-pointer">
                             <input
                                 type="file"
@@ -335,7 +335,7 @@ function NewProductContent() {
                             required
                             value={formData.nome}
                             onChange={e => setFormData({ ...formData, nome: e.target.value })}
-                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-base"
                             placeholder="Ex: Notebook Dell Inspiron"
                         />
                     </div>
@@ -348,7 +348,7 @@ function NewProductContent() {
                             value={`R$ ${formatBRL(formData.preco)}`}
                             onChange={handlePriceChange}
                             placeholder="R$ 0,00"
-                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-base"
                         />
                     </div>
 
@@ -359,7 +359,7 @@ function NewProductContent() {
                             rows={4}
                             value={formData.descricao}
                             onChange={e => setFormData({ ...formData, descricao: e.target.value })}
-                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none resize-none"
+                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none resize-none text-base"
                             placeholder="Descreva o produto..."
                         />
                     </div>
@@ -375,7 +375,7 @@ function NewProductContent() {
                                     setFormData({ ...formData, categoria: e.target.value });
                                 }
                             }}
-                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-base"
                         >
                             {CATEGORIES.filter(c => c !== "Outros").map(cat => (
                                 <option key={cat} value={cat}>{cat}</option>
@@ -390,7 +390,7 @@ function NewProductContent() {
                                 value={formData.categoria}
                                 onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
                                 placeholder="Digite o nome da categoria"
-                                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-base"
                                 autoFocus
                             />
                         ) : null}
@@ -401,7 +401,7 @@ function NewProductContent() {
                         <select
                             value={formData.condicao}
                             onChange={e => setFormData({ ...formData, condicao: e.target.value })}
-                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-base"
                             required
                         >
                             <option value="Novo">Novo</option>
@@ -421,7 +421,7 @@ function NewProductContent() {
                                 onChange={e => setCurrentTag(e.target.value)}
                                 onKeyDown={handleAddTag}
                                 placeholder="Digite e pressione Enter"
-                                className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                                className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-base"
                             />
                             <button
                                 type="button"
@@ -460,7 +460,7 @@ function NewProductContent() {
                     💾 Salvar Produto
                 </button>
 
-            </form>
+            </form >
             {
                 toast.isVisible && (
                     <Toast

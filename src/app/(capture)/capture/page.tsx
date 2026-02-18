@@ -9,7 +9,7 @@ import { findMatchingProducts } from '@/utils/imageMatching';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-// import { loadModel, detectObjects, DetectionResult } from '@/utils/objectDetection';
+import { loadModel, detectObjects, cropImage } from '@/utils/objectDetection';
 
 
 const RemainingTime = ({ createdAt }: { createdAt: string }) => {
@@ -128,6 +128,7 @@ export default function CapturePage() {
     const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("");
     const [isScanning, setIsScanning] = useState(false);
     const [foundProduct, setFoundProduct] = useState<Product | null>(null);
+    const [foundProducts, setFoundProducts] = useState<Product[]>([]); // New: Multiple products
     const [foundProductImageIndex, setFoundProductImageIndex] = useState(0);
     const [alternativeProducts, setAlternativeProducts] = useState<Product[]>([]); // New state
     const [showNotFound, setShowNotFound] = useState(false);
@@ -215,13 +216,10 @@ export default function CapturePage() {
     }, [customerInfo]);
 
     // Load AI Model
-    // useEffect(() => {
-    //     let isMounted = true;
-    //     loadModel().then((success) => {
-    //         if (isMounted) setModelLoaded(success);
-    //     });
-    //     return () => { isMounted = false; };
-    // }, []);
+    const [isModelLoading, setIsModelLoading] = useState(true);
+    useEffect(() => {
+        loadModel().then(() => setIsModelLoading(false));
+    }, []);
 
     // Run Object Detection Loop
     // useEffect(() => {
@@ -275,27 +273,67 @@ export default function CapturePage() {
 
         setIsScanning(true);
         setFoundProduct(null);
+        setFoundProducts([]);
         setAlternativeProducts([]);
         setShowNotFound(false);
 
-        await new Promise(r => setTimeout(r, 600));
+        // Allow UI update
+        await new Promise(r => setTimeout(r, 100));
 
-        const matches = await findMatchingProducts(imageSrc, currentProducts);
+        try {
+            const img = new Image();
+            img.src = imageSrc;
+            await new Promise((resolve) => { img.onload = resolve; });
 
-        if (matches.length > 0) {
-            const bestMatch = currentProducts.find((p: any) => p.id === matches[0].id);
-            if (bestMatch) {
-                setFoundProduct(bestMatch);
+            // 1. Detect Objects
+            const detections = await detectObjects(img);
+            const detectedProducts: Product[] = [];
 
-                // Get other matches
-                const others = matches.slice(1)
-                    .map(m => currentProducts.find((p: any) => p.id === m.id))
-                    .filter((p): p is Product => !!p);
-                setAlternativeProducts(others);
+            if (detections.length > 0) {
+                // Process each detection
+                for (const det of detections) {
+                    const croppedSrc = cropImage(img, det.bbox, 20); // Add padding
+                    if (croppedSrc) {
+                        const matches = await findMatchingProducts(croppedSrc, currentProducts, 1);
+                        if (matches.length > 0) {
+                            const match = currentProducts.find(p => p.id === matches[0].id);
+                            // Avoid duplicates
+                            if (match && !detectedProducts.some(p => p.id === match.id)) {
+                                detectedProducts.push(match);
+                            }
+                        }
+                    }
+                }
             }
-        } else {
+
+            // 2. Fallback to full image if nothing found or no detections
+            if (detectedProducts.length === 0) {
+                const matches = await findMatchingProducts(imageSrc, currentProducts);
+                if (matches.length > 0) {
+                    const bestMatch = currentProducts.find((p: any) => p.id === matches[0].id);
+                    if (bestMatch) {
+                        detectedProducts.push(bestMatch);
+                        // Alternatives logic for single item fallback
+                        const others = matches.slice(1)
+                            .map(m => currentProducts.find((p: any) => p.id === m.id))
+                            .filter((p): p is Product => !!p);
+                        setAlternativeProducts(others);
+                    }
+                }
+            }
+
+            if (detectedProducts.length > 0) {
+                setFoundProducts(detectedProducts);
+                setFoundProduct(detectedProducts[0]); // Select first by default
+            } else {
+                setShowNotFound(true);
+                setTimeout(() => setShowNotFound(false), 5000);
+            }
+
+        } catch (error) {
+            console.error("Scan error:", error);
             setShowNotFound(true);
-            setTimeout(() => setShowNotFound(false), 5000); // Increased timeout
+            setTimeout(() => setShowNotFound(false), 3000);
         }
 
         setIsScanning(false);
@@ -605,7 +643,7 @@ export default function CapturePage() {
             {/* Scanner Frame - Improved Visuals */}
             <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center p-4">
                 <p className="text-white text-center text-sm font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] bg-black/40 backdrop-blur-sm py-2 px-6 rounded-xl border border-white/10 mb-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                    {isScanning ? "Analisando..." : "Aponte e capture"}
+                    {isModelLoading ? "Carregando IA..." : isScanning ? "Analisando..." : "Aponte e capture"}
                 </p>
                 <div className="relative w-full h-[65vh] flex items-center justify-center">
                     {/* Corner Markers */}
@@ -735,15 +773,69 @@ export default function CapturePage() {
                                     <span className="px-4 py-1.5 bg-blue-500 text-white text-sm font-black rounded-full uppercase tracking-wider">
                                         {foundProduct.categoria}
                                     </span>
+                                    {foundProducts.length > 1 && (
+                                        <span className="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded-lg border border-green-500/30">
+                                            +{foundProducts.length - 1} outros itens
+                                        </span>
+                                    )}
                                 </div>
                                 <p className="mt-4 text-blue-400 font-black text-4xl">{formatBRL(foundProduct.preco)}</p>
                                 <p className="mt-4 text-neutral-300 text-base leading-relaxed">{foundProduct.descricao}</p>
 
-                                <button onClick={addToCart} className="mt-6 w-full bg-green-600 py-4 rounded-xl font-black text-white hover:bg-green-500 active:scale-95 transition-all text-lg shadow-xl border border-green-400/30 flex items-center justify-center gap-2">
-                                    <span>✓</span> ADICIONAR AO CARRINHO
-                                </button>
+                                <div className="mt-6 flex gap-2">
+                                    <button onClick={addToCart} className="flex-1 bg-green-600 py-4 rounded-xl font-black text-white hover:bg-green-500 active:scale-95 transition-all text-lg shadow-xl border border-green-400/30 flex items-center justify-center gap-2">
+                                        <span>✓</span> ADICIONAR
+                                    </button>
+                                    {foundProducts.length > 1 && (
+                                        <button
+                                            onClick={() => {
+                                                foundProducts.forEach(async (p) => {
+                                                    // Quick add all
+                                                    setFoundProduct(p);
+                                                    // This is a bit hacky, practically we should change addToCart to take product
+                                                    // But let's just use the current flow for single add, and maybe a bulk add function later if needed
+                                                    // For now, let user select from the list below
+                                                });
+                                                showToast("Adicione um por um abaixo", "info");
+                                            }}
+                                            className="hidden px-4 bg-neutral-800 rounded-xl font-bold text-white border border-white/10"
+                                        >
+                                            Todos
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
+
+                        {/* Multi-product detection list */}
+                        {foundProducts.length > 1 && (
+                            <div className="mt-6 mb-2">
+                                <h3 className="text-white font-bold mb-3 text-sm uppercase tracking-wider text-green-400">Itens encontrados na foto ({foundProducts.length})</h3>
+                                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                                    {foundProducts.map((prod) => (
+                                        <button
+                                            key={prod.id}
+                                            onClick={() => setFoundProduct(prod)}
+                                            className={`min-w-[120px] rounded-xl p-2 flex flex-col items-start transition-all border-2 ${foundProduct?.id === prod.id ? 'bg-neutral-800 border-blue-500' : 'bg-neutral-800/50 border-transparent hover:bg-neutral-800'}`}
+                                        >
+                                            <div className="relative w-full h-20 mb-2">
+                                                <img
+                                                    src={prod.imagens[0] || ''}
+                                                    className="w-full h-full object-cover rounded-lg bg-neutral-700"
+                                                />
+                                                {foundProduct?.id === prod.id && (
+                                                    <div className="absolute inset-0 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                                                        <div className="w-2 h-2 bg-blue-400 rounded-full shadow-[0_0_10px_rgba(59,130,246,1)]"></div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <span className="text-xs text-white font-bold line-clamp-1 text-left w-full">{prod.nome}</span>
+                                            <span className="text-blue-400 text-[10px] font-bold">{formatBRL(prod.preco)}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Alternative Products / Suggestions */}
                         {alternativeProducts.length > 0 && (

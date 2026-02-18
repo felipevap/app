@@ -107,8 +107,8 @@ function ProductsContent() {
         <div className="space-y-6">
             <header className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Produtos</h1>
-                    <p className="text-neutral-400">Gerencie os produtos das Garage Sales</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white">Produtos</h1>
+                    <p className="text-neutral-400 text-sm sm:text-base">Gerencie os produtos das Garage Sales</p>
                 </div>
                 {selectedGarageSaleId && (
                     <Link
@@ -146,7 +146,7 @@ function ProductsContent() {
                             <select
                                 value={selectedGarageSaleId}
                                 onChange={(e) => setSelectedGarageSaleId(e.target.value)}
-                                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:outline-none text-base"
                             >
                                 {garageSales.map((gs) => (
                                     <option key={gs.id} value={gs.id}>
@@ -177,14 +177,14 @@ function ProductsContent() {
                                 placeholder="Buscar produtos..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-white placeholder-neutral-500 focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-white placeholder-neutral-500 focus:border-blue-500 focus:outline-none text-base"
                             />
                         </div>
                         <div>
                             <select
                                 value={filterCategoria}
                                 onChange={(e) => setFilterCategoria(e.target.value)}
-                                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:outline-none text-base"
                             >
                                 <option value="">Todas as Categorias</option>
                                 {categorias.map((cat) => (
@@ -196,7 +196,7 @@ function ProductsContent() {
                             <select
                                 value={filterCondicao}
                                 onChange={(e) => setFilterCondicao(e.target.value)}
-                                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:outline-none"
+                                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:outline-none text-base"
                             >
                                 <option value="">Todas as Condições</option>
                                 {condicoes.map((cond) => (
@@ -269,8 +269,8 @@ function ProductsContent() {
                                                 {product.condicao}
                                             </span>
                                             <span className={`rounded-full px-2 py-0.5 text-xs ${product.status === 'vendido' ? 'bg-red-500/20 text-red-400' :
-                                                    product.status === 'reservado' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                        'bg-blue-500/20 text-blue-400'
+                                                product.status === 'reservado' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                    'bg-blue-500/20 text-blue-400'
                                                 }`}>
                                                 {product.status ? (product.status.charAt(0).toUpperCase() + product.status.slice(1)) : 'Disponível'}
                                             </span>
