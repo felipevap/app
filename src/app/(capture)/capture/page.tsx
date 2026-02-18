@@ -837,6 +837,20 @@ export default function CapturePage() {
                         {/* AR Overlays */}
                         {arOverlays.map(overlay => {
                             const coords = getScreenCoords(overlay.bbox);
+
+                            // Screen dimensions (fallback to safe defaults if undefined)
+                            const screenW = typeof window !== 'undefined' ? window.innerWidth : 360;
+                            // const screenH = typeof window !== 'undefined' ? window.innerHeight : 640;
+
+                            // Clamp Horizontal: Keep center of bubble within [110px, Width-110px]
+                            // This assumes bubble width max ~200px + padding
+                            const overlayLeft = Math.max(110, Math.min(coords.left + coords.width / 2, screenW - 110));
+
+                            // Clamp Vertical: Keep bottom of bubble at least 180px from top
+                            // This ensures the bubble (height ~150px) doesn't go off-screen top
+                            // If the item is too high, we might overlap it, but visibility is priority.
+                            const overlayTop = Math.max(coords.top - 10, 180);
+
                             return (
                                 <div key={overlay.id}>
                                     {/* Bounding Box */}
@@ -850,26 +864,26 @@ export default function CapturePage() {
                                         }}
                                     />
                                     <div
-                                        className="absolute z-40 bg-white/95 backdrop-blur-md rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.4)] border-2 border-green-500 p-3 flex flex-col items-start max-w-[200px] animate-in fade-in zoom-in duration-300 transition-transform text-left"
+                                        className="absolute z-40 bg-white/95 backdrop-blur-md rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.4)] border-2 border-green-500 p-3 flex flex-col items-start w-[200px] animate-in fade-in zoom-in duration-300 transition-all text-left"
                                         style={{
-                                            left: coords.left + coords.width / 2,
-                                            top: coords.top - 10,
+                                            left: overlayLeft,
+                                            top: overlayTop,
                                             transform: 'translate(-50%, -100%)'
                                         }}
                                         onClick={() => setFoundProduct(overlay.product)}
                                     >
                                         <div className="font-bold text-black text-sm leading-tight mb-1 line-clamp-2">{overlay.product.nome}</div>
-                                        {overlay.product.descricao && (
-                                            <div className="text-gray-600 text-xs mb-2 line-clamp-2 leading-snug">{overlay.product.descricao}</div>
-                                        )}
+
+                                        {/* Status Line */}
+                                        <div className={`text-[10px] font-black uppercase mb-2 ${overlay.product.status === 'disponível' ? 'text-green-600' :
+                                                overlay.product.status === 'vendido' ? 'text-red-600' : 'text-yellow-600'
+                                            }`}>
+                                            STATUS: {overlay.product.status}
+                                        </div>
+
                                         <div className="flex items-center justify-between w-full mt-1 gap-2">
                                             <div className="flex flex-col">
                                                 <span className="font-black text-blue-600 text-lg whitespace-nowrap">{formatBRL(overlay.product.preco)}</span>
-                                                {overlay.product.status !== 'disponível' && (
-                                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase w-fit ${overlay.product.status === 'vendido' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'}`}>
-                                                        {overlay.product.status}
-                                                    </span>
-                                                )}
                                             </div>
                                             {overlay.product.status === 'disponível' ? (
                                                 <button
