@@ -779,6 +779,73 @@ export default function CapturePage() {
                 )}
             </AnimatePresence>
 
+            {/* Search Modal */}
+            <AnimatePresence>
+                {showSearchModal && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className="absolute inset-0 z-50 bg-neutral-900/95 backdrop-blur-md flex flex-col pointer-events-auto"
+                    >
+                        <div className="flex items-center gap-2 p-4 border-b border-white/10">
+                            <div className="relative flex-1">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">🔍</span>
+                                <input
+                                    type="text"
+                                    placeholder="Buscar produto..."
+                                    value={searchQuery}
+                                    onChange={(e) => searchProducts(e.target.value)}
+                                    autoFocus
+                                    className="w-full bg-neutral-800 text-white pl-10 pr-4 py-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/50 border border-white/5 text-base font-medium"
+                                />
+                            </div>
+                            <button
+                                onClick={() => setShowSearchModal(false)}
+                                className="p-3 bg-neutral-800 text-neutral-400 hover:text-white rounded-xl transition-colors active:scale-95"
+                            >
+                                <span className="sr-only">Fechar</span>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                            {searchQuery.length > 0 && searchResults.length === 0 ? (
+                                <div className="text-center text-neutral-500 mt-10">
+                                    <p>Nenhum produto encontrado</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-3">
+                                    {searchResults.map((product) => (
+                                        <button
+                                            key={product.id}
+                                            onClick={() => selectProductFromSearch(product)}
+                                            className="bg-neutral-800 rounded-xl p-3 flex flex-col items-start hover:bg-neutral-700 transition-colors border border-white/5 text-left active:scale-95"
+                                        >
+                                            <div className="w-full aspect-square rounded-lg bg-neutral-700 mb-2 overflow-hidden">
+                                                {product.imagens[0] ? (
+                                                    <img src={product.imagens[0]} alt={product.nome} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-neutral-500 text-xs">Sem foto</div>
+                                                )}
+                                            </div>
+                                            <h3 className="font-bold text-white text-sm line-clamp-2 mb-1 leading-tight">{product.nome}</h3>
+                                            <span className="text-blue-400 font-extrabold text-sm">{formatBRL(product.preco)}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            {searchQuery.length === 0 && (
+                                <div className="text-center text-neutral-600 mt-20">
+                                    <p className="text-4xl mb-4">⌨</p>
+                                    <p>Digite o nome do produto para buscar</p>
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Success Message */}
             <AnimatePresence>
                 {showSuccessMessage && (
