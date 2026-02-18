@@ -607,46 +607,46 @@ export default function CapturePage() {
             {/* Scan Button & Bottom Bar */}
             {!isCartOpen && (
                 <div className="fixed bottom-0 inset-x-0 z-40 pointer-events-none">
-                <div className="flex justify-center mb-4">
-                    <button
-                        onClick={captureAndScan}
-                        disabled={isScanning}
-                        className="group relative pointer-events-auto"
-                    >
-                        <div className="absolute inset-0 bg-blue-500/30 rounded-full blur-2xl group-hover:bg-blue-500/50 transition-colors duration-500"></div>
-                        <div className="relative bg-white text-black p-6 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.4)] transform transition-all active:scale-90 border-[6px] border-white/30 bg-clip-padding group-hover:scale-110 group-hover:shadow-[0_0_50px_rgba(59,130,246,0.7)]">
-                            {isScanning ? (
-                                <svg className="w-8 h-8 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
-                            ) : (
-                                <div className="w-8 h-8 rounded-full border-[4px] border-neutral-900/80"></div>
-                            )}
-                        </div>
-                    </button>
-                </div>
+                    <div className="flex justify-center mb-4">
+                        <button
+                            onClick={captureAndScan}
+                            disabled={isScanning}
+                            className="group relative pointer-events-auto"
+                        >
+                            <div className="absolute inset-0 bg-blue-500/30 rounded-full blur-2xl group-hover:bg-blue-500/50 transition-colors duration-500"></div>
+                            <div className="relative bg-white text-black p-6 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.4)] transform transition-all active:scale-90 border-[6px] border-white/30 bg-clip-padding group-hover:scale-110 group-hover:shadow-[0_0_50px_rgba(59,130,246,0.7)]">
+                                {isScanning ? (
+                                    <svg className="w-8 h-8 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
+                                ) : (
+                                    <div className="w-8 h-8 rounded-full border-[4px] border-neutral-900/80"></div>
+                                )}
+                            </div>
+                        </button>
+                    </div>
 
-                <div className="bg-black/80 backdrop-blur-xl border-t border-white/10 p-3 pb-6 pointer-events-auto flex items-center gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-                    <button
-                        onClick={() => setIsCartOpen(true)}
-                        className="flex-1 bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all py-3 px-4 rounded-xl text-white flex items-center justify-center gap-3 shadow-xl border border-blue-400/30"
-                    >
-                        <div className="relative">
-                            <span className="text-2xl">🛒</span>
-                            {cart.length > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border border-white animate-bounce shadow-lg">
-                                    {cart.length}
-                                </span>
-                            )}
-                        </div>
-                        <span className="text-sm font-black uppercase tracking-tight">Carrinho</span>
-                    </button>
+                    <div className="bg-black/80 backdrop-blur-xl border-t border-white/10 p-3 pb-6 pointer-events-auto flex items-center gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+                        <button
+                            onClick={() => setIsCartOpen(true)}
+                            className="flex-1 bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all py-3 px-4 rounded-xl text-white flex items-center justify-center gap-3 shadow-xl border border-blue-400/30"
+                        >
+                            <div className="relative">
+                                <span className="text-2xl">🛒</span>
+                                {cart.length > 0 && (
+                                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border border-white animate-bounce shadow-lg">
+                                        {cart.length}
+                                    </span>
+                                )}
+                            </div>
+                            <span className="text-sm font-black uppercase tracking-tight">Carrinho</span>
+                        </button>
 
-                    <button
-                        onClick={() => setShowSearchModal(true)}
-                        className="bg-neutral-800 p-3 rounded-xl text-white hover:bg-neutral-700 active:scale-95 transition-all border border-white/10"
-                    >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    </button>
-                </div>
+                        <button
+                            onClick={() => setShowSearchModal(true)}
+                            className="bg-neutral-800 p-3 rounded-xl text-white hover:bg-neutral-700 active:scale-95 transition-all border border-white/10"
+                        >
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -681,7 +681,7 @@ export default function CapturePage() {
                         animate={{ y: 0 }}
                         exit={{ y: "100%" }}
                         transition={{ type: "spring", damping: 20 }}
-                        className="absolute bottom-0 left-0 right-0 z-30 bg-neutral-900 rounded-t-3xl p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-neutral-700 pointer-events-auto max-h-[85vh] overflow-y-auto"
+                        className="absolute bottom-0 left-0 right-0 z-50 bg-neutral-900 rounded-t-3xl p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-neutral-700 pointer-events-auto max-h-[85vh] overflow-y-auto"
                     >
                         <div className="w-16 h-2 bg-neutral-700 rounded-full mx-auto mb-8"></div>
 

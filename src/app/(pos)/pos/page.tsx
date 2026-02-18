@@ -962,7 +962,7 @@ export default function POSPage() {
                                 ) : (
                                     <div className="space-y-2 overflow-y-auto pr-1">
                                         {filteredPendingOrders.map((order: any) => (
-                                            <div key={order.id} className="bg-white rounded-lg p-3 border border-orange-200">
+                                            <div key={order.id} className="bg-white rounded p-2 border border-orange-200 shadow-sm">
                                                 <div className="flex justify-between items-start mb-2">
                                                     <div>
                                                         <div className="font-bold text-gray-800">{order.customerName}</div>
@@ -977,7 +977,7 @@ export default function POSPage() {
                                                 <div className="flex gap-2">
                                                     <button
                                                         onClick={() => loadPendingOrder(order)}
-                                                        className="flex-1 bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition-colors font-medium text-sm uppercase tracking-tighter"
+                                                        className="flex-1 bg-orange-600 text-white py-1 px-2 rounded hover:bg-orange-700 transition-colors font-bold text-xs uppercase tracking-tight"
                                                     >
                                                         Processar
                                                     </button>
@@ -995,7 +995,7 @@ export default function POSPage() {
                                 )}
                             </div>
                             <div className="flex flex-grow flex-col rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                                <div className="flex items-center justify-between border-b bg-gray-50 p-4 rounded-t-xl">
+                                <div className="flex items-center justify-between border-b bg-gray-50 p-2 rounded-t-xl mb-1">
                                     <h2 className="font-bold text-gray-700">{isCheckoutMode ? 'Pagamento' : 'Novo Pedido'}</h2>
                                     <div className="flex items-center gap-2">
                                         <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded border border-yellow-200">
