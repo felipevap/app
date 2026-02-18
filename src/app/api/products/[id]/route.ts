@@ -7,6 +7,12 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
         const id = params.id;
         const body = await req.json();
 
+        const existingProduct = await prisma.product.findUnique({ where: { id } });
+
+        if (!existingProduct) {
+            return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+        }
+
         const product = await prisma.product.update({
             where: { id },
             data: body

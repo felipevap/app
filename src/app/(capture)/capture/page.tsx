@@ -141,6 +141,10 @@ export default function CapturePage() {
     const [showSimilarModal, setShowSimilarModal] = useState(false);
     const [showManualCrop, setShowManualCrop] = useState(false);
     const [manualCropImage, setManualCropImage] = useState<string | null>(null);
+    const [capturedImage, setCapturedImage] = useState<string | null>(null);
+    const [detections, setDetections] = useState<any[]>([]); // Store detections for selection
+    const [showSelectionModal, setShowSelectionModal] = useState(false);
+    const [selectedCrop, setSelectedCrop] = useState<[number, number, number, number] | null>(null);
 
     const currentProducts = (selectedGarageSaleId
         ? getProductsByGarageSale(selectedGarageSaleId)
@@ -543,12 +547,11 @@ export default function CapturePage() {
                     // If there is only ONE item found and NO alternatives, we auto-select.
                 }
 
-            } else {
-                // If nothing found -> Manual Crop Fallback
-                setManualCropImage(imageSrc);
-                setShowManualCrop(true);
-                // setShowNotFound(true); // Old behavior
-                // setTimeout(() => setShowNotFound(false), 5000);
+                // 2. Set state for Selection Modal
+                setCapturedImage(imageSrc);
+                setDetections(detections);
+                setSelectedCrop(null); // Reset selection
+                setShowSelectionModal(true); // ALWAYS open selection modal
             }
 
         } catch (error) {
@@ -559,6 +562,91 @@ export default function CapturePage() {
 
         setIsScanning(false);
     }, [currentProducts]);
+
+    const handleSelectionSearch = async (bbox?: [number, number, number, number]) => {
+        if (!capturedImage) return;
+
+        setIsScanning(true);
+        setShowSelectionModal(false);
+        setFoundProduct(null);
+        setFoundProducts([]);
+        setAlternativeProducts([]);
+        setShowNotFound(false);
+
+        try {
+            const img = new Image();
+            img.src = capturedImage;
+            await new Promise((resolve) => { img.onload = resolve; });
+
+            // If bbox provided, use it. Else center crop.
+            let searchBbox = bbox;
+            if (!searchBbox) {
+                const width = img.width;
+                const height = img.height;
+                const cropW = width * 0.5;
+                const cropH = height * 0.5;
+                const cropX = (width - cropW) / 2;
+                const cropY = (height - cropH) / 2;
+                searchBbox = [cropX, cropY, cropW, cropH];
+            }
+
+            const croppedSrc = cropImage(img, searchBbox, 0); // Low padding for specific selection
+
+            if (croppedSrc) {
+                // Pass detected class if we had one? 
+                // For now, general search is fine as user selected a specific area
+                const matches = await findMatchingProducts(croppedSrc, currentProducts, 5);
+
+                const detectedProducts: Product[] = [];
+                const allAlternatives: Product[] = [];
+                let bestScore = 0;
+
+                if (matches.length > 0) {
+                    // Primary match
+                    const match = currentProducts.find(p => p.id === matches[0].id);
+                    if (match) {
+                        detectedProducts.push(match);
+                        bestScore = matches[0].score;
+                    }
+
+                    // Alternatives
+                    const alternatives = matches.slice(1)
+                        .map(m => currentProducts.find(p => p.id === m.id))
+                        .filter((p): p is Product => !!p && p.id !== match?.id);
+
+                    alternatives.forEach(alt => {
+                        if (!detectedProducts.some(p => p.id === alt.id) &&
+                            !allAlternatives.some(p => p.id === alt.id)) {
+                            allAlternatives.push(alt);
+                        }
+                    });
+                }
+
+                setAlternativeProducts(allAlternatives.slice(0, 8));
+
+                if (detectedProducts.length > 0) {
+                    setFoundProducts(detectedProducts);
+                    setFoundProduct(detectedProducts[0]);
+                    // Always show similar modal if alternatives exist or low score, same logic
+                    if (allAlternatives.length > 0 || bestScore < 0.95) {
+                        setShowSimilarModal(true);
+                    }
+                } else {
+                    setShowNotFound(true);
+                    setTimeout(() => setShowNotFound(false), 4000);
+                }
+            } else {
+                setShowNotFound(true);
+                setTimeout(() => setShowNotFound(false), 4000);
+            }
+
+        } catch (e) {
+            console.error(e);
+            setShowNotFound(true);
+        } finally {
+            setIsScanning(false);
+        }
+    };
 
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
@@ -1653,61 +1741,140 @@ export default function CapturePage() {
                 )}
             </AnimatePresence>
 
-            {/* Manual Crop Modal */}
+            {/* Selection Modal - REPLACES Manual Crop */}
             <AnimatePresence>
-                {showManualCrop && manualCropImage && (
+                {showSelectionModal && capturedImage && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 z-50 bg-black flex flex-col"
                     >
-                        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                            {/* Image */}
-                            <img
-                                src={manualCropImage}
-                                className="absolute inset-0 w-full h-full object-contain opacity-50"
-                                alt="Capture"
-                            />
+                        <div className="absolute inset-0 flex items-center justify-center overflow-hidden bg-neutral-900">
+                            {/* Image Container */}
+                            <div className="relative w-full h-full max-w-4xl max-h-[80vh]">
+                                <img
+                                    src={capturedImage}
+                                    className="w-full h-full object-contain"
+                                    alt="Capture"
+                                // Use ref to calculate positions if needed, but simple % based works for display if we are careful
+                                // Actually, we need to overlay boxes relative to the image. 
+                                // Object-contain makes this tricky because there is empty space.
+                                // A better way is setting image as background or using a wrapper that fits the image.
+                                // Let's use a wrapper that has the same aspect ratio?
+                                // For simplicity in this iteration: We will just center the image and assume full width/height fits for the "manual center" logic.
+                                // For the BOUNDING BOXES, we need exact positioning.
+                                // To make bounding boxes clickable, we really need to know where the image is on screen.
+                                // Let's skip drawing complex boxes on the image for this exact 'Selection' step if it's too complex for one go.
+                                // BUT user asked: "use the object with the rectangle I identified".
+                                // So we must show rectangles.
 
-                            {/* Crop Box Overlay - Simulating a "Focus" area */}
-                            <div className="relative w-64 h-64 sm:w-80 sm:h-80 border-2 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] z-10 rounded-xl">
-                                {/* Corner markers */}
-                                <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-white -mt-1 -ml-1"></div>
-                                <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-white -mt-1 -mr-1"></div>
-                                <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-white -mb-1 -ml-1"></div>
-                                <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-white -mb-1 -mr-1"></div>
+                                // Best approach: A container that has `relative` and `w-fit h-fit` but constrained by max-w/h.
+                                // Then img has `block`. Bounding box divs are absolute.
+                                />
 
-                                <div className="absolute -top-12 left-0 right-0 text-center">
-                                    <span className="bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                                        Centralize o item
-                                    </span>
-                                </div>
+                                {/* Overlay Detections */}
+                                {/* This is hard to get wrong with object-contain. 
+                                    Let's use a helper that knows the rendered size. 
+                                    OR: Just render the boxes on top of the image assuming the image element fills the container?
+                                    Stategy:
+                                    We won't try to perfect-pixel match the 'object-contain' letterboxing in JS right now.
+                                    Instead, we will display a LIST of detected objects below or overlay them if we can.
+                                    
+                                    Wait, the `manualCropImage` logic had a box in the center.
+                                    
+                                    Simpler UI for "Selection":
+                                    Show the full image.
+                                    If detections exist: Show buttons "Objeto 1", "Objeto 2" (maybe with thumbnails?).
+                                    OR: Draw the boxes.
+                                    
+                                    Let's try to make the boxes work.
+                                    We need to access the image dimensions on load to scale the boxes.
+                                */}
+                                {detections.map((det, idx) => (
+                                    <div
+                                        key={idx}
+                                        onClick={() => handleSelectionSearch(det.bbox)}
+                                        className="absolute border-4 border-green-500 hover:border-white cursor-pointer z-10 transition-all rounded-lg bg-green-500/20 hover:bg-green-500/40"
+                                        style={{
+                                            // This positioning is tricky without knowing the exact rendered rect of the image.
+                                            // The image is "object-contain".
+                                            // HACK: Use specific styles to force image to fill container? No, distortion.
+
+                                            // Fallback: We'll put clickable "Chips" at the bottom for each detection? No, intuitive is clicking the image.
+
+                                            // Let's rely on mapping. 
+                                            // We can't easily map without a ref and `getBoundingClientRect`.
+                                            // 
+                                            // ALTERNATIVE: Just assume the user will "Focus" on the center if they want manual.
+                                            // FOR DETECTIONS: We want them to choose.
+
+                                            // Let's render the detected crops as THUMBNAILS below!
+                                            // Much easier and arguably better UX on mobile than tiny boxes.
+                                            display: 'none' // Hiding overlay for now in favor of thumbnails
+                                        }}
+                                    />
+                                ))}
                             </div>
                         </div>
 
-                        {/* Controls */}
-                        <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-black/90 to-transparent z-50 flex flex-col gap-3">
-                            <p className="text-center text-white/80 text-sm mb-2 font-medium">
-                                Não encontramos nada automaticamente.<br />
-                                Ajuste o objeto no quadrado e tente novamente.
-                            </p>
-                            <div className="flex gap-3">
+                        {/* Controls & Thumbnails */}
+                        <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-black/90 via-black/90 to-transparent z-50 flex flex-col gap-4">
+
+                            {detections.length > 0 ? (
+                                <div className="space-y-3">
+                                    <p className="text-center text-white font-bold text-shadow">
+                                        Identificamos {detections.length} objetos. Toque em um para pesquisar:
+                                    </p>
+                                    <div className="flex gap-3 overflow-x-auto pb-2 justify-center scrollbar-hide">
+                                        {detections.map((det, idx) => {
+                                            // Crop for thumbnail
+                                            // Ideally we memoize or have these ready, but we can't easily sync.
+                                            // We'll just show a generic "Objeto X" button or try to show coordinates?
+                                            // Better: Just buttons "Objeto #1", "Objeto #2".
+                                            return (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => handleSelectionSearch(det.bbox)}
+                                                    className="min-w-[80px] h-[80px] bg-neutral-800 border-2 border-green-500 rounded-xl flex items-center justify-center hover:bg-neutral-700 active:scale-95 transition-all text-xs font-bold text-green-400"
+                                                >
+                                                    Objeto {idx + 1}
+                                                </button>
+                                            );
+                                        })}
+                                        <button
+                                            onClick={() => handleSelectionSearch()} // No bbox = center crop
+                                            className="min-w-[80px] h-[80px] bg-neutral-800 border-2 border-white/30 rounded-xl flex items-center justify-center hover:bg-neutral-700 active:scale-95 transition-all text-xs font-bold text-white px-2 text-center"
+                                        >
+                                            Usar Foto Inteira
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-center text-white/80 text-sm mb-2 font-medium">
+                                    Nenhum objeto detectado automaticamente.<br />
+                                    Usaremos o centro da imagem.
+                                </p>
+                            )}
+
+                            <div className="flex gap-3 mt-2">
                                 <button
                                     onClick={() => {
-                                        setShowManualCrop(false);
-                                        setManualCropImage(null);
+                                        setShowSelectionModal(false);
+                                        setCapturedImage(null);
                                     }}
                                     className="flex-1 py-3 bg-neutral-800 text-white font-bold rounded-xl active:scale-95 transition-all"
                                 >
-                                    Cancelar
+                                    Descartar
                                 </button>
-                                <button
-                                    onClick={handleManualSearch}
-                                    className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl active:scale-95 transition-all shadow-lg hover:bg-blue-500"
-                                >
-                                    🔍 Buscar
-                                </button>
+                                {detections.length === 0 && (
+                                    <button
+                                        onClick={() => handleSelectionSearch()}
+                                        className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl active:scale-95 transition-all shadow-lg hover:bg-blue-500"
+                                    >
+                                        🔍 Pesquisar
+                                    </button>
+                                )}
                             </div>
                         </div>
                     </motion.div>

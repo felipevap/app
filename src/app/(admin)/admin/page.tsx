@@ -39,6 +39,26 @@ export default function AdminDashboard() {
         fetchSales();
     }, []);
 
+    // Set default selected garage sale to the latest one when garageSales are loaded
+    useEffect(() => {
+        if (garageSales.length > 0 && selectedGarageSaleId === "all") {
+            // Check if we haven't manually selected "all" (this logic might be tricky if user actually WANTS "all")
+            // A better approach is initializing state with null or a specific value if possible, 
+            // but since garageSales comes from context, we might not have it on initial render.
+            // Let's just set it once when garageSales becomes available.
+            // Actually, the requirement is "numbers on dashboard are wrong... filter to only show products...".
+            // The user implies that the default view should be the active/latest sale.
+            setSelectedGarageSaleId(garageSales[0].id);
+        }
+    }, [garageSales]);
+    // Note: This will force selection to first GS on load. If user switches to "all", this effect won't run again 
+    // unless garageSales changes, which is fine. 
+    // BUT we need to be careful not to override user selection if they switch BACK to "all" and then garageSales updates (unlikely).
+    // To make it robust: only set if we are in the initial "all" state and we haven't touched it? 
+    // Simpler: Just set it on mount if we have them, or when they load.
+    // The previous state was initialized to "all".
+
+
     const filteredSales = selectedGarageSaleId === "all"
         ? salesHistory
         : salesHistory.filter(s => s.garageSaleId === selectedGarageSaleId);

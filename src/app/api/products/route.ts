@@ -18,6 +18,27 @@ export async function GET(req: NextRequest) {
             whereClause.garageSaleId = garageSaleId;
         }
 
+        // Cleanup expired reservations (older than 30 mins)
+        // We do this on GET so the list is always fresh without needing a cron job
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+
+        await prisma.product.updateMany({
+            where: {
+                status: 'reservado',
+                reservedAt: {
+                    lt: thirtyMinutesAgo
+                }
+            },
+            data: {
+                status: 'disponível',
+                reservedBy: null,
+                reservedByName: null,
+                reservedByEmail: null,
+                reservedByPhone: null,
+                reservedAt: null
+            }
+        });
+
         const products = await prisma.product.findMany({
             where: whereClause,
             orderBy: { createdAt: 'desc' }

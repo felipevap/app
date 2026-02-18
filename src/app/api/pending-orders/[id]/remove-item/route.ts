@@ -32,7 +32,8 @@ export async function POST(
             }
 
             // 2. Release the product
-            await tx.product.update({
+            // 2. Release the product (safely)
+            await tx.product.updateMany({
                 where: { id: orderItem.productId },
                 data: {
                     status: "disponível",

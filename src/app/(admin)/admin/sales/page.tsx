@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
+import Toast from "@/components/Toast";
 
 interface SaleItem {
     id: number;
@@ -32,6 +33,11 @@ export default function AdminSalesPage() {
     const [expandedSaleId, setExpandedSaleId] = useState<number | null>(null);
     const [editingSale, setEditingSale] = useState<Sale | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
+
+    const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+        setToast({ message, type, isVisible: true });
+    };
 
     useEffect(() => {
         fetchSales();
@@ -61,14 +67,14 @@ export default function AdminSalesPage() {
             });
 
             if (res.ok) {
-                alert("Venda excluída com sucesso!");
+                showToast("Venda excluída com sucesso!", "success");
                 fetchSales();
             } else {
-                alert("Erro ao excluir venda.");
+                showToast("Erro ao excluir venda.", "error");
             }
         } catch (error) {
             console.error(error);
-            alert("Erro ao excluir venda.");
+            showToast("Erro ao excluir venda.", "error");
         }
     };
 
@@ -282,13 +288,32 @@ export default function AdminSalesPage() {
                         setEditingSale(null);
                         fetchSales();
                     }}
+                    showToast={showToast}
+                />
+            )}
+
+            {toast.isVisible && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast({ ...toast, isVisible: false })}
                 />
             )}
         </div>
     );
 }
 
-function EditSaleModal({ sale, onClose, onSave }: { sale: Sale, onClose: () => void, onSave: () => void }) {
+function EditSaleModal({
+    sale,
+    onClose,
+    onSave,
+    showToast
+}: {
+    sale: Sale,
+    onClose: () => void,
+    onSave: () => void,
+    showToast: (message: string, type: 'success' | 'error' | 'info') => void
+}) {
     const [buyerName, setBuyerName] = useState(sale.buyerName || "");
     const [buyerPhone, setBuyerPhone] = useState(sale.buyerPhone || "");
     const [buyerEmail, setBuyerEmail] = useState(sale.buyerEmail || "");
@@ -318,14 +343,14 @@ function EditSaleModal({ sale, onClose, onSave }: { sale: Sale, onClose: () => v
             });
 
             if (res.ok) {
-                alert("Venda atualizada com sucesso!");
+                showToast("Venda atualizada com sucesso!", "success");
                 onSave();
             } else {
-                alert("Erro ao atualizar venda.");
+                showToast("Erro ao atualizar venda.", "error");
             }
         } catch (error) {
             console.error("Error updating sale", error);
-            alert("Erro ao atualizar venda.");
+            showToast("Erro ao atualizar venda.", "error");
         } finally {
             setIsSaving(false);
         }

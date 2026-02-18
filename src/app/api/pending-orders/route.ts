@@ -26,7 +26,8 @@ export async function GET(req: NextRequest) {
                 });
 
                 for (const item of order.items) {
-                    await tx.product.update({
+                    // Use updateMany to avoid error if product was deleted (P2025)
+                    await tx.product.updateMany({
                         where: { id: item.productId },
                         data: {
                             status: 'disponível',
