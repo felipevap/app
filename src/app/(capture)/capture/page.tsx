@@ -11,6 +11,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { loadModel, detectObjects, cropImage } from '@/utils/objectDetection';
 
+interface AROverlay {
+    id: string;
+    bbox: [number, number, number, number]; // [x, y, w, h] from Detection
+    product: Product;
+    score: number;
+}
+
 
 const RemainingTime = ({ createdAt }: { createdAt: string }) => {
     const [timeLeft, setTimeLeft] = useState("");
@@ -130,7 +137,17 @@ export default function CapturePage() {
     const [foundProduct, setFoundProduct] = useState<Product | null>(null);
     const [foundProducts, setFoundProducts] = useState<Product[]>([]); // New: Multiple products
     const [foundProductImageIndex, setFoundProductImageIndex] = useState(0);
-    const [alternativeProducts, setAlternativeProducts] = useState<Product[]>([]); // New state
+    const [alternativeProducts, setAlternativeProducts] = useState<Product[]>([]);
+
+    const currentProducts = (selectedGarageSaleId
+        ? getProductsByGarageSale(selectedGarageSaleId)
+        : products).filter(p => p.status === 'disponível');
+
+    // AR Scanner State
+    const [arOverlays, setArOverlays] = useState<AROverlay[]>([]);
+    const lastScanTime = useRef(0);
+    const isProcessingFrame = useRef(false);
+
     const [showNotFound, setShowNotFound] = useState(false);
     const [cart, setCart] = useState<any[]>([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
@@ -142,6 +159,9 @@ export default function CapturePage() {
 
     const [cartTab, setCartTab] = useState<'current' | 'pending'>('current');
     const [pendingOrders, setPendingOrders] = useState<any[]>([]);
+
+
+
     const [isLoadingPending, setIsLoadingPending] = useState(false);
 
     const [pendingCount, setPendingCount] = useState(0);
@@ -222,24 +242,89 @@ export default function CapturePage() {
     }, []);
 
     // Run Object Detection Loop
-    // useEffect(() => {
-    //     if (!modelLoaded || !webcamRef.current || !webcamRef.current.video) return;
+    useEffect(() => {
+        const scanFrame = async () => {
+            const now = Date.now();
+            if (now - lastScanTime.current < 800) return; // ~1.2Hz throttle
+            if (isProcessingFrame.current) return;
+            if (!webcamRef.current || !webcamRef.current.video || webcamRef.current.video.readyState !== 4) return;
+            if (isScanning || foundProduct) {
+                if (arOverlays.length > 0) setArOverlays([]);
+                return;
+            }
 
-    //     let animationFrameId: number;
+            isProcessingFrame.current = true;
+            try {
+                const video = webcamRef.current.video;
+                const detections = await detectObjects(video);
 
-    //     const detect = async () => {
-    //         if (webcamRef.current && webcamRef.current.video && webcamRef.current.video.readyState === 4) {
-    //             const results = await detectObjects(webcamRef.current.video);
-    //             // Filter out 'person' to avoid clutter if desired, or keep all
-    //             setDetections(results.filter(r => r.class !== 'person'));
-    //         }
-    //         animationFrameId = requestAnimationFrame(detect);
-    //     };
+                if (detections.length === 0) {
+                    setArOverlays([]);
+                    return;
+                }
 
-    //     detect();
+                const newOverlays: AROverlay[] = [];
 
-    //     return () => cancelAnimationFrame(animationFrameId);
-    // }, [modelLoaded, webcamRef]);
+                // Process top 2 detections only
+                for (const det of detections.slice(0, 2)) {
+                    // Crop from video
+                    const croppedSrc = cropImage(video, det.bbox, 0);
+                    if (croppedSrc) {
+                        // Fast match: limit 1, use category boost
+                        const matches = await findMatchingProducts(croppedSrc, currentProducts, 1, det.class);
+
+                        // Threshold for AR display (needs to be reasonably confident)
+                        if (matches.length > 0 && matches[0].score > 0.65) {
+                            const product = currentProducts.find(p => p.id === matches[0].id);
+                            if (product) {
+                                newOverlays.push({
+                                    id: product.id,
+                                    bbox: det.bbox as [number, number, number, number],
+                                    product,
+                                    score: matches[0].score
+                                });
+                            }
+                        }
+                    }
+                }
+                setArOverlays(newOverlays);
+
+            } catch (e) {
+                console.error("AR Scan error", e);
+            } finally {
+                isProcessingFrame.current = false;
+                lastScanTime.current = Date.now();
+            }
+        };
+
+        const interval = setInterval(scanFrame, 200);
+        return () => clearInterval(interval);
+    }, [currentProducts, isScanning, foundProduct, arOverlays.length, isModelLoading]); // Dependencies
+
+    // Helper to map video coordinates to screen coordinates (object-fit: cover)
+    const getScreenCoords = (bbox: [number, number, number, number]) => {
+        if (!webcamRef.current || !webcamRef.current.video) return { left: 0, top: 0, width: 0, height: 0 };
+
+        const video = webcamRef.current.video;
+        const videoWidth = video.videoWidth;
+        const videoHeight = video.videoHeight;
+        const clientWidth = video.clientWidth; // Element width on screen
+        const clientHeight = video.clientHeight; // Element height on screen
+
+        // Calculate scale for object-fit: cover
+        const scale = Math.max(clientWidth / videoWidth, clientHeight / videoHeight);
+
+        // Calculate offsets
+        const dx = (clientWidth - videoWidth * scale) / 2;
+        const dy = (clientHeight - videoHeight * scale) / 2;
+
+        return {
+            left: bbox[0] * scale + dx,
+            top: bbox[1] * scale + dy,
+            width: bbox[2] * scale,
+            height: bbox[3] * scale
+        };
+    };
 
     const [sessionId, setSessionId] = useState<string>("");
 
@@ -252,9 +337,7 @@ export default function CapturePage() {
         setSessionId(sid);
     }, []);
 
-    const currentProducts = (selectedGarageSaleId
-        ? getProductsByGarageSale(selectedGarageSaleId)
-        : products).filter(p => p.status === 'disponível');
+
 
     const formatBRL = (value: number): string => {
         return value.toLocaleString('pt-BR', {
@@ -276,6 +359,7 @@ export default function CapturePage() {
         setFoundProducts([]);
         setAlternativeProducts([]);
         setShowNotFound(false);
+        const allAlternatives: Product[] = [];
 
         // Allow UI update
         await new Promise(r => setTimeout(r, 100));
@@ -294,33 +378,60 @@ export default function CapturePage() {
                 for (const det of detections) {
                     const croppedSrc = cropImage(img, det.bbox, 20); // Add padding
                     if (croppedSrc) {
-                        const matches = await findMatchingProducts(croppedSrc, currentProducts, 1);
+                        // Pass detected class and increase limit to finding similar items as well
+                        const matches = await findMatchingProducts(croppedSrc, currentProducts, 5, det.class);
+
                         if (matches.length > 0) {
+                            // Primary match
                             const match = currentProducts.find(p => p.id === matches[0].id);
-                            // Avoid duplicates
+
+                            // Avoid duplicates in found products
                             if (match && !detectedProducts.some(p => p.id === match.id)) {
                                 detectedProducts.push(match);
                             }
+
+                            // Add other matches to alternatives
+                            const alternatives = matches.slice(1)
+                                .map(m => currentProducts.find(p => p.id === m.id))
+                                .filter((p): p is Product => !!p && p.id !== match?.id); // Ensure not adding the same
+
+                            // Add unique alternatives
+                            alternatives.forEach(alt => {
+                                if (!detectedProducts.some(p => p.id === alt.id) &&
+                                    !allAlternatives.some(p => p.id === alt.id)) {
+                                    allAlternatives.push(alt);
+                                }
+                            });
                         }
                     }
                 }
             }
 
-            // 2. Fallback to full image if nothing found or no detections
+            // 2. Fallback to full image if nothing detected (or no good matches from detections)
             if (detectedProducts.length === 0) {
-                const matches = await findMatchingProducts(imageSrc, currentProducts);
+                // Try searching the whole image, maybe use 'Outros' or generic boost if needed
+                const matches = await findMatchingProducts(imageSrc, currentProducts, 5);
+
                 if (matches.length > 0) {
                     const bestMatch = currentProducts.find((p: any) => p.id === matches[0].id);
                     if (bestMatch) {
                         detectedProducts.push(bestMatch);
+
                         // Alternatives logic for single item fallback
                         const others = matches.slice(1)
                             .map(m => currentProducts.find((p: any) => p.id === m.id))
                             .filter((p): p is Product => !!p);
-                        setAlternativeProducts(others);
+
+                        others.forEach(alt => {
+                            if (!allAlternatives.some(p => p.id === alt.id)) {
+                                allAlternatives.push(alt);
+                            }
+                        });
                     }
                 }
             }
+
+            setAlternativeProducts(allAlternatives.slice(0, 8)); // Limit alternatives to 8
 
             if (detectedProducts.length > 0) {
                 setFoundProducts(detectedProducts);
@@ -567,26 +678,48 @@ export default function CapturePage() {
                             onUserMediaError={onUserMediaError}
                         />
 
-                        {/* Object Detection Overlays */}
-                        {/* {modelLoaded && detections.map((det, idx) => (
-                            <button
-                                key={idx}
-                                onClick={() => searchProducts(det.class)}
-                                className="absolute bg-blue-600/80 text-white text-xs font-bold px-2 py-1 rounded-full backdrop-blur-sm border border-white/30 hover:bg-blue-500 transition-colors z-20"
-                                style={{
-                                    left: `${det.bbox[0]}px`,
-                                    top: `${det.bbox[1]}px`,
-                                    // Simple positioning based on bbox
-                                }}
-                            >
-                                {det.class} {Math.round(det.score * 100)}%
-                            </button>
-                        ))} */}
+                        {/* AR Overlays */}
+                        {arOverlays.map(overlay => {
+                            const coords = getScreenCoords(overlay.bbox);
+                            return (
+                                <div key={overlay.id}>
+                                    {/* Bounding Box */}
+                                    <div
+                                        className="absolute border-2 border-green-500/70 rounded-lg pointer-events-none transition-all duration-300"
+                                        style={{
+                                            left: coords.left,
+                                            top: coords.top,
+                                            width: coords.width,
+                                            height: coords.height,
+                                        }}
+                                    />
+                                    {/* Product Tag Button */}
+                                    <button
+                                        onClick={() => setFoundProduct(overlay.product)}
+                                        className="absolute z-40 bg-white/90 backdrop-blur-md rounded-xl shadow-[0_0_15px_rgba(0,0,0,0.3)] border-2 border-green-500 p-3 flex flex-col items-center animate-in fade-in zoom-in duration-300 active:scale-95 transition-transform"
+                                        style={{
+                                            left: coords.left + coords.width / 2,
+                                            top: coords.top - 10,
+                                            transform: 'translate(-50%, -100%)'
+                                        }}
+                                    >
+                                        <div className="text-[10px] font-black uppercase tracking-wider text-green-700 mb-1">É este?</div>
+                                        <div className="font-bold text-black text-sm leading-none whitespace-nowrap mb-1">{overlay.product.nome}</div>
+                                        <div className="font-black text-blue-600 text-sm">{formatBRL(overlay.product.preco)}</div>
+
+                                        {/* Arrow pointer */}
+                                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white rotate-45 border-b-2 border-r-2 border-green-500"></div>
+                                    </button>
+                                </div>
+                            );
+                        })}
+
 
                         <div className="absolute inset-0 pointer-events-none"></div>
                     </div>
                 </motion.div>
-            )}
+            )
+            }
 
             {/* Toast Notification */}
             <AnimatePresence>
@@ -673,50 +806,52 @@ export default function CapturePage() {
             </div>
 
             {/* Scan Button & Bottom Bar */}
-            {!isCartOpen && (
-                <div className="fixed bottom-0 inset-x-0 z-40 pointer-events-none">
-                    <div className="flex justify-center mb-4">
-                        <button
-                            onClick={captureAndScan}
-                            disabled={isScanning}
-                            className="group relative pointer-events-auto"
-                        >
-                            <div className="absolute inset-0 bg-blue-500/30 rounded-full blur-2xl group-hover:bg-blue-500/50 transition-colors duration-500"></div>
-                            <div className="relative bg-white text-black p-6 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.4)] transform transition-all active:scale-90 border-[6px] border-white/30 bg-clip-padding group-hover:scale-110 group-hover:shadow-[0_0_50px_rgba(59,130,246,0.7)]">
-                                {isScanning ? (
-                                    <svg className="w-8 h-8 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
-                                ) : (
-                                    <div className="w-8 h-8 rounded-full border-[4px] border-neutral-900/80"></div>
-                                )}
-                            </div>
-                        </button>
-                    </div>
+            {
+                !isCartOpen && (
+                    <div className="fixed bottom-0 inset-x-0 z-40 pointer-events-none">
+                        <div className="flex justify-center mb-4">
+                            <button
+                                onClick={captureAndScan}
+                                disabled={isScanning}
+                                className="group relative pointer-events-auto"
+                            >
+                                <div className="absolute inset-0 bg-blue-500/30 rounded-full blur-2xl group-hover:bg-blue-500/50 transition-colors duration-500"></div>
+                                <div className="relative bg-white text-black p-6 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.4)] transform transition-all active:scale-90 border-[6px] border-white/30 bg-clip-padding group-hover:scale-110 group-hover:shadow-[0_0_50px_rgba(59,130,246,0.7)]">
+                                    {isScanning ? (
+                                        <svg className="w-8 h-8 animate-spin text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg>
+                                    ) : (
+                                        <div className="w-8 h-8 rounded-full border-[4px] border-neutral-900/80"></div>
+                                    )}
+                                </div>
+                            </button>
+                        </div>
 
-                    <div className="bg-black/80 backdrop-blur-xl border-t border-white/10 p-3 pb-6 pointer-events-auto flex items-center gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-                        <button
-                            onClick={() => setIsCartOpen(true)}
-                            className="flex-1 bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all py-3 px-4 rounded-xl text-white flex items-center justify-center gap-3 shadow-xl border border-blue-400/30"
-                        >
-                            <div className="relative">
-                                <span className="text-2xl">🛒</span>
-                                {cart.length > 0 && (
-                                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border border-white animate-bounce shadow-lg">
-                                        {cart.length}
-                                    </span>
-                                )}
-                            </div>
-                            <span className="text-sm font-black uppercase tracking-tight">Carrinho</span>
-                        </button>
+                        <div className="bg-black/80 backdrop-blur-xl border-t border-white/10 p-3 pb-6 pointer-events-auto flex items-center gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+                            <button
+                                onClick={() => setIsCartOpen(true)}
+                                className="flex-1 bg-blue-600 hover:bg-blue-500 active:scale-95 transition-all py-3 px-4 rounded-xl text-white flex items-center justify-center gap-3 shadow-xl border border-blue-400/30"
+                            >
+                                <div className="relative">
+                                    <span className="text-2xl">🛒</span>
+                                    {cart.length > 0 && (
+                                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border border-white animate-bounce shadow-lg">
+                                            {cart.length}
+                                        </span>
+                                    )}
+                                </div>
+                                <span className="text-sm font-black uppercase tracking-tight">Carrinho</span>
+                            </button>
 
-                        <button
-                            onClick={() => setShowSearchModal(true)}
-                            className="bg-neutral-800 p-3 rounded-xl text-white hover:bg-neutral-700 active:scale-95 transition-all border border-white/10"
-                        >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        </button>
+                            <button
+                                onClick={() => setShowSearchModal(true)}
+                                className="bg-neutral-800 p-3 rounded-xl text-white hover:bg-neutral-700 active:scale-95 transition-all border border-white/10"
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            </button>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             <AnimatePresence>
                 {showNotFound && (
@@ -1160,6 +1295,6 @@ export default function CapturePage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 }

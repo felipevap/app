@@ -9,7 +9,92 @@ import Toast from "@/components/Toast";
 import { loadModel, detectObjects, cropImage, DetectionResult } from "@/utils/objectDetection";
 import { Suspense } from "react";
 
+import { COCO_TO_CATEGORY_MAP } from "@/utils/imageMatching";
+
 const CATEGORIES = ["Eletrônicos", "Roupas", "Móveis", "Livros", "Brinquedos", "Esportes", "Decoração", "CD", "DVD", "LP", "Itens cozinha", "Ferramentas", "Itens piscina", "Cama mesa e banho", "Eletrodomésticos", "Saúde", "Outros"];
+
+const COCO_TRANSLATIONS: Record<string, string> = {
+    'person': 'Pessoa',
+    'bicycle': 'Bicicleta',
+    'car': 'Carro',
+    'motorcycle': 'Moto',
+    'airplane': 'Avião',
+    'bus': 'Ônibus',
+    'train': 'Trem',
+    'truck': 'Caminhão',
+    'boat': 'Barco',
+    'traffic light': 'Semáforo',
+    'fire hydrant': 'Hidrante',
+    'stop sign': 'Pare',
+    'parking meter': 'Parquímetro',
+    'bench': 'Banco',
+    'bird': 'Pássaro',
+    'cat': 'Gato',
+    'dog': 'Cachorro',
+    'horse': 'Cavalo',
+    'sheep': 'Ovelha',
+    'cow': 'Vaca',
+    'elephant': 'Elefante',
+    'bear': 'Urso',
+    'zebra': 'Zebra',
+    'giraffe': 'Girafa',
+    'backpack': 'Mochila',
+    'umbrella': 'Guarda-chuva',
+    'handbag': 'Bolsa',
+    'tie': 'Gravata',
+    'suitcase': 'Mala',
+    'frisbee': 'Frisbee',
+    'skis': 'Esquis',
+    'snowboard': 'Snowboard',
+    'sports ball': 'Bola',
+    'kite': 'Pipa',
+    'baseball bat': 'Taco de Beisebol',
+    'baseball glove': 'Luva de Beisebol',
+    'skateboard': 'Skate',
+    'surfboard': 'Prancha de Surf',
+    'tennis racket': 'Raquete de Tênis',
+    'bottle': 'Garrafa',
+    'wine glass': 'Taça',
+    'cup': 'Copo',
+    'fork': 'Garfo',
+    'knife': 'Faca',
+    'spoon': 'Colher',
+    'bowl': 'Tigela',
+    'banana': 'Banana',
+    'apple': 'Maçã',
+    'sandwich': 'Sanduíche',
+    'orange': 'Laranja',
+    'broccoli': 'Brócolis',
+    'carrot': 'Cenoura',
+    'hot dog': 'Cachorro Quente',
+    'pizza': 'Pizza',
+    'donut': 'Rosquinha',
+    'cake': 'Bolo',
+    'chair': 'Cadeira',
+    'couch': 'Sofá',
+    'potted plant': 'Vaso de Planta',
+    'bed': 'Cama',
+    'dining table': 'Mesa de Jantar',
+    'toilet': 'Privada',
+    'tv': 'TV',
+    'laptop': 'Notebook',
+    'mouse': 'Mouse',
+    'remote': 'Controle Remoto',
+    'keyboard': 'Teclado',
+    'cell phone': 'Celular',
+    'microwave': 'Micro-ondas',
+    'oven': 'Forno',
+    'toaster': 'Torradeira',
+    'sink': 'Pia',
+    'refrigerator': 'Geladeira',
+    'book': 'Livro',
+    'clock': 'Relógio',
+    'vase': 'Vaso',
+    'scissors': 'Tesoura',
+    'teddy bear': 'Urso de Pelúcia',
+    'hair drier': 'Secador de Cabelo',
+    'toothbrush': 'Escova de Dentes'
+};
 
 function NewProductContent() {
     const router = useRouter();
@@ -31,14 +116,23 @@ function NewProductContent() {
     });
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
 
-    // Object Detection State
+    // Object Detection & Cropping State
     const [isModelLoaded, setIsModelLoaded] = useState(false);
     const [processingImage, setProcessingImage] = useState(false);
     const [showSelectionModal, setShowSelectionModal] = useState(false);
     const [currentImageForSelection, setCurrentImageForSelection] = useState<string | null>(null);
     const [detections, setDetections] = useState<DetectionResult[]>([]);
+    const [selectedDetectionClass, setSelectedDetectionClass] = useState<string | null>(null);
+
+    // Interactive Cropping
     const imageRef = useRef<HTMLImageElement>(null);
-    const [containerWidth, setContainerWidth] = useState(0);
+    const [cropBox, setCropBox] = useState<{ x: number, y: number, w: number, h: number } | null>(null);
+    const [interaction, setInteraction] = useState<{
+        mode: 'none' | 'moving' | 'resizing',
+        startPos: { x: number, y: number },
+        startBox: { x: number, y: number, w: number, h: number },
+        handle?: string
+    }>({ mode: 'none', startPos: { x: 0, y: 0 }, startBox: { x: 0, y: 0, w: 0, h: 0 } });
 
     const showToast = (message: string, type: 'success' | 'error' | 'info') => {
         setToast({ message, type, isVisible: true });
@@ -80,16 +174,138 @@ function NewProductContent() {
         setProcessingImage(false);
     };
 
-    const handleObjectSelect = (detection: DetectionResult) => {
-        if (!currentImageForSelection) return;
+    // --- Interactive Cropping Logic ---
+
+    const getScaledCoords = (e: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent) => {
+        const img = imageRef.current;
+        if (!img) return null;
+
+        const rect = img.getBoundingClientRect();
+        const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+
+        const scaleX = img.naturalWidth / rect.width;
+        const scaleY = img.naturalHeight / rect.height;
+
+        const x = (clientX - rect.left) * scaleX;
+        const y = (clientY - rect.top) * scaleY;
+
+        return { x, y, scaleX, scaleY, rect };
+    };
+
+    const handlePointerDown = (e: React.MouseEvent | React.TouchEvent, action: 'move' | 'resize' | 'create', handle?: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const coords = getScaledCoords(e);
+        if (!coords || (!cropBox && action !== 'create')) return;
+
+        if (action === 'create') {
+            // Logic to find detection or start new box handled in handleImageClick
+            return;
+        }
+
+        setInteraction({
+            mode: action === 'move' ? 'moving' : 'resizing',
+            startPos: { x: coords.x, y: coords.y },
+            startBox: cropBox!,
+            handle
+        });
+    };
+
+    const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
+        if (interaction.mode === 'none' || !cropBox) return;
+        e.preventDefault();
+
+        const coords = getScaledCoords(e);
+        if (!coords) return;
+
+        const dx = coords.x - interaction.startPos.x;
+        const dy = coords.y - interaction.startPos.y;
+
+        if (interaction.mode === 'moving') {
+            setCropBox({
+                ...cropBox,
+                x: interaction.startBox.x + dx,
+                y: interaction.startBox.y + dy
+            });
+        } else if (interaction.mode === 'resizing' && interaction.handle) {
+            const box = { ...interaction.startBox };
+
+            if (interaction.handle.includes('n')) { box.y += dy; box.h -= dy; }
+            if (interaction.handle.includes('s')) { box.h += dy; }
+            if (interaction.handle.includes('w')) { box.x += dx; box.w -= dx; }
+            if (interaction.handle.includes('e')) { box.w += dx; }
+
+            // Normalize negative width/height
+            if (box.w < 0) { box.x += box.w; box.w = Math.abs(box.w); }
+            if (box.h < 0) { box.y += box.h; box.h = Math.abs(box.h); }
+
+            setCropBox(box);
+        }
+    };
+
+    const handlePointerUp = () => {
+        setInteraction({ mode: 'none', startPos: { x: 0, y: 0 }, startBox: { x: 0, y: 0, w: 0, h: 0 } });
+    };
+
+    const handleImageClick = (e: React.MouseEvent | React.TouchEvent) => {
+        if (interaction.mode !== 'none') return;
+
+        const coords = getScaledCoords(e);
+        if (!coords) return;
+
+        // 1. Check if clicked inside an existing detection
+        const clickedDetection = detections.find(d =>
+            coords.x >= d.bbox[0] && coords.x <= d.bbox[0] + d.bbox[2] &&
+            coords.y >= d.bbox[1] && coords.y <= d.bbox[1] + d.bbox[3]
+        );
+
+        if (clickedDetection) {
+            setCropBox({
+                x: clickedDetection.bbox[0],
+                y: clickedDetection.bbox[1],
+                w: clickedDetection.bbox[2],
+                h: clickedDetection.bbox[3]
+            });
+            setSelectedDetectionClass(clickedDetection.class);
+        } else {
+            // 2. Create a default box around the click
+            const size = 200; // Default size in image pixels
+            setCropBox({
+                x: coords.x - size / 2,
+                y: coords.y - size / 2,
+                w: size,
+                h: size
+            });
+            setSelectedDetectionClass(null); // Manual box has no class initially
+        }
+    };
+
+    const handleCropConfirm = () => {
+        if (!currentImageForSelection || !cropBox) return;
 
         const img = new Image();
         img.src = currentImageForSelection;
         img.onload = () => {
-            // Add padding to crop (e.g., 20px)
-            const croppedUrl = cropImage(img, detection.bbox, 20);
+            const croppedUrl = cropImage(img, [cropBox.x, cropBox.y, cropBox.w, cropBox.h], 0);
             if (croppedUrl) {
-                setFormData(prev => ({ ...prev, imagens: [...prev.imagens, croppedUrl] }));
+                setFormData(prev => {
+                    const updates: any = { imagens: [...prev.imagens, croppedUrl] };
+
+                    // Auto-fill logic
+                    if (selectedDetectionClass) {
+                        const translatedName = COCO_TRANSLATIONS[selectedDetectionClass] || selectedDetectionClass;
+                        // Suggested category logic
+                        const suggestedCats = COCO_TO_CATEGORY_MAP[selectedDetectionClass];
+                        const suggestedCategory = suggestedCats ? suggestedCats[0] : "Outros";
+
+                        if (!prev.nome) updates.nome = translatedName;
+                        if (prev.categoria === "Outros") updates.categoria = suggestedCategory;
+                    }
+
+                    return { ...prev, ...updates };
+                });
             }
             closeSelectionModal();
         };
@@ -106,6 +322,7 @@ function NewProductContent() {
         setShowSelectionModal(false);
         setCurrentImageForSelection(null);
         setDetections([]);
+        setCropBox(null);
     };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -544,55 +761,109 @@ function NewProductContent() {
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-black/50 relative">
+                        <div
+                            className="flex-1 overflow-hidden p-4 flex items-center justify-center bg-black/50 relative touch-none"
+                            onMouseMove={handlePointerMove}
+                            onTouchMove={handlePointerMove}
+                            onMouseUp={handlePointerUp}
+                            onTouchEnd={handlePointerUp}
+                            onMouseLeave={handlePointerUp}
+                        >
                             <div className="relative inline-block">
                                 <img
                                     ref={imageRef}
                                     src={currentImageForSelection}
                                     alt="Selection"
-                                    className="max-w-full max-h-[60vh] object-contain"
-                                    onLoad={(e) => setContainerWidth(e.currentTarget.clientWidth)}
+                                    className="max-w-full max-h-[60vh] object-contain pointer-events-none select-none"
+                                    draggable={false}
                                 />
-                                {detections.map((det, idx) => {
-                                    // Calculate scaling logic if image is resized by CSS
-                                    // For simplicity in this iteration, we assume strict relative positioning 
-                                    // We need to know the rendered size vs natural size to scale detections
-                                    const imgEl = imageRef.current;
-                                    if (!imgEl) return null;
+                                {/* Overlay for detections and crop box */}
+                                <div
+                                    className="absolute inset-0"
+                                    onMouseDown={handleImageClick}
+                                    onTouchStart={handleImageClick}
+                                >
+                                    {/* Detections Hints (Faint) */}
+                                    {detections.map((det, idx) => {
+                                        const imgEl = imageRef.current;
+                                        if (!imgEl) return null;
+                                        const scaleX = imgEl.clientWidth / imgEl.naturalWidth;
+                                        const scaleY = imgEl.clientHeight / imgEl.naturalHeight;
+                                        const [x, y, w, h] = det.bbox;
 
-                                    const scaleX = imgEl.clientWidth / imgEl.naturalWidth;
-                                    const scaleY = imgEl.clientHeight / imgEl.naturalHeight;
+                                        return (
+                                            <div
+                                                key={idx}
+                                                className="absolute border border-green-500/30 bg-green-500/10"
+                                                style={{
+                                                    left: `${x * scaleX}px`,
+                                                    top: `${y * scaleY}px`,
+                                                    width: `${w * scaleX}px`,
+                                                    height: `${h * scaleY}px`,
+                                                }}
+                                            />
+                                        );
+                                    })}
 
-                                    const [x, y, w, h] = det.bbox;
+                                    {/* Active Crop Box */}
+                                    {cropBox && (() => {
+                                        const imgEl = imageRef.current;
+                                        if (!imgEl) return null;
+                                        const scaleX = imgEl.clientWidth / imgEl.naturalWidth;
+                                        const scaleY = imgEl.clientHeight / imgEl.naturalHeight;
 
-                                    return (
-                                        <button
-                                            key={idx}
-                                            onClick={() => handleObjectSelect(det)}
-                                            className="absolute border-2 border-green-500 bg-green-500/20 hover:bg-green-500/40 transition-colors group"
-                                            style={{
-                                                left: `${x * scaleX}px`,
-                                                top: `${y * scaleY}px`,
-                                                width: `${w * scaleX}px`,
-                                                height: `${h * scaleY}px`,
-                                            }}
-                                        >
-                                            <span className="absolute -top-7 left-0 bg-green-500 text-black text-xs font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                                {det.class} ({Math.round(det.score * 100)}%)
-                                            </span>
-                                        </button>
-                                    );
-                                })}
+                                        return (
+                                            <div
+                                                className="absolute border-2 border-white shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] cursor-move"
+                                                style={{
+                                                    left: `${cropBox.x * scaleX}px`,
+                                                    top: `${cropBox.y * scaleY}px`,
+                                                    width: `${cropBox.w * scaleX}px`,
+                                                    height: `${cropBox.h * scaleY}px`,
+                                                }}
+                                                onMouseDown={(e) => handlePointerDown(e, 'move')}
+                                                onTouchStart={(e) => handlePointerDown(e, 'move')}
+                                            >
+                                                {/* Resize Handles */}
+                                                {['nw', 'ne', 'sw', 'se'].map(handle => (
+                                                    <div
+                                                        key={handle}
+                                                        className={`absolute w-6 h-6 bg-white border border-neutral-400 rounded-full
+                                                            ${handle.includes('n') ? '-top-3' : '-bottom-3'}
+                                                            ${handle.includes('w') ? '-left-3' : '-right-3'}
+                                                            cursor-${handle}-resize
+                                                        `}
+                                                        onMouseDown={(e) => handlePointerDown(e, 'resize', handle)}
+                                                        onTouchStart={(e) => handlePointerDown(e, 'resize', handle)}
+                                                    />
+                                                ))}
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
                             </div>
                         </div>
 
-                        <div className="p-4 border-t border-neutral-800 flex justify-end gap-3 bg-neutral-900">
-                            <button
-                                onClick={handleKeepOriginal}
-                                className="px-4 py-2 rounded-lg border border-neutral-700 hover:bg-neutral-800 text-white transition-colors"
-                            >
-                                Manter Original (Sem Recorte)
-                            </button>
+                        <div className="p-4 border-t border-neutral-800 flex justify-between gap-3 bg-neutral-900">
+                            <div className="text-neutral-400 text-sm flex items-center">
+                                * Toque na imagem para selecionar ou criar uma área
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={handleKeepOriginal}
+                                    className="px-4 py-2 rounded-lg border border-neutral-700 hover:bg-neutral-800 text-white transition-colors"
+                                >
+                                    Manter Original
+                                </button>
+                                {cropBox && (
+                                    <button
+                                        onClick={handleCropConfirm}
+                                        className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-bold transition-colors shadow-lg"
+                                    >
+                                        ✂️ Salvar Recorte
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
