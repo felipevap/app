@@ -68,7 +68,7 @@ export default function AdminDashboard() {
         : products.filter(p => p.garageSaleId === selectedGarageSaleId);
 
     const totalSalesValue = filteredSales.reduce((sum, sale) => sum + sale.totalValue, 0);
-    const activeProducts = filteredProducts.filter(p => p.status === 'disponível').length;
+    const activeProducts = filteredProducts.filter(p => p.status === 'disponível' && !p.deletedAt).length;
     const recentSales = filteredSales.slice(-5).reverse();
 
     const formatCurrency = (value: number) => {
