@@ -87,7 +87,7 @@ export const COCO_TO_CATEGORY_MAP: Record<string, string[]> = {
 
 export async function findMatchingProducts(
     capturedImageBase64: string,
-    products: { id: string, imagens: string[], categoria?: string, tags?: string[], nome?: string, embedding?: number[] }[],
+    products: { id: string, imagens: string[], categoria?: string, tags?: string[], nome?: string, embedding?: number[] | null }[],
     limit = 5,
     detectedClass?: string,
     minScore = 0.65
@@ -119,12 +119,12 @@ export async function findMatchingProducts(
         let visualScore = 0;
 
         // A. Embedding Score (Best)
-        if (capturedEmbedding && product.embedding) {
-            const sim = cosineSimilarity(capturedEmbedding, product.embedding);
-            visualScore = sim;
+        if (capturedEmbedding && product.embedding && product.embedding.length === 1024) {
+            visualScore = cosineSimilarity(capturedEmbedding, product.embedding);
+        } else if (capturedEmbedding) {
+            visualScore = 0.36;
         } else {
-            // Fallback for when embeddings are not ready
-            visualScore = 0.4;
+            visualScore = 0.42;
         }
 
         let finalScore = visualScore;

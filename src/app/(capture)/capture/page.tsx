@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import Webcam from 'react-webcam';
 // import { useProducts, type Product } from '@/contexts/ProductContext';
 import type { Product } from '@/contexts/GarageSaleContext';
@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { loadModel, detectObjects, cropImage } from '@/utils/objectDetection';
+import { isValidStoredEmbedding } from '@/utils/productEmbedding';
 
 interface AROverlay {
     id: string;
@@ -131,7 +132,7 @@ const ProductImageCarousel = ({
 
 export default function CapturePage() {
     const webcamRef = useRef<Webcam>(null);
-    const { garageSales, products, getProductsByGarageSale, loading } = useGarageSales();
+    const { garageSales, products, getProductsByGarageSale, loading, updateProduct } = useGarageSales();
     const [selectedGarageSaleId, setSelectedGarageSaleId] = useState<string>("");
     const [isScanning, setIsScanning] = useState(false);
     const [foundProduct, setFoundProduct] = useState<Product | null>(null);
@@ -146,9 +147,13 @@ export default function CapturePage() {
     const [showSelectionModal, setShowSelectionModal] = useState(false);
     const [selectedCrop, setSelectedCrop] = useState<[number, number, number, number] | null>(null);
 
-    const currentProducts = (selectedGarageSaleId
-        ? getProductsByGarageSale(selectedGarageSaleId)
-        : products).filter(p => p.status === 'disponível');
+    const currentProducts = useMemo(
+        () =>
+            (selectedGarageSaleId ? getProductsByGarageSale(selectedGarageSaleId) : products).filter(
+                (p) => p.status === 'disponível'
+            ),
+        [selectedGarageSaleId, products, getProductsByGarageSale]
+    );
 
     // AR Scanner State
     const [arOverlays, setArOverlays] = useState<AROverlay[]>([]);
@@ -249,57 +254,75 @@ export default function CapturePage() {
 
     useEffect(() => {
         loadModel().then(() => setIsModelLoading(false));
+    }, []);
 
-        // Start processing embeddings for products that don't have them
+    const embeddingFailedIdsRef = useRef<Set<string>>(new Set());
+
+    useEffect(() => {
+        embeddingFailedIdsRef.current.clear();
+    }, [selectedGarageSaleId]);
+
+    useEffect(() => {
+        let cancelled = false;
         const processEmbeddings = async () => {
-            // We need to import the generator dynamically
             const { getMobileNetEmbedding } = await import('@/utils/mobileNetEmbedding');
-
             setIsEmbeddingProcessing(true);
+            const total = Math.max(currentProducts.length, 1);
             let processed = 0;
-            const total = currentProducts.length;
-
             for (const product of currentProducts) {
-                // Optimization: Skip if already has embedding (not persisted yet, but for in-session refetch)
-                if ((product as any).embedding) {
+                if (cancelled) return;
+                if (isValidStoredEmbedding(product.embedding) || embeddingFailedIdsRef.current.has(product.id)) {
                     processed++;
+                    setEmbeddingProgress(Math.floor((processed / total) * 100));
                     continue;
                 }
-
-                if (product.imagens && product.imagens.length > 0) {
-                    try {
-                        const img = new Image();
-                        img.crossOrigin = 'Anonymous';
-                        img.src = product.imagens[0];
-                        await new Promise((resolve) => {
-                            img.onload = resolve;
-                            img.onerror = resolve; // skip on error
-                        });
-
+                if (!product.imagens?.length) {
+                    processed++;
+                    setEmbeddingProgress(Math.floor((processed / total) * 100));
+                    continue;
+                }
+                try {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.src = product.imagens[0];
+                    await new Promise<void>((resolve) => {
+                        img.onload = () => resolve();
+                        img.onerror = () => resolve();
+                    });
+                    if (!img.complete || img.naturalWidth === 0) {
+                        embeddingFailedIdsRef.current.add(product.id);
+                    } else {
                         const embeddingTensor = await getMobileNetEmbedding(img);
-                        if (embeddingTensor) {
-                            (product as any).embedding = await embeddingTensor.array();
+                        if (embeddingTensor && !cancelled) {
+                            const arr = (await embeddingTensor.array()) as number[];
                             embeddingTensor.dispose();
+                            if (arr.length === 1024) {
+                                await updateProduct(product.id, { embedding: arr });
+                            } else {
+                                embeddingFailedIdsRef.current.add(product.id);
+                            }
+                        } else {
+                            embeddingFailedIdsRef.current.add(product.id);
                         }
-                    } catch (e) {
-                        // console.error("Error generating embedding for", product.nome);
                     }
+                } catch {
+                    embeddingFailedIdsRef.current.add(product.id);
                 }
                 processed++;
                 setEmbeddingProgress(Math.floor((processed / total) * 100));
-
-                // Yield to UI every few items to not freeze
-                if (processed % 5 === 0) await new Promise(r => setTimeout(r, 20));
+                if (processed % 5 === 0) await new Promise((r) => setTimeout(r, 20));
             }
-            setIsEmbeddingProcessing(false);
+            if (!cancelled) setIsEmbeddingProcessing(false);
         };
-
-        // Only run if products are loaded and model is likely ready (or loading)
         if (currentProducts.length > 0) {
             processEmbeddings();
+        } else {
+            setIsEmbeddingProcessing(false);
         }
-
-    }, [currentProducts]); // Re-run when products change (e.g. selected garage sale)
+        return () => {
+            cancelled = true;
+        };
+    }, [currentProducts, updateProduct]);
 
     // Run Object Detection Loop
     useEffect(() => {

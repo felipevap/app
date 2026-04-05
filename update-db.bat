@@ -27,6 +27,6 @@ echo Concluido com sucesso!
 echo ========================================
 echo.
 echo As tabelas PendingOrder e PendingOrderItem foram criadas.
-echo Agora voce pode fazer commit e push para o Vercel.
+echo Agora voce pode fazer commit e push.
 echo.
 pause
