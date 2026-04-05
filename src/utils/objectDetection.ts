@@ -1,14 +1,19 @@
 
 import * as tf from '@tensorflow/tfjs';
 
-// Define the detection result interface
 export interface DetectionResult {
-    bbox: [number, number, number, number]; // [x, y, width, height]
+    bbox: [number, number, number, number];
     class: string;
     score: number;
 }
 
 let model: tf.GraphModel | null = null;
+
+const MODEL_URL = '/models/yolo26n/model.json';
+const INPUT_SIZE = 640;
+const MAX_OUTPUT_BOXES = 25;
+const SCORE_THRESHOLD = 0.25;
+const NMS_IOU_THRESHOLD = 0.5;
 
 const YOLO_CLASSES = [
     'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
@@ -22,48 +27,48 @@ const YOLO_CLASSES = [
     'hair drier', 'toothbrush'
 ];
 
-/**
- * Loads the YOLOv8n model.
- */
+function getImageDimensions(img: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement): { w: number; h: number } {
+    if (img instanceof HTMLVideoElement) {
+        return { w: img.videoWidth || img.width, h: img.videoHeight || img.height };
+    }
+    if (img instanceof HTMLImageElement) {
+        return { w: img.naturalWidth || img.width, h: img.naturalHeight || img.height };
+    }
+    return { w: img.width, h: img.height };
+}
+
 export async function loadModel(): Promise<boolean> {
     try {
         if (model) {
-            console.log('Model already loaded.');
             return true;
         }
 
-        console.log('Loading YOLOv8n model...');
         await tf.ready();
-
-        // Try setting backend to 'webgl' if available
         if (!tf.getBackend()) {
             await tf.setBackend('webgl');
         }
-        console.log('TensorFlow backend:', tf.getBackend());
 
-        model = await tf.loadGraphModel('/models/yolov8n/model.json');
+        model = await tf.loadGraphModel(MODEL_URL);
 
-        // Warmup
-        const dummyInput = tf.zeros([1, 640, 640, 3]);
-        model.execute(dummyInput);
+        const dummyInput = tf.zeros([1, INPUT_SIZE, INPUT_SIZE, 3]);
+        try {
+            model.execute({ 'images:0': dummyInput });
+        } catch {
+            model.execute(dummyInput);
+        }
         dummyInput.dispose();
 
-        console.log('YOLOv8n model loaded successfully.');
         return true;
     } catch (error) {
-        console.error('Failed to load YOLOv8n model:', error);
+        console.error('Failed to load YOLO26n model:', error);
         return false;
     }
 }
 
-/**
- * Detects objects in an image or video element using YOLOv8.
- */
 export async function detectObjects(
     img: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement
 ): Promise<DetectionResult[]> {
     if (!model) {
-        console.warn('Model not loaded yet. Calling loadModel()...');
         const loaded = await loadModel();
         if (!loaded || !model) {
             return [];
@@ -74,141 +79,126 @@ export async function detectObjects(
     let resized: tf.Tensor3D | null = null;
     let normalized: tf.Tensor4D | null = null;
     let output: tf.Tensor | null = null;
-    let transposed: tf.Tensor | null = null;
-    let boxes: tf.Tensor | null = null;
-    let scores: tf.Tensor | null = null;
-    let classIndices: tf.Tensor | null = null;
-    let nmsIndices: tf.Tensor | null = null;
+    let nmsIndices: tf.Tensor1D | null = null;
 
     try {
-        // Preprocessing
-        tfImg = tf.browser.fromPixels(img);
+        const { w: origW, h: origH } = getImageDimensions(img);
+        const safeW = origW > 0 ? origW : INPUT_SIZE;
+        const safeH = origH > 0 ? origH : INPUT_SIZE;
+        const scaleX = safeW / INPUT_SIZE;
+        const scaleY = safeH / INPUT_SIZE;
 
-        // Resize and normalize
-        // YOLOv8 expects 640x640
-        resized = tf.image.resizeBilinear(tfImg, [640, 640]);
+        tfImg = tf.browser.fromPixels(img);
+        resized = tf.image.resizeBilinear(tfImg, [INPUT_SIZE, INPUT_SIZE]);
         normalized = resized.div(255.0).expandDims(0).toFloat() as tf.Tensor4D;
 
-        // Inference
-        output = model.execute(normalized) as tf.Tensor;
-
-        // Post-processing
-        // YOLOv8 output: [1, 84, 8400] -> 4 coords + 80 classes
-        transposed = output.squeeze().transpose([1, 0]); // [8400, 84]
-
-        boxes = tf.tidy(() => {
-            const w = transposed!.slice([0, 2], [-1, 1]);
-            const h = transposed!.slice([0, 3], [-1, 1]);
-            const x1 = tf.sub(transposed!.slice([0, 0], [-1, 1]), tf.div(w, 2));
-            const y1 = tf.sub(transposed!.slice([0, 1], [-1, 1]), tf.div(h, 2));
-            return tf.concat([y1, x1, tf.add(y1, h), tf.add(x1, w)], 1); // [y1, x1, y2, x2] for NMS
-        });
-
-        scores = tf.tidy(() => {
-            const rawScores = transposed!.slice([0, 4], [-1, 80]); // [8400, 80]
-            return rawScores.max(1); // Max score per anchor
-        });
-
-        classIndices = tf.tidy(() => {
-            const rawScores = transposed!.slice([0, 4], [-1, 80]);
-            return rawScores.argMax(1);
-        });
-
-        // NMS
-        nmsIndices = await tf.image.nonMaxSuppressionAsync(
-            boxes as tf.Tensor2D,
-            scores as tf.Tensor1D,
-            20, // Max output size (limit to top 20 to avoid clutter)
-            0.45, // IOU threshold
-            0.25 // Score threshold
-        );
-
-        const detections: DetectionResult[] = [];
-        // Ensure indices is an array
-        const indicesData = nmsIndices.dataSync();
-        const indices = Array.from(indicesData);
-
-        if (indices.length > 0) {
-            const boxesData = boxes.arraySync() as number[][];
-            const scoresData = scores.dataSync();
-            const classesData = classIndices.dataSync();
-
-            // Calculate scale factors
-            let origW = 0;
-            let origH = 0;
-
-            if (img instanceof HTMLVideoElement) {
-                origW = img.videoWidth;
-                origH = img.videoHeight;
-            } else if (img instanceof HTMLImageElement) {
-                origW = img.naturalWidth || img.width;
-                origH = img.naturalHeight || img.height;
-            } else {
-                origW = img.width;
-                origH = img.height;
-            }
-
-            // prevent division by zero
-            if (origW === 0 || origH === 0) {
-                origW = 640;
-                origH = 640;
-            }
-
-            const scaleX = origW / 640;
-            const scaleY = origH / 640;
-
-            for (const idx of indices) {
-                const box = boxesData[idx]; // [y1, x1, y2, x2]
-                const score = scoresData[idx];
-                const classIdx = classesData[idx];
-                const label = YOLO_CLASSES[classIdx];
-
-                // Convert back from [y1, x1, y2, x2] to [x, y, w, h] and scale
-
-                const y1 = box[0];
-                const x1 = box[1];
-                const y2 = box[2];
-                const x2 = box[3];
-
-                const w_det = (x2 - x1);
-                const h_det = (y2 - y1);
-
-                const finalX = x1 * scaleX;
-                const finalY = y1 * scaleY;
-                const finalW = w_det * scaleX;
-                const finalH = h_det * scaleY;
-
-                detections.push({
-                    bbox: [finalX, finalY, finalW, finalH],
-                    class: label,
-                    score: score
-                });
-            }
+        try {
+            output = model!.execute({ 'images:0': normalized }) as tf.Tensor;
+        } catch {
+            output = model!.execute(normalized) as tf.Tensor;
         }
 
-        return detections;
+        const squeezed = output.squeeze();
+        const flat = await squeezed.data();
+        squeezed.dispose();
+        output.dispose();
+        output = null;
 
+        const numPred = flat.length / 6;
+        const candY1: number[] = [];
+        const candX1: number[] = [];
+        const candY2: number[] = [];
+        const candX2: number[] = [];
+        const candScores: number[] = [];
+        const candCls: number[] = [];
+
+        for (let i = 0; i < numPred; i++) {
+            const b = i * 6;
+            const x1 = flat[b];
+            const y1 = flat[b + 1];
+            const x2 = flat[b + 2];
+            const y2 = flat[b + 3];
+            const score = flat[b + 4];
+            const cls = Math.round(flat[b + 5]);
+
+            if (score < SCORE_THRESHOLD || cls < 0 || cls >= YOLO_CLASSES.length) {
+                continue;
+            }
+            if (x2 <= x1 || y2 <= y1) {
+                continue;
+            }
+
+            candX1.push(x1);
+            candY1.push(y1);
+            candX2.push(x2);
+            candY2.push(y2);
+            candScores.push(score);
+            candCls.push(cls);
+        }
+
+        if (candScores.length === 0) {
+            return [];
+        }
+
+
+        const n = candScores.length;
+        const nmsBoxes = new Float32Array(n * 4);
+        for (let i = 0; i < n; i++) {
+            nmsBoxes[i * 4] = candY1[i];
+            nmsBoxes[i * 4 + 1] = candX1[i];
+            nmsBoxes[i * 4 + 2] = candY2[i];
+            nmsBoxes[i * 4 + 3] = candX2[i];
+        }
+
+        const boxesT = tf.tensor2d(nmsBoxes, [n, 4]);
+        const scoresT = tf.tensor1d(candScores);
+
+        nmsIndices = await tf.image.nonMaxSuppressionAsync(
+            boxesT,
+            scoresT,
+            MAX_OUTPUT_BOXES,
+            NMS_IOU_THRESHOLD,
+            SCORE_THRESHOLD
+        );
+
+        boxesT.dispose();
+        scoresT.dispose();
+
+        const idxArr = Array.from(await nmsIndices.data());
+        nmsIndices.dispose();
+        nmsIndices = null;
+
+        const detections: DetectionResult[] = [];
+        for (const idx of idxArr) {
+            const x1 = candX1[idx];
+            const y1 = candY1[idx];
+            const x2 = candX2[idx];
+            const y2 = candY2[idx];
+            const wDet = x2 - x1;
+            const hDet = y2 - y1;
+            const cls = candCls[idx];
+
+            detections.push({
+                bbox: [x1 * scaleX, y1 * scaleY, wDet * scaleX, hDet * scaleY],
+                class: YOLO_CLASSES[cls],
+                score: candScores[idx]
+            });
+        }
+
+        detections.sort((a, b) => b.score - a.score);
+        return detections;
     } catch (error) {
-        console.error('YOLOv8 detection failed:', error);
+        console.error('YOLO26 detection failed:', error);
         return [];
     } finally {
-        // Cleanup tensors
         if (tfImg) tfImg.dispose();
         if (resized) resized.dispose();
         if (normalized) normalized.dispose();
         if (output) output.dispose();
-        if (transposed) transposed.dispose();
-        if (boxes) boxes.dispose();
-        if (scores) scores.dispose();
-        if (classIndices) classIndices.dispose();
         if (nmsIndices) nmsIndices.dispose();
     }
 }
 
-/**
- * Crops an image based on the bounding box.
- * Returns the cropped image as a Data URL (base64 string).
- */
 export function cropImage(
     sourceImage: HTMLImageElement | HTMLVideoElement,
     bbox: [number, number, number, number],
@@ -221,13 +211,11 @@ export function cropImage(
 
     let [x, y, width, height] = bbox;
 
-    // Apply padding
     x = Math.max(0, x - padding);
     y = Math.max(0, y - padding);
     width = width + (padding * 2);
     height = height + (padding * 2);
 
-    // Ensure we don't go out of bounds if source dimensions are available
     if (sourceImage instanceof HTMLImageElement) {
         width = Math.min(width, (sourceImage.naturalWidth || sourceImage.width) - x);
         height = Math.min(height, (sourceImage.naturalHeight || sourceImage.height) - y);
@@ -236,18 +224,16 @@ export function cropImage(
         height = Math.min(height, sourceImage.videoHeight - y);
     }
 
-    // Sanity check
     if (width <= 0 || height <= 0) return null;
 
     canvas.width = width;
     canvas.height = height;
 
-    // Draw the cropped area
     try {
         ctx.drawImage(sourceImage, x, y, width, height, 0, 0, width, height);
         return canvas.toDataURL('image/jpeg');
     } catch (e) {
-        console.error("Crop failed", e);
+        console.error('Crop failed', e);
         return null;
     }
 }
