@@ -1,5 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { parseEmbeddingInput } from '@/lib/productEmbeddingValidation';
+
+const UPDATABLE_KEYS = [
+    'nome',
+    'descricao',
+    'preco',
+    'imagens',
+    'categoria',
+    'condicao',
+    'tags',
+    'garageSaleId',
+    'status',
+    'deletedAt',
+    'embedding',
+    'reservedBy',
+    'reservedByName',
+    'reservedByEmail',
+    'reservedByPhone',
+    'reservedAt',
+] as const;
 
 export async function PUT(req: NextRequest, props: { params: Promise<{ id: string }> }) {
     try {
@@ -13,9 +34,29 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
             return NextResponse.json({ error: 'Product not found' }, { status: 404 });
         }
 
+        const data: Record<string, unknown> = {};
+        for (const key of UPDATABLE_KEYS) {
+            if (!(key in body)) continue;
+            if (key === 'embedding') {
+                const p = parseEmbeddingInput(body.embedding);
+                if (p === undefined) continue;
+                data.embedding = p === null ? Prisma.JsonNull : p;
+                continue;
+            }
+            if (key === 'preco' && body.preco !== undefined && body.preco !== null) {
+                data.preco = typeof body.preco === 'number' ? body.preco : parseFloat(String(body.preco));
+                continue;
+            }
+            if (key === 'deletedAt' && body.deletedAt === null) {
+                data.deletedAt = null;
+                continue;
+            }
+            data[key] = body[key];
+        }
+
         const product = await prisma.product.update({
             where: { id },
-            data: body
+            data
         });
 
         return NextResponse.json(product);

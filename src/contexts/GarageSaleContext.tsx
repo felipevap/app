@@ -25,6 +25,7 @@ export interface Product {
     descricao: string;
     preco: number;
     imagens: string[];
+    embedding?: number[] | null;
     categoria: string;
     condicao: string;
     tags: string[];
@@ -52,7 +53,7 @@ interface GarageSaleContextType {
     getProduct: (id: string) => Product | undefined;
     getProductsByGarageSale: (garageSaleId: string) => Product[];
     createSale: (sale: any) => Promise<any>;
-    refreshData: (options?: { includeDeleted?: boolean; silent?: boolean }) => Promise<void>;
+    refreshData: (options?: { includeDeleted?: boolean; silent?: boolean }) => Promise<Product[] | undefined>;
 }
 
 const GarageSaleContext = createContext<GarageSaleContextType | undefined>(undefined);
@@ -66,7 +67,7 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
         try {
             if (!options?.silent) setLoading(true);
             const query = options?.includeDeleted ? '?includeDeleted=true' : '';
-            const timestamp = new Date().getTime(); // Add timestamp to bust browser cache
+            const timestamp = new Date().getTime();
             const [gsRes, prodRes] = await Promise.all([
                 fetch(`/api/garage-sales${query}`, { cache: 'no-store' }),
                 fetch(`/api/products${query}${query ? '&' : '?'}t=${timestamp}`, { cache: 'no-store' })
@@ -77,12 +78,14 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
                 const prodData = await prodRes.json();
                 setGarageSales(gsData);
                 setProducts(prodData);
+                return prodData as Product[];
             }
         } catch (error) {
             console.error('Failed to fetch data:', error);
         } finally {
             if (!options?.silent) setLoading(false);
         }
+        return undefined;
     }, []);
 
     useEffect(() => {

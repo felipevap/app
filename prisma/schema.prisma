@@ -37,6 +37,7 @@ model Product {
   descricao     String?
   preco         Float
   imagens       String[]
+  embedding     Json?
   categoria     String?
   condicao      String?
   tags          String[]
