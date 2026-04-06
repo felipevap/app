@@ -6,6 +6,7 @@ import { useGarageSales } from "@/contexts/GarageSaleContext";
 import { formatDate, formatCurrency } from "@/utils/formatters";
 import Toast from "@/components/Toast";
 import PortalGarageLogo from "@/components/PortalGarageLogo";
+import { clampCommissionPercent } from "@/lib/commission";
 
 interface Item {
     productId?: string;
@@ -81,13 +82,6 @@ export default function POSPage() {
     const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
         setToast({ message, type });
     };
-
-    // ... (lines 60-449 skipped for brevity in this replace, I need to be careful with line numbers)
-    // Actually, I should do this in two chunks or use multi_replace.
-    // Let's use multi_replace to be safe and clean.
-
-
-
 
     const [productFilters, setProductFilters] = useState({
         search: "",
@@ -182,6 +176,10 @@ export default function POSPage() {
         !selectedGarageSaleId || sale.garageSaleId === selectedGarageSaleId
     );
 
+    const commissionPercent = clampCommissionPercent(
+        Number(garageSales.find((g) => g.id === selectedGarageSaleId)?.commissionPercent ?? 20)
+    );
+    const commissionRate = commissionPercent / 100;
 
 
     const getPaymentLabel = (method: string) => {
@@ -316,7 +314,7 @@ export default function POSPage() {
         html += `<h1 style="text-align:center;">RELATÓRIO DE FECHAMENTO</h1>`;
         html += `<p><strong>Data:</strong> ${formatDate(new Date())}</p>`;
         html += `<h2>Resumo Financeiro</h2>`;
-        html += `<table><tr><th>Método</th><th>Total</th><th>Comissão (20%)</th><th>Líquido</th></tr>`;
+        html += `<table><tr><th>Método</th><th>Total</th><th>Comissão (${commissionPercent}%)</th><th>Líquido</th></tr>`;
         html += `<tr><td>PIX</td><td>${formatCurrency(summary.pix.total)}</td><td>${formatCurrency(summary.pix.commission)}</td><td>${formatCurrency(summary.pix.net)}</td></tr>`;
         html += `<tr><td>Dinheiro</td><td>${formatCurrency(summary.money.total)}</td><td>${formatCurrency(summary.money.commission)}</td><td>${formatCurrency(summary.money.net)}</td></tr>`;
         html += `<tr><td>Cartão (Cli)</td><td>${formatCurrency(summary.cardClient.total)}</td><td>${formatCurrency(summary.cardClient.commission)}</td><td>${formatCurrency(summary.cardClient.net)}</td></tr>`;
@@ -405,7 +403,7 @@ export default function POSPage() {
             }
 
             sale.payments.forEach(p => {
-                const commission = p.amount * 0.20;
+                const commission = p.amount * commissionRate;
                 const net = p.amount - commission;
                 summary.grandTotal += p.amount;
                 summary.totalCommission += commission;
@@ -1535,7 +1533,7 @@ export default function POSPage() {
                                         <span>{formatCurrency(calculateSummary().grandTotal)}</span>
                                     </div>
                                     <div className="mt-1 flex justify-between text-sm text-red-600">
-                                        <span>Comissões (20%)</span>
+                                        <span>Comissões ({commissionPercent}%)</span>
                                         <span>-{formatCurrency(calculateSummary().totalCommission)}</span>
                                     </div>
                                     <div className="mt-2 flex justify-between border-t border-blue-200 pt-2 text-xl font-bold text-green-700">

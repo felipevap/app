@@ -26,6 +26,7 @@ export default function EditGarageSalePage() {
         cep: "",
         cpf: "",
         pix: "",
+        commissionPercent: "20",
     });
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
     const [preEventSegments, setPreEventSegments] = useState<ContractSegment[]>([]);
@@ -86,6 +87,11 @@ export default function EditGarageSalePage() {
                     cep: garageSale.cep || "",
                     cpf: garageSale.cpf || "",
                     pix: garageSale.pix || "",
+                    commissionPercent: String(
+                        typeof garageSale.commissionPercent === "number"
+                            ? garageSale.commissionPercent
+                            : 20
+                    ),
                 });
                 if (typeof garageSale.itemsRegistrationComplete === "boolean") {
                     setItemsComplete(garageSale.itemsRegistrationComplete);
@@ -108,7 +114,12 @@ export default function EditGarageSalePage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await updateGarageSale(id, formData);
+            const { commissionPercent: commissionStr, ...rest } = formData;
+            const parsed = parseFloat(commissionStr.replace(",", "."));
+            await updateGarageSale(id, {
+                ...rest,
+                commissionPercent: Number.isFinite(parsed) ? parsed : 20,
+            });
             showToast("Evento atualizado com sucesso!", "success");
             setTimeout(() => {
                 router.push("/admin/garage-sales");
@@ -330,6 +341,25 @@ export default function EditGarageSalePage() {
                                 className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-green-500 focus:ring-1 focus:ring-green-500"
                                 placeholder="Email, CPF, Telefone ou Aleatória"
                             />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-stone-700">
+                                Comissão neste evento (%)
+                            </label>
+                            <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                step={0.5}
+                                name="commissionPercent"
+                                value={formData.commissionPercent}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                required
+                            />
+                            <p className="mt-1 text-xs text-stone-500">
+                                Usada nos fechamentos do PDV e no portal do proprietário para este evento.
+                            </p>
                         </div>
                     </div>
 

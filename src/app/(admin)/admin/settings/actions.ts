@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionFromCookies } from "@/lib/session";
 import { isTenantAdministrator } from "@/lib/panel-routes";
+import { parseCommissionPercentInput } from "@/lib/commission";
 
 const MAX_DATA_URL_LEN = 900_000;
 const ALLOWED_PREFIXES = ["data:image/jpeg;base64,", "data:image/png;base64,", "data:image/webp;base64,"];
@@ -49,6 +50,27 @@ export async function clearTenantAdminLogo(): Promise<{ error?: string; ok?: boo
         return { error: "Não foi possível remover." };
     }
     revalidatePath("/administracao");
+    revalidatePath("/admin/settings");
+    return { ok: true };
+}
+
+export async function saveTenantDefaultCommission(
+    percent: unknown
+): Promise<{ error?: string; ok?: boolean }> {
+    const session = await getSessionFromCookies();
+    if (!session || !isTenantAdministrator(session) || !session.tenantId) {
+        return { error: "Sem permissão" };
+    }
+    const v = parseCommissionPercentInput(percent, 20);
+    try {
+        await prisma.tenant.update({
+            where: { id: session.tenantId },
+            data: { defaultCommissionPercent: v },
+        });
+    } catch (e) {
+        console.error("[saveTenantDefaultCommission]", e);
+        return { error: "Não foi possível salvar." };
+    }
     revalidatePath("/admin/settings");
     return { ok: true };
 }

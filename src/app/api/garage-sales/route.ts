@@ -5,6 +5,7 @@ import { requireTenantSession } from "@/lib/require-tenant";
 import { requireStaffSession } from "@/lib/require-staff";
 import { garageSaleTenantWhere } from "@/lib/tenant-scope";
 import { CONTRACT_PHASE_ONBOARDING, normalizeSegments } from "@/lib/contract";
+import { parseCommissionPercentInput } from "@/lib/commission";
 
 const OWNER_EMAIL_IN_USE = "OWNER_EMAIL_IN_USE";
 
@@ -63,6 +64,13 @@ export async function POST(req: NextRequest) {
         }
 
         const garageSale = await prisma.$transaction(async (tx) => {
+            const tenantRow = await tx.tenant.findUnique({
+                where: { id: tenantId },
+                select: { defaultCommissionPercent: true },
+            });
+            const tenantDefault = tenantRow?.defaultCommissionPercent ?? 20;
+            const commissionPercent = parseCommissionPercentInput(body.commissionPercent, tenantDefault);
+
             const gs = await tx.garageSale.create({
                 data: {
                     nome,
@@ -75,6 +83,7 @@ export async function POST(req: NextRequest) {
                     cep: body.cep,
                     cpf: body.cpf,
                     pix: body.pix,
+                    commissionPercent,
                     tenantId,
                 },
             });

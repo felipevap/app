@@ -1,0 +1,2 @@
+ALTER TABLE `Tenant` ADD COLUMN `defaultCommissionPercent` DOUBLE NOT NULL DEFAULT 20;
+ALTER TABLE `GarageSale` ADD COLUMN `commissionPercent` DOUBLE NOT NULL DEFAULT 20;

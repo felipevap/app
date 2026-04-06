@@ -8,12 +8,13 @@ datasource db {
 }
 
 model Tenant {
-  id                 String       @id @default(uuid())
-  name               String
-  slug               String       @unique
-  adminLogoDataUrl   String?      @db.LongText
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  id                       String       @id @default(uuid())
+  name                     String
+  slug                     String       @unique
+  adminLogoDataUrl         String?      @db.LongText
+  defaultCommissionPercent Float        @default(20)
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime     @updatedAt
   users              User[]
   garageSales        GarageSale[]
 }
@@ -38,19 +39,20 @@ model User {
 }
 
 model GarageSale {
-  id          String    @id @default(uuid())
-  nome        String
-  dataInicio  DateTime
-  dataFim     DateTime?
-  endereco    String
-  responsavel String?
-  email       String?
-  regras      String?
-  discount    Float?    @default(0)
-  cep         String?
-  cpf         String?
-  pix         String?
-  createdAt   DateTime  @default(now())
+  id                String    @id @default(uuid())
+  nome              String
+  dataInicio        DateTime
+  dataFim           DateTime?
+  endereco          String
+  responsavel       String?
+  email             String?
+  regras            String?
+  discount          Float?    @default(0)
+  commissionPercent Float     @default(20)
+  cep               String?
+  cpf               String?
+  pix               String?
+  createdAt         DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireTenantSession } from "@/lib/require-tenant";
 import { requireStaffSession } from "@/lib/require-staff";
 import { garageSaleFindWhere } from "@/lib/tenant-scope";
+import { parseCommissionPercentInput } from "@/lib/commission";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const session = await requireTenantSession(req);
@@ -40,6 +41,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
         const body = await req.json();
         delete body.tenantId;
+        if (Object.prototype.hasOwnProperty.call(body, "commissionPercent")) {
+            body.commissionPercent = parseCommissionPercentInput(
+                body.commissionPercent,
+                owned.commissionPercent
+            );
+        }
 
         const garageSale = await prisma.garageSale.update({
             where: { id: paramId },

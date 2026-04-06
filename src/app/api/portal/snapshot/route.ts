@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { computeClosureSummary, type PortalSale } from "@/lib/portal-report";
+import { clampCommissionPercent } from "@/lib/commission";
 import { requireOwnerSession } from "@/lib/require-owner";
 import { garageSaleFindWhere } from "@/lib/tenant-scope";
 
@@ -51,7 +52,8 @@ export async function GET(req: NextRequest) {
             payments: s.payments.map((p) => ({ method: p.method, amount: p.amount })),
         }));
 
-        const summary = computeClosureSummary(sales);
+        const commissionPct = clampCommissionPercent(garageSale.commissionPercent);
+        const summary = computeClosureSummary(sales, commissionPct);
 
         const contractAcceptances = await prisma.garageSaleContractAcceptance.findMany({
             where: { garageSaleId: gid, signerUserId: session.userId },

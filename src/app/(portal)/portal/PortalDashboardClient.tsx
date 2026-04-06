@@ -10,6 +10,7 @@ import {
     type ClosureSummary,
     type PortalSale,
 } from "@/lib/portal-report";
+import { clampCommissionPercent } from "@/lib/commission";
 
 type GarageSaleRow = {
     id: string;
@@ -23,6 +24,7 @@ type GarageSaleRow = {
     cep: string | null;
     cpf: string | null;
     pix: string | null;
+    commissionPercent?: number | null;
 };
 
 type ProductRow = {
@@ -151,8 +153,9 @@ export default function PortalDashboardClient() {
 
     function downloadClosure() {
         if (!data) return;
-        const summary = computeClosureSummary(data.sales);
-        const html = buildClosureReportHtml(data.sales, summary, null);
+        const pct = clampCommissionPercent(Number(data.garageSale.commissionPercent ?? 20));
+        const summary = computeClosureSummary(data.sales, pct);
+        const html = buildClosureReportHtml(data.sales, summary, null, pct);
         const blob = new Blob([html], { type: "text/html" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -182,6 +185,7 @@ export default function PortalDashboardClient() {
     }
 
     const { garageSale, products, sales, summary, metrics, contractAcceptances } = data;
+    const closureCommissionPct = clampCommissionPercent(Number(garageSale.commissionPercent ?? 20));
 
     return (
         <div className="mx-auto max-w-6xl px-4 py-6 pb-16">
@@ -406,7 +410,8 @@ export default function PortalDashboardClient() {
                     <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
                         <h2 className="text-lg font-semibold text-stone-900">Relatório final (PDV)</h2>
                         <p className="mt-1 text-sm text-stone-600">
-                            Mesmo resumo de fechamento do PDV: métodos de pagamento, comissão de 20% e lista de vendas.
+                            Mesmo resumo de fechamento do PDV: métodos de pagamento, comissão de {closureCommissionPct}% neste
+                            evento e lista de vendas.
                         </p>
                         <button
                             type="button"
@@ -422,7 +427,9 @@ export default function PortalDashboardClient() {
                                 <tr className="border-b border-stone-200 bg-stone-50">
                                     <th className="p-3 font-semibold text-stone-700">Método</th>
                                     <th className="p-3 font-semibold text-stone-700">Total</th>
-                                    <th className="p-3 font-semibold text-stone-700">Comissão (20%)</th>
+                                    <th className="p-3 font-semibold text-stone-700">
+                                        Comissão ({closureCommissionPct}%)
+                                    </th>
                                     <th className="p-3 font-semibold text-stone-700">Líquido</th>
                                 </tr>
                             </thead>

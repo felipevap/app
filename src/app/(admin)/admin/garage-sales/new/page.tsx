@@ -27,6 +27,7 @@ export default function NewGarageSalePage() {
         cep: "",
         cpf: "",
         pix: "",
+        commissionPercent: "20",
     });
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
     const [contractSegments, setContractSegments] = useState<ContractSegment[]>([]);
@@ -46,6 +47,36 @@ export default function NewGarageSalePage() {
             cancelled = true;
         };
     }, []);
+
+    async function loadTenantDefaultCommission(tid: string | null) {
+        const q = tid ? `?tenantId=${encodeURIComponent(tid)}` : "";
+        const res = await fetch(`/api/tenant/defaults${q}`, { cache: "no-store" });
+        if (!res.ok) return;
+        const j = (await res.json()) as { defaultCommissionPercent?: number };
+        if (typeof j.defaultCommissionPercent === "number") {
+            setFormData((prev) => ({
+                ...prev,
+                commissionPercent: String(j.defaultCommissionPercent),
+            }));
+        }
+    }
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            if (tenantOptions.length > 0) {
+                if (!tenantId) return;
+                if (cancelled) return;
+                await loadTenantDefaultCommission(tenantId);
+            } else {
+                if (cancelled) return;
+                await loadTenantDefaultCommission(null);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [tenantId, tenantOptions.length]);
 
     const showToast = (message: string, type: 'success' | 'error' | 'info') => {
         setToast({ message, type, isVisible: true });
@@ -90,8 +121,11 @@ export default function NewGarageSalePage() {
         }
 
         try {
+            const { commissionPercent: commissionStr, ...restForm } = formData;
+            const parsed = parseFloat(commissionStr.replace(",", "."));
             await addGarageSale({
-                ...formData,
+                ...restForm,
+                commissionPercent: Number.isFinite(parsed) ? parsed : 20,
                 ...(tenantOptions.length > 0 && tenantId ? { tenantId } : {}),
                 ...(contractSegments.length > 0
                     ? {
@@ -292,9 +326,9 @@ export default function NewGarageSalePage() {
                                 placeholder="000.000.000-00"
                             />
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-stone-700">
-                                Chave PIX
+                    <div>
+                        <label className="block text-sm font-medium text-stone-700">
+                            Chave PIX
                             </label>
                             <input
                                 type="text"
@@ -304,6 +338,25 @@ export default function NewGarageSalePage() {
                                 className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-green-500 focus:ring-1 focus:ring-green-500"
                                 placeholder="Email, CPF, Telefone ou Aleatória"
                             />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-stone-700">
+                                Comissão neste evento (%)
+                            </label>
+                            <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                step={0.5}
+                                name="commissionPercent"
+                                value={formData.commissionPercent}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                required
+                            />
+                            <p className="mt-1 text-xs text-stone-500">
+                                Preenchido com o padrão das configurações; altere só se este evento tiver outra comissão.
+                            </p>
                         </div>
                     </div>
 

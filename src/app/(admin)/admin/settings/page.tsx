@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionFromCookies } from "@/lib/session";
 import { isTenantAdministrator } from "@/lib/panel-routes";
 import AdminLogoForm from "./AdminLogoForm";
+import CommissionPercentForm from "./CommissionPercentForm";
 
 export default async function AdminSettingsPage() {
     const session = await getSessionFromCookies();
@@ -14,7 +15,7 @@ export default async function AdminSettingsPage() {
         isTenantAdministrator(session) && session.tenantId
             ? await prisma.tenant.findUnique({
                   where: { id: session.tenantId },
-                  select: { adminLogoDataUrl: true },
+                  select: { adminLogoDataUrl: true, defaultCommissionPercent: true },
               })
             : null;
 
@@ -22,7 +23,10 @@ export default async function AdminSettingsPage() {
         <div>
             <h1 className="mb-6 text-3xl font-bold text-stone-900">Configurações</h1>
             {tenant ? (
-                <AdminLogoForm initialDataUrl={tenant.adminLogoDataUrl} />
+                <>
+                    <CommissionPercentForm initialPercent={tenant.defaultCommissionPercent} />
+                    <AdminLogoForm initialDataUrl={tenant.adminLogoDataUrl} />
+                </>
             ) : (
                 <div className="rounded-xl border border-stone-200 bg-white p-6 text-center text-stone-600 shadow-sm">
                     <span className="mb-4 block text-4xl">⚙️</span>

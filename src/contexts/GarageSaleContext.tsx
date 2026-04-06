@@ -20,6 +20,7 @@ export interface GarageSale {
     itemsRegistrationComplete?: boolean;
     itemsRegistrationCompletedAt?: string | null;
     createdAt?: string;
+    commissionPercent?: number;
 }
 
 export interface Product {
@@ -48,6 +49,7 @@ interface GarageSaleContextType {
     addGarageSale: (
         garageSale: Omit<GarageSale, 'id' | 'criadoEm'> & {
             tenantId?: string;
+            commissionPercent?: number;
             contractOnboarding?: { sourceFileName: string | null; segments: ContractSegment[] };
         }
     ) => Promise<GarageSale>;
@@ -110,6 +112,7 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode; initialAuthenti
     const addGarageSale = useCallback(async (
         garageSale: Omit<GarageSale, 'id' | 'criadoEm'> & {
             tenantId?: string;
+            commissionPercent?: number;
             contractOnboarding?: { sourceFileName: string | null; segments: ContractSegment[] };
         }
     ): Promise<GarageSale> => {
