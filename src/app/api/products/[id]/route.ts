@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { requireTenantSession } from "@/lib/require-tenant";
+import { requireStaffSession } from "@/lib/require-staff";
 import { garageSaleRelationFilter } from "@/lib/tenant-scope";
 import { parseEmbeddingInput } from "@/lib/productEmbeddingValidation";
 
@@ -25,7 +25,7 @@ const UPDATABLE_KEYS = [
 ] as const;
 
 export async function PUT(req: NextRequest, props: { params: Promise<{ id: string }> }) {
-    const session = await requireTenantSession(req);
+    const session = await requireStaffSession(req);
     if (session instanceof NextResponse) return session;
 
     try {
@@ -76,7 +76,7 @@ export async function PUT(req: NextRequest, props: { params: Promise<{ id: strin
 }
 
 export async function DELETE(req: NextRequest, props: { params: Promise<{ id: string }> }) {
-    const session = await requireTenantSession(req);
+    const session = await requireStaffSession(req);
     if (session instanceof NextResponse) return session;
 
     try {

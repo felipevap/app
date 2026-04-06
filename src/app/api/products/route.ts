@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireTenantSession } from "@/lib/require-tenant";
+import { requireStaffSession } from "@/lib/require-staff";
 import { garageSaleFindWhere, garageSaleRelationFilter } from "@/lib/tenant-scope";
 import { parseEmbeddingInput } from "@/lib/productEmbeddingValidation";
 
@@ -105,7 +106,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-    const session = await requireTenantSession(req);
+    const session = await requireStaffSession(req);
     if (session instanceof NextResponse) return session;
 
     try {

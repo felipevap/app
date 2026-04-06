@@ -69,7 +69,7 @@ export async function registerOrganization(formData: FormData) {
             return { error: "Não foi possível concluir o cadastro. Tente novamente." };
         }
 
-        const token = await signSession(user.id, tenantId, false);
+        const token = await signSession(user.id, tenantId, false, { role: "staff" });
         const jar = await cookies();
         jar.set(SESSION_COOKIE, token, sessionCookieOptions(7 * 24 * 60 * 60));
 

@@ -16,25 +16,54 @@ export type SessionPayload = {
     userId: string;
     tenantId: string | null;
     superAdmin: boolean;
+    role: "owner" | "staff";
+    ownerGarageSaleId: string | null;
 };
 
-function parsePayload(payload: Record<string, unknown>, userId: string): SessionPayload | null {
+export function parseSessionFromJwtPayload(
+    userId: string,
+    payload: Record<string, unknown>
+): SessionPayload | null {
     if (payload.sa === true) {
-        return { userId, tenantId: null, superAdmin: true };
+        return { userId, tenantId: null, superAdmin: true, role: "staff", ownerGarageSaleId: null };
     }
     const tid = payload.tid;
-    if (typeof tid === "string") {
-        return { userId, tenantId: tid, superAdmin: false };
-    }
-    return null;
+    if (typeof tid !== "string") return null;
+    const r = payload.r === "owner" ? "owner" : "staff";
+    const g = typeof payload.g === "string" ? payload.g : null;
+    if (r === "owner" && !g) return null;
+    return {
+        userId,
+        tenantId: tid,
+        superAdmin: false,
+        role: r,
+        ownerGarageSaleId: r === "owner" ? g : null,
+    };
 }
 
 export async function signSession(
     userId: string,
     tenantId: string | null,
-    isSuperAdmin: boolean
+    isSuperAdmin: boolean,
+    opts?: { role?: "owner" | "staff"; ownerGarageSaleId?: string | null }
 ): Promise<string> {
-    const body = isSuperAdmin ? { sa: true } : { sa: false, tid: tenantId as string };
+    if (isSuperAdmin) {
+        return new SignJWT({ sa: true })
+            .setProtectedHeader({ alg: "HS256" })
+            .setSubject(userId)
+            .setIssuedAt()
+            .setExpirationTime("7d")
+            .sign(getSecretKey());
+    }
+    if (!tenantId) {
+        throw new Error("tenantId required for non-superadmin session");
+    }
+    const role = opts?.role ?? "staff";
+    const gid = opts?.ownerGarageSaleId ?? null;
+    const body: Record<string, unknown> =
+        role === "owner" && gid
+            ? { sa: false, tid: tenantId, r: "owner", g: gid }
+            : { sa: false, tid: tenantId, r: "staff" };
     return new SignJWT(body)
         .setProtectedHeader({ alg: "HS256" })
         .setSubject(userId)
@@ -52,7 +81,7 @@ export async function getSessionFromRequest(req: NextRequest): Promise<SessionPa
         const { payload } = await jwtVerify(token, new TextEncoder().encode(s));
         const userId = payload.sub;
         if (typeof userId !== "string") return null;
-        return parsePayload(payload as Record<string, unknown>, userId);
+        return parseSessionFromJwtPayload(userId, payload as Record<string, unknown>);
     } catch {
         return null;
     }
@@ -68,7 +97,7 @@ export async function getSessionFromCookies(): Promise<SessionPayload | null> {
         const { payload } = await jwtVerify(token, new TextEncoder().encode(s));
         const userId = payload.sub;
         if (typeof userId !== "string") return null;
-        return parsePayload(payload as Record<string, unknown>, userId);
+        return parseSessionFromJwtPayload(userId, payload as Record<string, unknown>);
     } catch {
         return null;
     }

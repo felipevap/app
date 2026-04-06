@@ -41,9 +41,18 @@ export async function login(formData: FormData) {
         return { error: "Credenciais inválidas" };
     }
 
+    const dbRole = user.role === "owner" ? "owner" : "staff";
+    const ownerGid = user.ownerGarageSaleId;
     let token: string;
     try {
-        token = await signSession(user.id, user.tenantId, user.isSuperAdmin);
+        if (dbRole === "owner" && ownerGid) {
+            token = await signSession(user.id, user.tenantId, user.isSuperAdmin, {
+                role: "owner",
+                ownerGarageSaleId: ownerGid,
+            });
+        } else {
+            token = await signSession(user.id, user.tenantId, user.isSuperAdmin, { role: "staff" });
+        }
     } catch {
         return { error: "Autenticação não configurada corretamente no servidor." };
     }
@@ -53,6 +62,9 @@ export async function login(formData: FormData) {
 
     if (user.isSuperAdmin) {
         redirect("/super");
+    }
+    if (dbRole === "owner" && ownerGid) {
+        redirect("/portal");
     }
     redirect("/dashboard");
 }

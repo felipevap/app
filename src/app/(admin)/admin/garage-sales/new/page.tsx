@@ -220,7 +220,7 @@ export default function NewGarageSalePage() {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-stone-700">
-                                Email do Responsável
+                                E-mail do proprietário (portal)
                             </label>
                             <input
                                 type="email"
@@ -231,6 +231,9 @@ export default function NewGarageSalePage() {
                                 placeholder="joao@exemplo.com"
                                 required
                             />
+                            <p className="mt-1 text-xs text-stone-500">
+                                Será criado acesso ao portal do proprietário com senha inicial 12345 (não use o e-mail de um membro da equipe).
+                            </p>
                         </div>
                     </div>
                 </div>

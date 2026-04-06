@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireTenantSession } from "@/lib/require-tenant";
+import { requireStaffSession } from "@/lib/require-staff";
 import { garageSaleFindWhere } from "@/lib/tenant-scope";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const session = await requireTenantSession(req);
+    const session = await requireStaffSession(req);
     if (session instanceof NextResponse) return session;
 
     try {
@@ -53,7 +54,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const session = await requireTenantSession(req);
+    const session = await requireStaffSession(req);
     if (session instanceof NextResponse) return session;
 
     try {

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireTenantSession } from "@/lib/require-tenant";
+import { requireStaffSession } from "@/lib/require-staff";
 import { garageSaleRelationFilter } from "@/lib/tenant-scope";
 
 export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
-    const session = await requireTenantSession(req);
+    const session = await requireStaffSession(req);
     if (session instanceof NextResponse) return session;
 
     try {

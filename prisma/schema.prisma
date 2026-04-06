@@ -18,15 +18,18 @@ model Tenant {
 }
 
 model User {
-  id             String   @id @default(uuid())
-  email          String   @unique
-  passwordHash   String
-  name           String?
-  tenantId       String?
-  tenant         Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  isSuperAdmin   Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                String      @id @default(uuid())
+  email             String      @unique
+  passwordHash      String
+  name              String?
+  tenantId          String?
+  tenant            Tenant?     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  isSuperAdmin      Boolean     @default(false)
+  role              String      @default("staff")
+  ownerGarageSaleId String?     @unique
+  ownerGarageSale   GarageSale? @relation("GarageSaleOwner", fields: [ownerGarageSaleId], references: [id], onDelete: SetNull)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
   @@index([tenantId])
 }
@@ -54,6 +57,7 @@ model GarageSale {
   products      Product[]
   sales         Sale[]
   pendingOrders PendingOrder[]
+  ownerUser     User?         @relation("GarageSaleOwner")
 
   @@index([tenantId])
 }

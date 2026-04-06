@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
-import { SESSION_COOKIE } from "@/lib/session";
+import { SESSION_COOKIE, parseSessionFromJwtPayload } from "@/lib/session";
 
 export async function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname;
-    const protectedPrefixes = ["/admin", "/pos", "/capture", "/dashboard", "/super"];
+    const protectedPrefixes = ["/admin", "/pos", "/capture", "/dashboard", "/super", "/portal"];
     const isProtected = protectedPrefixes.some((p) => path.startsWith(p));
 
     if (!isProtected) {
@@ -23,7 +23,30 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-        await jwtVerify(token, new TextEncoder().encode(secret));
+        const { payload } = await jwtVerify(token, new TextEncoder().encode(secret));
+        const userId = payload.sub;
+        if (typeof userId !== "string") {
+            return NextResponse.redirect(new URL("/login", request.url));
+        }
+        const session = parseSessionFromJwtPayload(userId, payload as Record<string, unknown>);
+        if (!session) {
+            return NextResponse.redirect(new URL("/login", request.url));
+        }
+
+        const isOwner = session.role === "owner" && !session.superAdmin;
+
+        if (path.startsWith("/portal")) {
+            if (!isOwner) {
+                const dest = session.superAdmin ? "/super" : "/dashboard";
+                return NextResponse.redirect(new URL(dest, request.url));
+            }
+            return NextResponse.next();
+        }
+
+        if (isOwner) {
+            return NextResponse.redirect(new URL("/portal", request.url));
+        }
+
         return NextResponse.next();
     } catch {
         return NextResponse.redirect(new URL("/login", request.url));
@@ -31,5 +54,14 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/admin/:path*", "/pos/:path*", "/capture/:path*", "/dashboard/:path*", "/super", "/super/:path*"],
+    matcher: [
+        "/admin/:path*",
+        "/pos/:path*",
+        "/capture/:path*",
+        "/dashboard/:path*",
+        "/super",
+        "/super/:path*",
+        "/portal",
+        "/portal/:path*",
+    ],
 };

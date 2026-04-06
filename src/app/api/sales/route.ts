@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireTenantSession } from "@/lib/require-tenant";
+import { requireStaffSession } from "@/lib/require-staff";
 import { garageSaleFindWhere, garageSaleRelationFilter } from "@/lib/tenant-scope";
 
 export async function GET(req: NextRequest) {
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-    const session = await requireTenantSession(req);
+    const session = await requireStaffSession(req);
     if (session instanceof NextResponse) return session;
 
     try {
