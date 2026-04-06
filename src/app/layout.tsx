@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Portal Garage", template: "%s | Portal Garage" },
+  title: { default: "Gestor Garage", template: "%s | Gestor Garage" },
   description:
-    "Portal Garage: gestão multi-organização de bazares e vendas — cadastro, checagem de preço no evento, PDV e painel do organizador.",
+    "Gestor Garage: gestão multi-organização de bazares e vendas — cadastro, checagem de preço no evento, PDV e painel do organizador.",
   icons: {
     icon: "/portal-garage-mark.svg",
     apple: "/portal-garage-mark.svg",

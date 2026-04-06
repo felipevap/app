@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getSessionFromCookies } from "@/lib/session";
-import PortalGarageLogo from "@/components/PortalGarageLogo";
+import GestorGarageLogo from "@/components/GestorGarageLogo";
 
 export default async function Home() {
     const session = await getSessionFromCookies();
@@ -8,8 +8,8 @@ export default async function Home() {
 
     return (
         <div className="flex min-h-[calc(100dvh-6rem)] flex-col items-center justify-center bg-gradient-to-b from-stone-50 to-stone-100 p-4 text-center">
-            <PortalGarageLogo className="h-20 w-20 drop-shadow-md sm:h-24 sm:w-24" />
-            <h1 className="mt-6 text-5xl font-bold tracking-tight text-stone-900 sm:text-6xl">Portal Garage</h1>
+            <GestorGarageLogo className="h-20 w-20 drop-shadow-md sm:h-24 sm:w-24" />
+            <h1 className="mt-6 text-5xl font-bold tracking-tight text-stone-900 sm:text-6xl">Gestor Garage</h1>
             <p className="mt-3 max-w-xl text-lg text-amber-800 sm:text-xl">
                 O portal do seu bazar: cadastro de itens, checagem de preço no evento e PDV — multi-organização, cada
                 conta isolada.
@@ -82,7 +82,7 @@ export default async function Home() {
             )}
 
             <footer className="mt-16 text-sm text-stone-500">
-                &copy; {new Date().getFullYear()} Portal Garage <span className="mx-2">|</span> v0.7.0
+                &copy; {new Date().getFullYear()} Gestor Garage <span className="mx-2">|</span> v0.7.0
             </footer>
         </div>
     );

@@ -1,1 +1,1 @@
-ALTER TABLE "Product" ADD COLUMN IF NOT EXISTS "embedding" JSONB;
+SELECT 1;

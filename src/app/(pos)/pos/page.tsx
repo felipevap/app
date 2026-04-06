@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import { formatDate, formatCurrency } from "@/utils/formatters";
 import Toast from "@/components/Toast";
-import PortalGarageLogo from "@/components/PortalGarageLogo";
+import GestorGarageLogo from "@/components/GestorGarageLogo";
 
 interface Item {
     productId?: string;
@@ -308,7 +308,7 @@ export default function POSPage() {
 
     const generateReportHTML = () => {
         const summary = calculateSummary();
-        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório de Vendas — Portal Garage</title>`;
+        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório de Vendas — Gestor Garage</title>`;
         html += `<style>body{font-family:sans-serif;padding:20px;max-width:800px;margin:0 auto;}`;
         html += `table{width:100%;border-collapse:collapse;margin:20px 0;}`;
         html += `th,td{border:1px solid #ddd;padding:8px;text-align:left;}`;
@@ -776,8 +776,8 @@ export default function POSPage() {
                 <header className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm">
                     <div className="flex items-center gap-2">
                         <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                            <PortalGarageLogo className="h-8 w-8 shrink-0" aria-hidden />
-                            <span className="hidden font-bold sm:block">Portal Garage</span>
+                            <GestorGarageLogo className="h-8 w-8 shrink-0" aria-hidden />
+                            <span className="hidden font-bold sm:block">Gestor Garage</span>
                         </Link>
                     </div>
                 </header>
@@ -855,8 +855,8 @@ export default function POSPage() {
                 <header className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm">
                     <div className="flex items-center gap-2">
                         <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                            <PortalGarageLogo className="h-8 w-8 shrink-0" aria-hidden />
-                            <span className="hidden font-bold sm:block">Portal Garage</span>
+                            <GestorGarageLogo className="h-8 w-8 shrink-0" aria-hidden />
+                            <span className="hidden font-bold sm:block">Gestor Garage</span>
                         </Link>
                     </div>
                 </header>
@@ -888,8 +888,8 @@ export default function POSPage() {
             <header className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm">
                 <div className="flex items-center gap-4">
                     <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                        <PortalGarageLogo className="h-8 w-8 shrink-0" aria-hidden />
-                        <span className="hidden font-bold sm:block">Portal Garage</span>
+                        <GestorGarageLogo className="h-8 w-8 shrink-0" aria-hidden />
+                        <span className="hidden font-bold sm:block">Gestor Garage</span>
                     </Link>
 
                     {garageSales.length > 0 && (

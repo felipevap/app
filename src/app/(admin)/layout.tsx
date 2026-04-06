@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import PortalGarageLogo from "@/components/PortalGarageLogo";
+import GestorGarageLogo from "@/components/GestorGarageLogo";
 
 export default function AdminLayout({
     children,
@@ -27,8 +27,8 @@ export default function AdminLayout({
             {/* Mobile Header */}
             <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-stone-200 z-40 flex items-center justify-between px-4 shadow-sm">
                 <span className="flex min-w-0 items-center gap-2 text-lg font-bold tracking-tight text-stone-900">
-                    <PortalGarageLogo className="h-8 w-8 shrink-0" aria-hidden />
-                    <span className="truncate">Portal Garage</span>
+                    <GestorGarageLogo className="h-8 w-8 shrink-0" aria-hidden />
+                    <span className="truncate">Gestor Garage</span>
                 </span>
                 <button
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -61,9 +61,9 @@ export default function AdminLayout({
             >
                 <div className="hidden md:flex items-center justify-between gap-2 p-4">
                     <Link href="/" className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-                        <PortalGarageLogo className="h-8 w-8 shrink-0" aria-hidden />
+                        <GestorGarageLogo className="h-8 w-8 shrink-0" aria-hidden />
                         {isSidebarOpen && (
-                            <span className="truncate text-lg font-bold tracking-tight text-stone-900">Portal Garage</span>
+                            <span className="truncate text-lg font-bold tracking-tight text-stone-900">Gestor Garage</span>
                         )}
                     </Link>
                     <button

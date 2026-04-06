@@ -42,7 +42,7 @@ interface GarageSaleContextType {
     garageSales: GarageSale[];
     products: Product[];
     loading: boolean;
-    addGarageSale: (garageSale: Omit<GarageSale, 'id' | 'criadoEm'>) => Promise<GarageSale>;
+    addGarageSale: (garageSale: Omit<GarageSale, 'id' | 'criadoEm'> & { tenantId?: string }) => Promise<GarageSale>;
     updateGarageSale: (id: string, garageSale: Partial<GarageSale>) => Promise<void>;
     deleteGarageSale: (id: string) => Promise<void>;
     getGarageSale: (id: string) => GarageSale | undefined;
@@ -92,14 +92,25 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
         fetchData();
     }, [fetchData]);
 
-    const addGarageSale = useCallback(async (garageSale: Omit<GarageSale, 'id' | 'criadoEm'>): Promise<GarageSale> => {
+    const addGarageSale = useCallback(async (garageSale: Omit<GarageSale, 'id' | 'criadoEm'> & { tenantId?: string }): Promise<GarageSale> => {
+        const { tenantId, ...rest } = garageSale;
+        const body = tenantId ? { ...rest, tenantId } : rest;
         const res = await fetch('/api/garage-sales', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(garageSale)
+            body: JSON.stringify(body)
         });
 
-        if (!res.ok) throw new Error('Failed to create garage sale');
+        if (!res.ok) {
+            let message = "Falha ao criar evento";
+            try {
+                const j = (await res.json()) as { error?: string };
+                if (j?.error) message = j.error;
+            } catch {
+                /* ignore */
+            }
+            throw new Error(message);
+        }
 
         const newGarageSale = await res.json();
         setGarageSales(prev => [newGarageSale, ...prev]);

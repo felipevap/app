@@ -30,9 +30,23 @@ export default async function SuperAdminPage() {
                     <h1 className="text-3xl font-bold text-stone-900">Super Admin</h1>
                     <p className="text-sm text-stone-600">Todas as organizações (tenants) do sistema</p>
                 </div>
-                <Link href="/" className="text-sm text-amber-800 hover:text-amber-900 font-medium">
-                    ← Site
-                </Link>
+                <div className="flex flex-wrap items-center gap-3">
+                    <Link
+                        href="/admin/garage-sales/new"
+                        className="rounded-lg bg-stone-800 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700"
+                    >
+                        Novo evento
+                    </Link>
+                    <Link
+                        href="/admin/garage-sales"
+                        className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-800 hover:bg-stone-50"
+                    >
+                        Eventos (painel)
+                    </Link>
+                    <Link href="/" className="text-sm text-amber-800 hover:text-amber-900 font-medium">
+                        ← Site
+                    </Link>
+                </div>
             </div>
 
             <div className="mt-8 overflow-x-auto rounded-xl border border-stone-200 bg-white shadow-sm">
@@ -71,9 +85,9 @@ export default async function SuperAdminPage() {
             )}
 
             <p className="mt-8 text-xs text-stone-600">
-                Para criar eventos ou produtos como super admin, use as APIs ou o painel enviando{" "}
-                <code className="rounded bg-stone-100 px-1 py-0.5 text-stone-800">tenantId</code> no corpo ao criar eventos. Usuários normais veem
-                apenas o próprio tenant.
+                Ao criar evento pelo painel, selecione a organização. Na API{" "}
+                <code className="rounded bg-stone-100 px-1 py-0.5 text-stone-800">POST /api/garage-sales</code>, envie{" "}
+                <code className="rounded bg-stone-100 px-1 py-0.5 text-stone-800">tenantId</code> no JSON. Usuários normais veem só o próprio tenant.
             </p>
         </div>
     );
