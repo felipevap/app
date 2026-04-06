@@ -1,80 +1,83 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireTenantSession } from "@/lib/require-tenant";
+import { garageSaleFindWhere, garageSaleRelationFilter } from "@/lib/tenant-scope";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
+    const session = await requireTenantSession(req);
+    if (session instanceof NextResponse) return session;
+
     try {
         const { searchParams } = new URL(req.url);
-        const garageSaleId = searchParams.get('garageSaleId');
-        const includeDeleted = searchParams.get('includeDeleted') === 'true';
+        const garageSaleId = searchParams.get("garageSaleId");
+        const includeDeleted = searchParams.get("includeDeleted") === "true";
 
-        // Pagination vars
-        const pageParam = searchParams.get('page');
-        const limitParam = searchParams.get('limit');
-
+        const pageParam = searchParams.get("page");
+        const limitParam = searchParams.get("limit");
         const shouldPaginate = pageParam !== null;
-
-        const page = parseInt(pageParam || '1');
-        const limit = parseInt(limitParam || '10');
+        const page = parseInt(pageParam || "1");
+        const limit = parseInt(limitParam || "10");
         const skip = (page - 1) * limit;
 
-        // Filter vars
-        const search = searchParams.get('search') || '';
-        const category = searchParams.get('category') || '';
-        const condition = searchParams.get('condition') || '';
+        const search = searchParams.get("search") || "";
+        const category = searchParams.get("category") || "";
+        const condition = searchParams.get("condition") || "";
 
-        const whereClause: any = {
-            deletedAt: includeDeleted ? undefined : null,
-            // Search filter
-            AND: [
-                search ? {
-                    OR: [
-                        { nome: { contains: search, mode: 'insensitive' } },
-                        { descricao: { contains: search, mode: 'insensitive' } }
-                    ]
-                } : {},
-                category ? { categoria: category } : {},
-                condition ? { condicao: condition } : {}
-            ]
+        const garageSaleFilter: Record<string, unknown> = {
+            ...garageSaleRelationFilter(session),
+            ...(includeDeleted ? {} : { deletedAt: null }),
         };
-
         if (garageSaleId) {
-            whereClause.garageSaleId = garageSaleId;
+            garageSaleFilter.id = garageSaleId;
         }
 
-        // Cleanup expired reservations (older than 30 mins)
-        // We do this on GET so the list is always fresh without needing a cron job
+        const whereClause: Record<string, unknown> = {
+            deletedAt: includeDeleted ? undefined : null,
+            garageSale: garageSaleFilter,
+            AND: [
+                search
+                    ? {
+                          OR: [
+                              { nome: { contains: search } },
+                              { descricao: { contains: search } },
+                          ],
+                      }
+                    : {},
+                category ? { categoria: category } : {},
+                condition ? { condicao: condition } : {},
+            ],
+        };
+
         const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
 
         await prisma.product.updateMany({
             where: {
-                status: 'reservado',
-                reservedAt: {
-                    lt: thirtyMinutesAgo
-                }
+                status: "reservado",
+                reservedAt: { lt: thirtyMinutesAgo },
+                garageSale: garageSaleRelationFilter(session),
             },
             data: {
-                status: 'disponível',
+                status: "disponível",
                 reservedBy: null,
                 reservedByName: null,
                 reservedByEmail: null,
                 reservedByPhone: null,
-                reservedAt: null
-            }
+                reservedAt: null,
+            },
         });
 
         if (shouldPaginate) {
-            // Execute query with pagination
             const [products, total] = await prisma.$transaction([
                 prisma.product.findMany({
                     where: whereClause,
-                    orderBy: { createdAt: 'desc' },
+                    orderBy: { createdAt: "desc" },
                     skip,
-                    take: limit
+                    take: limit,
                 }),
-                prisma.product.count({ where: whereClause })
+                prisma.product.count({ where: whereClause }),
             ]);
 
             return NextResponse.json({
@@ -83,27 +86,36 @@ export async function GET(req: NextRequest) {
                     total,
                     page,
                     limit,
-                    totalPages: Math.ceil(total / limit)
-                }
+                    totalPages: Math.ceil(total / limit),
+                },
             });
-        } else {
-            // Legacy behavior: return all products as array
-            const products = await prisma.product.findMany({
-                where: whereClause,
-                orderBy: { createdAt: 'desc' }
-            });
-            return NextResponse.json(products);
         }
+
+        const products = await prisma.product.findMany({
+            where: whereClause,
+            orderBy: { createdAt: "desc" },
+        });
+        return NextResponse.json(products);
     } catch (error) {
-        console.error('Error fetching products:', error);
-        return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+        console.error("Error fetching products:", error);
+        return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
     }
 }
 
 export async function POST(req: NextRequest) {
+    const session = await requireTenantSession(req);
+    if (session instanceof NextResponse) return session;
+
     try {
         const body = await req.json();
         const { nome, descricao, preco, imagens, categoria, condicao, tags, garageSaleId } = body;
+
+        const gs = await prisma.garageSale.findFirst({
+            where: garageSaleFindWhere(session, garageSaleId),
+        });
+        if (!gs) {
+            return NextResponse.json({ error: "Evento inválido" }, { status: 403 });
+        }
 
         const product = await prisma.product.create({
             data: {
@@ -114,13 +126,13 @@ export async function POST(req: NextRequest) {
                 categoria,
                 condicao,
                 tags: tags || [],
-                garageSaleId
-            }
+                garageSaleId,
+            },
         });
 
         return NextResponse.json(product);
     } catch (error) {
-        console.error('Error creating product:', error);
-        return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
+        console.error("Error creating product:", error);
+        return NextResponse.json({ error: "Failed to create product" }, { status: 500 });
     }
 }

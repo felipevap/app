@@ -13,12 +13,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Garage Sale Premium",
-  description: "Sistema de Gerenciamento Premium de Garage Sales",
+  title: { default: "Portal Garage", template: "%s | Portal Garage" },
+  description:
+    "Portal Garage: gestão multi-organização de bazares e vendas — cadastro, checagem de preço no evento, PDV e painel do organizador.",
+  icons: {
+    icon: "/portal-garage-mark.svg",
+    apple: "/portal-garage-mark.svg",
+  },
 };
 
 // import { ProductProvider } from "@/contexts/ProductContext";
 import { GarageSaleProvider } from "@/contexts/GarageSaleContext";
+import SiteHeader from "@/components/SiteHeader";
 
 export default function RootLayout({
   children,
@@ -31,7 +37,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <GarageSaleProvider>
-          {children}
+          <SiteHeader />
+          <div className="pt-24">{children}</div>
         </GarageSaleProvider>
       </body>
     </html>

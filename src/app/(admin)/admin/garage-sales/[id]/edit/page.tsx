@@ -61,12 +61,12 @@ export default function EditGarageSalePage() {
         e.preventDefault();
         try {
             await updateGarageSale(id, formData);
-            showToast("Garage Sale atualizada com sucesso!", "success");
+            showToast("Evento atualizado com sucesso!", "success");
             setTimeout(() => {
                 router.push("/admin/garage-sales");
             }, 1000);
         } catch (error) {
-            showToast("Erro ao atualizar Garage Sale.", "error");
+            showToast("Erro ao atualizar evento.", "error");
         }
     };
 
@@ -74,36 +74,36 @@ export default function EditGarageSalePage() {
         <div className="max-w-4xl mx-auto">
             <header className="mb-8 flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Editar Garage Sale</h1>
-                    <p className="text-neutral-400">Atualize as informações do evento.</p>
+                    <h1 className="text-3xl font-bold text-stone-900">Editar evento</h1>
+                    <p className="text-stone-600">Atualize as informações do evento.</p>
                 </div>
                 <Link
                     href="/admin/garage-sales"
-                    className="rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-700"
+                    className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
                 >
                     Cancelar
                 </Link>
             </header>
 
-            <form onSubmit={handleSubmit} className="space-y-8 rounded-2xl border border-neutral-800 bg-neutral-950 p-8 shadow-xl">
+            <form onSubmit={handleSubmit} className="space-y-8 rounded-2xl border border-stone-200 bg-white shadow-sm p-8 shadow-xl">
                 <div className="space-y-4">
                     <h2 className="text-xl font-semibold text-blue-400">Detalhes do Evento</h2>
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-neutral-300">
-                                Nome da Garage Sale
+                            <label className="block text-sm font-medium text-stone-700">
+                                Nome do evento
                             </label>
                             <input
                                 type="text"
                                 name="nome"
                                 value={formData.nome}
                                 onChange={handleChange}
-                                className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                 required
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-neutral-300">
+                            <label className="block text-sm font-medium text-stone-700">
                                 Data de Início
                             </label>
                             <input
@@ -111,12 +111,12 @@ export default function EditGarageSalePage() {
                                 name="dataInicio"
                                 value={formData.dataInicio}
                                 onChange={handleChange}
-                                className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                 required
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-neutral-300">
+                            <label className="block text-sm font-medium text-stone-700">
                                 Data de Término
                             </label>
                             <input
@@ -124,12 +124,12 @@ export default function EditGarageSalePage() {
                                 name="dataFim"
                                 value={formData.dataFim}
                                 onChange={handleChange}
-                                className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                 required
                             />
                         </div>
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-neutral-300">
+                            <label className="block text-sm font-medium text-stone-700">
                                 Endereço
                             </label>
                             <input
@@ -137,20 +137,20 @@ export default function EditGarageSalePage() {
                                 name="endereco"
                                 value={formData.endereco}
                                 onChange={handleChange}
-                                className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                 required
                             />
                         </div>
                     </div>
                 </div>
 
-                <hr className="border-neutral-800" />
+                <hr className="border-stone-200" />
 
                 <div className="space-y-4">
                     <h2 className="text-xl font-semibold text-purple-400">Responsável</h2>
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div>
-                            <label className="block text-sm font-medium text-neutral-300">
+                            <label className="block text-sm font-medium text-stone-700">
                                 Nome do Responsável
                             </label>
                             <input
@@ -158,12 +158,12 @@ export default function EditGarageSalePage() {
                                 name="responsavel"
                                 value={formData.responsavel}
                                 onChange={handleChange}
-                                className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                                 required
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-neutral-300">
+                            <label className="block text-sm font-medium text-stone-700">
                                 Email do Responsável
                             </label>
                             <input
@@ -171,21 +171,21 @@ export default function EditGarageSalePage() {
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
                                 required
                             />
                         </div>
                     </div>
                 </div>
 
-                <hr className="border-neutral-800" />
+                <hr className="border-stone-200" />
 
                 <div className="space-y-4">
                     <h2 className="text-xl font-semibold text-green-400">Regras e Configuração</h2>
 
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                         <div>
-                            <label className="block text-sm font-medium text-neutral-300">
+                            <label className="block text-sm font-medium text-stone-700">
                                 CEP
                             </label>
                             <input
@@ -196,12 +196,12 @@ export default function EditGarageSalePage() {
                                     const val = e.target.value.replace(/\D/g, '').replace(/^(\d{5})(\d)/, '$1-$2').substring(0, 9);
                                     setFormData(prev => ({ ...prev, cep: val }));
                                 }}
-                                className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-green-500 focus:ring-1 focus:ring-green-500"
                                 placeholder="00000-000"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-neutral-300">
+                            <label className="block text-sm font-medium text-stone-700">
                                 CPF (Responsável)
                             </label>
                             <input
@@ -216,12 +216,12 @@ export default function EditGarageSalePage() {
                                     val = val.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
                                     setFormData(prev => ({ ...prev, cpf: val }));
                                 }}
-                                className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-green-500 focus:ring-1 focus:ring-green-500"
                                 placeholder="000.000.000-00"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-neutral-300">
+                            <label className="block text-sm font-medium text-stone-700">
                                 Chave PIX
                             </label>
                             <input
@@ -229,14 +229,14 @@ export default function EditGarageSalePage() {
                                 name="pix"
                                 value={formData.pix}
                                 onChange={handleChange}
-                                className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-green-500 focus:ring-1 focus:ring-green-500"
                                 placeholder="Email, CPF, Telefone ou Aleatória"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-neutral-300">
+                        <label className="block text-sm font-medium text-stone-700">
                             Regras e Termos
                         </label>
                         <textarea
@@ -244,7 +244,7 @@ export default function EditGarageSalePage() {
                             value={formData.regras}
                             onChange={handleChange}
                             rows={4}
-                            className="mt-1 block w-full rounded-lg border border-neutral-800 bg-neutral-900 p-3 text-white focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                            className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-green-500 focus:ring-1 focus:ring-green-500"
                         />
                     </div>
                 </div>
@@ -252,7 +252,7 @@ export default function EditGarageSalePage() {
                 <div className="flex justify-end pt-4">
                     <button
                         type="submit"
-                        className="rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-4 font-bold text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-neutral-900"
+                        className="rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-4 font-bold text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-white"
                     >
                         Salvar Alterações
                     </button>

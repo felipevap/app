@@ -1,5 +1,5 @@
 {
-  "name": "app",
+  "name": "portal-garage",
   "version": "0.6.0",
   "private": true,
   "scripts": {
@@ -7,14 +7,17 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:seed-super-admin": "npx tsx scripts/seed-super-admin.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "@tensorflow-models/coco-ssd": "^2.2.3",
     "@tensorflow-models/mobilenet": "^2.1.1",
     "@tensorflow/tfjs": "^4.22.0",
+    "bcryptjs": "^3.0.3",
     "framer-motion": "^12.34.0",
+    "jose": "^6.2.2",
     "lucide-react": "^0.564.0",
     "next": "16.1.6",
     "react": "19.2.3",
@@ -23,6 +26,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -30,6 +34,7 @@
     "eslint-config-next": "16.1.6",
     "prisma": "^5.22.0",
     "tailwindcss": "^4",
+    "tsx": "^4.19.3",
     "typescript": "^5"
   }
 }

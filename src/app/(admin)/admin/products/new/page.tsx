@@ -153,9 +153,9 @@ function NewProductContent() {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[50vh] text-white">
+            <div className="flex flex-col items-center justify-center min-h-[50vh] text-stone-900">
                 <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-neutral-400 font-medium">Carregando dados...</p>
+                <p className="text-stone-600 font-medium">Carregando dados...</p>
             </div>
         );
     }
@@ -373,7 +373,7 @@ function NewProductContent() {
             `Oportunidade incrível! ${name} em estado ${condition}. Perfeito para quem busca qualidade e economia na categoria ${category}.`,
             `${name} disponível! Item ${condition}, ideal para seu uso diário. Aproveite esta oferta de ${category}.`,
             `Confira este(a) ${name}! Produto ${condition} com ótimo custo-benefício. Destaque em nossa seção de ${category}.`,
-            `Vendo ${name} (${condition}). Ótimo estado de conservação, pronto para uso. Veja mais itens de ${category} em nossa Garage Sale.`,
+            `Vendo ${name} (${condition}). Ótimo estado de conservação, pronto para uso. Veja mais itens de ${category} no nosso evento.`,
             `${category}: ${name} em condição ${condition}. Peça única, não perca!`
         ];
 
@@ -567,7 +567,7 @@ function NewProductContent() {
         e.preventDefault();
 
         if (!formData.garageSaleId) {
-            showToast('Por favor, selecione uma Garage Sale.', 'error');
+            showToast('Por favor, selecione um evento.', 'error');
             return;
         }
 
@@ -585,19 +585,19 @@ function NewProductContent() {
     if (garageSales.length === 0) {
         return (
             <div className="max-w-2xl mx-auto">
-                <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-12 text-center">
+                <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-12 text-center">
                     <span className="mb-4 block text-6xl">🏪</span>
-                    <h3 className="mb-2 text-xl font-bold text-white">
-                        Nenhuma Garage Sale cadastrada
+                    <h3 className="mb-2 text-xl font-bold text-stone-900">
+                        Nenhum evento cadastrado
                     </h3>
-                    <p className="mb-6 text-neutral-400">
-                        Crie uma Garage Sale primeiro para poder adicionar produtos
+                    <p className="mb-6 text-stone-600">
+                        Crie um evento primeiro para poder adicionar produtos
                     </p>
                     <Link
                         href="/admin/garage-sales/new"
                         className="inline-block rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-[1.02]"
                     >
-                        Criar Garage Sale
+                        Criar evento
                     </Link>
                 </div>
             </div>
@@ -608,26 +608,26 @@ function NewProductContent() {
         <div className="max-w-2xl mx-auto">
             <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white">Novo Produto</h1>
-                    <p className="text-neutral-400 text-sm sm:text-base">Adicione um produto à Garage Sale</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-stone-900">Novo Produto</h1>
+                    <p className="text-stone-600 text-sm sm:text-base">Adicione um produto ao evento</p>
                 </div>
                 <Link
                     href={`/admin/products${formData.garageSaleId ? `?garageSale=${formData.garageSaleId}` : ''}`}
-                    className="w-full sm:w-auto text-center rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-700"
+                    className="w-full sm:w-auto text-center rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
                 >
                     Cancelar
                 </Link>
             </header>
 
-            <form onSubmit={handleSubmit} className="space-y-6 bg-neutral-950 border border-neutral-800 p-4 sm:p-8 rounded-2xl">
+            <form onSubmit={handleSubmit} className="space-y-6 bg-white shadow-sm border border-stone-200 p-4 sm:p-8 rounded-2xl">
                 <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-2">
-                        Garage Sale
+                    <label className="block text-sm font-medium text-stone-700 mb-2">
+                        Evento
                     </label>
                     <select
                         value={formData.garageSaleId}
                         onChange={e => setFormData({ ...formData, garageSaleId: e.target.value })}
-                        className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-base"
+                        className="w-full bg-white border border-stone-300 rounded-lg p-3 text-stone-900 focus:border-blue-500 outline-none text-base"
                         required
                     >
                         {garageSales.map((gs) => (
@@ -639,12 +639,12 @@ function NewProductContent() {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                    <label className="block text-sm font-medium text-stone-700 mb-2">
                         Imagens do Produto
                     </label>
 
                     <div className="flex flex-col sm:flex-row gap-2 mb-4">
-                        <label className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-neutral-600 rounded-xl p-6 hover:border-blue-500 transition-colors cursor-pointer">
+                        <label className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-xl p-6 hover:border-blue-500 transition-colors cursor-pointer">
                             <input
                                 type="file"
                                 accept="image/*"
@@ -653,25 +653,25 @@ function NewProductContent() {
                                 className="hidden"
                             />
                             <div className="w-10 h-10 mb-2">
-                                <svg className="w-full h-full text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-full h-full text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                 </svg>
                             </div>
-                            <p className="text-center text-neutral-400 text-sm">Upload</p>
+                            <p className="text-center text-stone-600 text-sm">Upload</p>
                         </label>
 
                         <button
                             type="button"
                             onClick={() => setShowCamera(!showCamera)}
-                            className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-neutral-600 rounded-xl p-6 hover:border-blue-500 transition-colors"
+                            className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-xl p-6 hover:border-blue-500 transition-colors"
                         >
                             <div className="w-10 h-10 mb-2">
-                                <svg className="w-full h-full text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-full h-full text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                             </div>
-                            <p className="text-center text-neutral-400 text-sm">
+                            <p className="text-center text-stone-600 text-sm">
                                 {showCamera ? 'Fechar Câmera' : 'Usar Câmera'}
                             </p>
                         </button>
@@ -679,8 +679,8 @@ function NewProductContent() {
 
                     {showCamera && (
                         <div className="mb-4 rounded-xl overflow-hidden border-2 border-blue-500 shadow-xl">
-                            <div className="bg-neutral-900 p-2">
-                                <p className="text-center text-neutral-300 text-sm font-semibold">📸 Posicione o produto e clique para capturar</p>
+                            <div className="bg-stone-100 p-2">
+                                <p className="text-center text-stone-800 text-sm font-semibold">📸 Posicione o produto e clique para capturar</p>
                             </div>
                             <Webcam
                                 ref={webcamRef}
@@ -694,7 +694,7 @@ function NewProductContent() {
                                 }}
                                 className="w-full h-96 object-cover"
                             />
-                            <div className="bg-neutral-900 p-6 flex justify-center gap-4">
+                            <div className="bg-stone-100 p-6 flex justify-center gap-4">
                                 <button
                                     type="button"
                                     onClick={capturePhoto}
@@ -707,7 +707,7 @@ function NewProductContent() {
                     )}
 
                     {formData.imagens.length > 0 && (
-                        <div className="border border-neutral-700 rounded-xl p-4">
+                        <div className="border border-stone-200 rounded-xl p-4 bg-stone-50">
                             <div className="flex gap-2 overflow-x-auto pb-2">
                                 {formData.imagens.map((img, index) => (
                                     <div key={index} className="relative flex-shrink-0">
@@ -722,7 +722,7 @@ function NewProductContent() {
                                     </div>
                                 ))}
                             </div>
-                            <p className="text-center text-neutral-400 text-sm mt-2">
+                            <p className="text-center text-stone-600 text-sm mt-2">
                                 {formData.imagens.length} imagem(ns) adicionada(s)
                             </p>
                         </div>
@@ -731,32 +731,32 @@ function NewProductContent() {
 
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-neutral-300 mb-2">Nome do Produto</label>
+                        <label className="block text-sm font-medium text-stone-700 mb-2">Nome do Produto</label>
                         <input
                             type="text"
                             required
                             value={formData.nome}
                             onChange={e => setFormData({ ...formData, nome: e.target.value })}
-                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-base"
+                            className="w-full bg-white border border-stone-300 rounded-lg p-3 text-stone-900 focus:border-blue-500 outline-none text-base"
                             placeholder="Ex: Notebook Dell Inspiron"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-neutral-300 mb-2">Preço (R$)</label>
+                        <label className="block text-sm font-medium text-stone-700 mb-2">Preço (R$)</label>
                         <input
                             type="text"
                             required
                             value={`R$ ${formatBRL(formData.preco)}`}
                             onChange={handlePriceChange}
                             placeholder="R$ 0,00"
-                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-base"
+                            className="w-full bg-white border border-stone-300 rounded-lg p-3 text-stone-900 focus:border-blue-500 outline-none text-base"
                         />
                     </div>
 
                     <div>
                         <div className="flex items-center justify-between mb-2">
-                            <label className="block text-sm font-medium text-neutral-300">Descrição</label>
+                            <label className="block text-sm font-medium text-stone-700">Descrição</label>
                             <button
                                 type="button"
                                 onClick={handleSuggestDescription}
@@ -770,12 +770,12 @@ function NewProductContent() {
                             rows={4}
                             value={formData.descricao}
                             onChange={e => setFormData({ ...formData, descricao: e.target.value })}
-                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none resize-none text-base"
+                            className="w-full bg-white border border-stone-300 rounded-lg p-3 text-stone-900 focus:border-blue-500 outline-none resize-none text-base"
                             placeholder="Descreva o produto..."
                         />
                     </div>
 
-                    <label className="block text-sm font-medium text-neutral-300 mb-2">Categoria</label>
+                    <label className="block text-sm font-medium text-stone-700 mb-2">Categoria</label>
                     <div className="space-y-2">
                         <select
                             value={CATEGORIES.includes(formData.categoria) ? formData.categoria : "Outros"}
@@ -786,7 +786,7 @@ function NewProductContent() {
                                     setFormData({ ...formData, categoria: e.target.value });
                                 }
                             }}
-                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-base"
+                            className="w-full bg-white border border-stone-300 rounded-lg p-3 text-stone-900 focus:border-blue-500 outline-none text-base"
                         >
                             {CATEGORIES.filter(c => c !== "Outros").map(cat => (
                                 <option key={cat} value={cat}>{cat}</option>
@@ -801,18 +801,18 @@ function NewProductContent() {
                                 value={formData.categoria}
                                 onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
                                 placeholder="Digite o nome da categoria"
-                                className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-base"
+                                className="w-full bg-white border border-stone-300 rounded-lg p-3 text-stone-900 focus:border-blue-500 outline-none text-base"
                                 autoFocus
                             />
                         ) : null}
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-neutral-300 mb-2">Estado/Condição</label>
+                        <label className="block text-sm font-medium text-stone-700 mb-2">Estado/Condição</label>
                         <select
                             value={formData.condicao}
                             onChange={e => setFormData({ ...formData, condicao: e.target.value })}
-                            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-base"
+                            className="w-full bg-white border border-stone-300 rounded-lg p-3 text-stone-900 focus:border-blue-500 outline-none text-base"
                             required
                         >
                             <option value="Novo">Novo</option>
@@ -824,7 +824,7 @@ function NewProductContent() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-neutral-300 mb-2">Tags</label>
+                        <label className="block text-sm font-medium text-stone-700 mb-2">Tags</label>
                         <div className="flex gap-2 mb-2">
                             <input
                                 type="text"
@@ -832,7 +832,7 @@ function NewProductContent() {
                                 onChange={e => setCurrentTag(e.target.value)}
                                 onKeyDown={handleAddTag}
                                 placeholder="Digite e pressione Enter"
-                                className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-base"
+                                className="flex-1 bg-white border border-stone-300 rounded-lg p-3 text-stone-900 focus:border-blue-500 outline-none text-base"
                             />
                             <button
                                 type="button"
@@ -876,16 +876,16 @@ function NewProductContent() {
             {/* Selection Modal */}
             {showSelectionModal && currentImageForSelection && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
-                    <div className="w-full max-w-4xl bg-neutral-900 rounded-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                        <div className="p-4 border-b border-neutral-800 flex justify-between items-center">
+                    <div className="w-full max-w-4xl bg-white rounded-2xl overflow-hidden flex flex-col max-h-[90vh] border border-stone-200 shadow-xl">
+                        <div className="p-4 border-b border-stone-200 flex justify-between items-center bg-stone-50">
                             <div className="flex justify-between items-center w-full">
-                                <h3 className="text-xl font-bold text-white">
+                                <h3 className="text-xl font-bold text-stone-900">
                                     {selectedDetectionClass
                                         ? `Objeto Detectado: ${COCO_TRANSLATIONS[selectedDetectionClass] || selectedDetectionClass}`
                                         : "Ajuste o Recorte (Seleção Manual)"
                                     }
                                 </h3>
-                                <button onClick={closeSelectionModal} className="text-neutral-400 hover:text-white">✕</button>
+                                <button onClick={closeSelectionModal} className="text-stone-500 hover:text-stone-800">✕</button>
                             </div>
                         </div>
 
@@ -956,7 +956,7 @@ function NewProductContent() {
                                                 {['nw', 'ne', 'sw', 'se'].map(handle => (
                                                     <div
                                                         key={handle}
-                                                        className={`absolute w-6 h-6 bg-white border border-neutral-400 rounded-full
+                                                        className={`absolute w-6 h-6 bg-white border border-stone-400 rounded-full
                                                             ${handle.includes('n') ? '-top-3' : '-bottom-3'}
                                                             ${handle.includes('w') ? '-left-3' : '-right-3'}
                                                             cursor-${handle}-resize
@@ -972,14 +972,14 @@ function NewProductContent() {
                             </div>
                         </div>
 
-                        <div className="p-4 border-t border-neutral-800 flex justify-between gap-3 bg-neutral-900">
-                            <div className="text-neutral-400 text-sm flex items-center">
+                        <div className="p-4 border-t border-stone-200 flex justify-between gap-3 bg-stone-50">
+                            <div className="text-stone-600 text-sm flex items-center">
                                 * Toque na imagem para selecionar ou criar uma área
                             </div>
                             <div className="flex gap-3">
                                 <button
                                     onClick={handleKeepOriginal}
-                                    className="px-4 py-2 rounded-lg border border-neutral-700 hover:bg-neutral-800 text-white transition-colors"
+                                    className="px-4 py-2 rounded-lg border border-stone-300 hover:bg-stone-100 text-stone-800 transition-colors"
                                 >
                                     Manter Original
                                 </button>
@@ -1012,7 +1012,7 @@ function NewProductContent() {
 
 export default function NewProductPage() {
     return (
-        <Suspense fallback={<div className="text-white text-center p-8">Carregando...</div>}>
+        <Suspense fallback={<div className="text-stone-700 text-center p-8">Carregando...</div>}>
             <NewProductContent />
         </Suspense>
     );

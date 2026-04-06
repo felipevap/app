@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { requireTenantSession } from "@/lib/require-tenant";
+import { garageSaleRelationFilter } from "@/lib/tenant-scope";
 
-const prisma = new PrismaClient();
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+    const session = await requireTenantSession(req);
+    if (session instanceof NextResponse) return session;
 
-export async function POST(
-    req: NextRequest,
-    props: { params: Promise<{ id: string }> }
-) {
     try {
         const params = await props.params;
         const orderId = params.id;
@@ -17,66 +17,69 @@ export async function POST(
             return NextResponse.json({ error: "Item ID is required" }, { status: 400 });
         }
 
+        const orderOk = await prisma.pendingOrder.findFirst({
+            where: { id: orderId, garageSale: garageSaleRelationFilter(session) },
+        });
+        if (!orderOk) {
+            return NextResponse.json({ error: "Order not found" }, { status: 404 });
+        }
+
         const result = await prisma.$transaction(async (tx) => {
-            // 1. Get the item to find productId and price
             const orderItem = await tx.pendingOrderItem.findUnique({
-                where: { id: itemId }
+                where: { id: itemId },
             });
 
             if (!orderItem || orderItem.pendingOrderId !== orderId) {
-                // If item doesn't exist, maybe it was already deleted. 
-                // We should check if the order exists to be sure.
-                const orderExists = await tx.pendingOrder.findUnique({ where: { id: orderId } });
-                if (!orderExists) return { deleted: true }; // Order already gone
+                const orderExists = await tx.pendingOrder.findFirst({
+                    where: { id: orderId, garageSale: garageSaleRelationFilter(session) },
+                });
+                if (!orderExists) return { deleted: true };
                 throw new Error("Item not found in this order");
             }
 
-            // 2. Release the product
-            // 2. Release the product (safely)
             await tx.product.updateMany({
-                where: { id: orderItem.productId },
+                where: {
+                    id: orderItem.productId,
+                    garageSale: garageSaleRelationFilter(session),
+                },
                 data: {
                     status: "disponível",
                     reservedBy: null,
                     reservedByName: null,
                     reservedByEmail: null,
                     reservedByPhone: null,
-                    reservedAt: null
-                }
+                    reservedAt: null,
+                },
             });
 
-            // 3. Delete the item
             await tx.pendingOrderItem.delete({
-                where: { id: itemId }
+                where: { id: itemId },
             });
 
-            // 4. Check remaining items and update total
             const remainingItems = await tx.pendingOrderItem.findMany({
-                where: { pendingOrderId: orderId }
+                where: { pendingOrderId: orderId },
             });
 
             if (remainingItems.length === 0) {
-                // Delete the empty order
                 await tx.pendingOrder.delete({
-                    where: { id: orderId }
+                    where: { id: orderId },
                 });
                 return { deleted: true };
-            } else {
-                // Update total
-                const newTotal = remainingItems.reduce((acc, item) => acc + item.price, 0);
-                const updatedOrder = await tx.pendingOrder.update({
-                    where: { id: orderId },
-                    data: { total: newTotal },
-                    include: { items: true }
-                });
-                return { deleted: false, order: updatedOrder };
             }
+
+            const newTotal = remainingItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+            const updatedOrder = await tx.pendingOrder.update({
+                where: { id: orderId },
+                data: { total: newTotal },
+                include: { items: true },
+            });
+            return { deleted: false, order: updatedOrder };
         });
 
         return NextResponse.json(result);
-
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error removing item:", error);
-        return NextResponse.json({ error: error.message || "Failed to remove item" }, { status: 500 });
+        const message = error instanceof Error ? error.message : "Failed to remove item";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

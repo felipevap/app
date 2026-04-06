@@ -22,6 +22,12 @@ async function main() {
         console.log('Deleting GarageSales...');
         await prisma.garageSale.deleteMany({});
 
+        console.log('Deleting Users...');
+        await prisma.user.deleteMany({});
+
+        console.log('Deleting Tenants...');
+        await prisma.tenant.deleteMany({});
+
         console.log('Database truncated successfully.');
     } catch (error) {
         console.error('Error truncating database:', error);

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireTenantSession } from "@/lib/require-tenant";
+import { garageSaleRelationFilter } from "@/lib/tenant-scope";
 
-export async function POST(
-    req: NextRequest,
-    props: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: NextRequest, props: { params: Promise<{ id: string }> }) {
+    const session = await requireTenantSession(req);
+    if (session instanceof NextResponse) return session;
+
     try {
         const params = await props.params;
         const { id } = params;
@@ -12,34 +14,23 @@ export async function POST(
         const { clientId, action } = body;
 
         if (!clientId || !action) {
-            return NextResponse.json(
-                { error: "Missing clientId or action" },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: "Missing clientId or action" }, { status: 400 });
         }
 
-        const product = await prisma.product.findUnique({
-            where: { id },
-        }) as any;
+        const product = await prisma.product.findFirst({
+            where: { id, garageSale: garageSaleRelationFilter(session) },
+        });
 
         if (!product) {
             return NextResponse.json({ error: "Product not found" }, { status: 404 });
         }
 
         if (action === "reserve") {
-            // Check if already reserved by someone else
-            if (
-                product.status === "reservado" &&
-                product.reservedBy !== clientId
-            ) {
-                // Optional: Check connection timeout (e.g., if reserved > 10 mins ago, steal it?)
-                // For now, strict reservation.
+            if (product.status === "reservado" && product.reservedBy !== clientId) {
                 if (product.reservedAt) {
                     const reservationTime = new Date(product.reservedAt).getTime();
                     const now = new Date().getTime();
-                    // simple 15 min timeout check
                     if (now - reservationTime > 15 * 60 * 1000) {
-                        // expired, allow steal
                     } else {
                         return NextResponse.json(
                             { error: "O produto já está reservado", reservedBy: product.reservedBy },
@@ -54,15 +45,10 @@ export async function POST(
                 }
             }
 
-            // If already sold
             if (product.status === "vendido") {
-                return NextResponse.json(
-                    { error: "Product is already sold" },
-                    { status: 409 }
-                );
+                return NextResponse.json({ error: "Product is already sold" }, { status: 409 });
             }
 
-            // Reserve it
             const updatedProduct = await prisma.product.update({
                 where: { id },
                 data: {
@@ -73,13 +59,13 @@ export async function POST(
             });
 
             return NextResponse.json(updatedProduct);
-        } else if (action === "release") {
-            // Prevent releasing if already sold
+        }
+
+        if (action === "release") {
             if (product.status === "vendido") {
                 return NextResponse.json({ message: "Product already sold, cannot release" });
             }
 
-            // Only release if reserved by this client
             if (product.reservedBy === clientId) {
                 const updatedProduct = await prisma.product.update({
                     where: { id },
@@ -90,19 +76,14 @@ export async function POST(
                     },
                 });
                 return NextResponse.json(updatedProduct);
-            } else {
-                // If not reserved by this client, just ignore or return success (idempotent)
-                // Unless it's reserved by someone else, then we shouldn't touch it.
-                return NextResponse.json({ message: "Not reserved by you or already released" });
             }
-        } else {
-            return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+
+            return NextResponse.json({ message: "Not reserved by you or already released" });
         }
+
+        return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     } catch (error) {
         console.error("Error reserving product:", error);
-        return NextResponse.json(
-            { error: "Internal server error" },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

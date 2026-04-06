@@ -137,9 +137,9 @@ function ProductsContent() {
 
     if (contextLoading && garageSales.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[50vh] text-white">
+            <div className="flex flex-col items-center justify-center min-h-[50vh] text-stone-900">
                 <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-neutral-400 font-medium">Carregando...</p>
+                <p className="text-stone-600 font-medium">Carregando...</p>
             </div>
         );
     }
@@ -148,8 +148,8 @@ function ProductsContent() {
         <div className="space-y-6">
             <header className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-white">Produtos</h1>
-                    <p className="text-neutral-400 text-sm sm:text-base">Gerencie os produtos das Garage Sales</p>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-stone-900">Produtos</h1>
+                    <p className="text-stone-600 text-sm sm:text-base">Gerencie os produtos dos seus eventos</p>
                 </div>
                 {selectedGarageSaleId && (
                     <Link
@@ -162,32 +162,32 @@ function ProductsContent() {
             </header>
 
             {garageSales.length === 0 ? (
-                <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-12 text-center">
+                <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-12 text-center">
                     <span className="mb-4 block text-6xl">🏪</span>
-                    <h3 className="mb-2 text-xl font-bold text-white">
-                        Nenhuma Garage Sale cadastrada
+                    <h3 className="mb-2 text-xl font-bold text-stone-900">
+                        Nenhum evento cadastrado
                     </h3>
-                    <p className="mb-6 text-neutral-400">
-                        Crie uma Garage Sale primeiro para poder adicionar produtos
+                    <p className="mb-6 text-stone-600">
+                        Crie um evento primeiro para poder adicionar produtos
                     </p>
                     <Link
                         href="/admin/garage-sales/new"
                         className="inline-block rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-[1.02]"
                     >
-                        Criar Garage Sale
+                        Criar evento
                     </Link>
                 </div>
             ) : (
                 <>
-                    <div className="space-y-4 rounded-xl border border-neutral-800 bg-neutral-950 p-4">
+                    <div className="space-y-4 rounded-xl border border-stone-200 bg-white shadow-sm p-4">
                         <div>
-                            <label className="block text-sm font-medium text-neutral-300 mb-2">
-                                Selecionar Garage Sale
+                            <label className="block text-sm font-medium text-stone-700 mb-2">
+                                Selecionar evento
                             </label>
                             <select
                                 value={selectedGarageSaleId}
                                 onChange={(e) => setSelectedGarageSaleId(e.target.value)}
-                                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:outline-none text-base"
+                                className="w-full rounded-lg border border-stone-300 bg-white p-3 text-stone-900 focus:border-blue-500 focus:outline-none text-base"
                             >
                                 {garageSales.map((gs) => (
                                     <option key={gs.id} value={gs.id}>
@@ -203,9 +203,9 @@ function ProductsContent() {
                                 id="showDeleted"
                                 checked={showDeleted}
                                 onChange={(e) => setShowDeleted(e.target.checked)}
-                                className="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-blue-600 focus:ring-blue-500"
+                                className="h-4 w-4 rounded border-stone-300 bg-white text-blue-600 focus:ring-blue-500"
                             />
-                            <label htmlFor="showDeleted" className="text-sm font-medium text-neutral-300 select-none cursor-pointer">
+                            <label htmlFor="showDeleted" className="text-sm font-medium text-stone-700 select-none cursor-pointer">
                                 Exibir produtos deletados
                             </label>
                         </div>
@@ -218,14 +218,14 @@ function ProductsContent() {
                                 placeholder="Buscar produtos..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-white placeholder-neutral-500 focus:border-blue-500 focus:outline-none text-base"
+                                className="w-full rounded-lg border border-stone-300 bg-white p-3 text-stone-900 placeholder-stone-400 focus:border-blue-500 focus:outline-none text-base"
                             />
                         </div>
                         <div>
                             <select
                                 value={filterCategoria}
                                 onChange={(e) => setFilterCategoria(e.target.value)}
-                                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:outline-none text-base"
+                                className="w-full rounded-lg border border-stone-300 bg-white p-3 text-stone-900 focus:border-blue-500 focus:outline-none text-base"
                             >
                                 <option value="">Todas as Categorias</option>
                                 {categorias.map((cat) => (
@@ -237,7 +237,7 @@ function ProductsContent() {
                             <select
                                 value={filterCondicao}
                                 onChange={(e) => setFilterCondicao(e.target.value)}
-                                className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-white focus:border-blue-500 focus:outline-none text-base"
+                                className="w-full rounded-lg border border-stone-300 bg-white p-3 text-stone-900 focus:border-blue-500 focus:outline-none text-base"
                             >
                                 <option value="">Todas as Condições</option>
                                 {condicoes.map((cond) => (
@@ -248,20 +248,20 @@ function ProductsContent() {
                     </div>
 
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-white">
+                        <div className="flex flex-col items-center justify-center py-20 text-stone-900">
                             <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                            <p className="text-neutral-400 font-medium">Carregando produtos...</p>
+                            <p className="text-stone-600 font-medium">Carregando produtos...</p>
                         </div>
                     ) : products.length === 0 ? (
-                        <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-12 text-center">
+                        <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-12 text-center">
                             <span className="mb-4 block text-6xl">📦</span>
-                            <h3 className="mb-2 text-xl font-bold text-white">
+                            <h3 className="mb-2 text-xl font-bold text-stone-900">
                                 {searchTerm || filterCategoria || filterCondicao ? "Nenhum produto encontrado" : "Nenhum produto cadastrado"}
                             </h3>
-                            <p className="mb-6 text-neutral-400">
+                            <p className="mb-6 text-stone-600">
                                 {searchTerm || filterCategoria || filterCondicao
                                     ? "Tente ajustar os filtros de busca"
-                                    : "Comece adicionando produtos para esta Garage Sale"}
+                                    : "Comece adicionando produtos para este evento"}
                             </p>
                             {!searchTerm && !filterCategoria && !filterCondicao && !showDeleted && (
                                 <Link
@@ -278,9 +278,9 @@ function ProductsContent() {
                                 {products.map((product) => (
                                     <div
                                         key={product.id}
-                                        className={`group rounded-xl border bg-neutral-950 overflow-hidden shadow-sm transition-all hover:shadow-lg ${product.deletedAt ? 'border-red-900 opacity-75' : 'border-neutral-800 hover:border-neutral-700'}`}
+                                        className={`group rounded-xl border bg-white shadow-sm overflow-hidden shadow-sm transition-all hover:shadow-lg ${product.deletedAt ? 'border-red-900 opacity-75' : 'border-stone-200 hover:border-stone-300'}`}
                                     >
-                                        <div className="relative h-48 bg-neutral-900">
+                                        <div className="relative h-48 bg-stone-100">
                                             {product.imagens.length > 0 ? (
                                                 <img
                                                     src={product.imagens[0]}
@@ -298,13 +298,13 @@ function ProductsContent() {
                                                 </div>
                                             )}
                                             {product.imagens.length > 1 && (
-                                                <div className="absolute top-2 right-2 rounded-full bg-black/70 px-2 py-1 text-xs text-white">
+                                                <div className="absolute top-2 right-2 rounded-full bg-stone-900/75 px-2 py-1 text-xs text-white">
                                                     +{product.imagens.length - 1}
                                                 </div>
                                             )}
                                         </div>
                                         <div className="p-4">
-                                            <h3 className="font-bold text-white line-clamp-1">{product.nome}</h3>
+                                            <h3 className="font-bold text-stone-900 line-clamp-1">{product.nome}</h3>
                                             <p className="mt-1 text-2xl font-bold text-blue-400">
                                                 R$ {product.preco.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </p>
@@ -325,12 +325,12 @@ function ProductsContent() {
                                             {product.tags.length > 0 && (
                                                 <div className="mt-2 flex flex-wrap gap-1">
                                                     {product.tags.slice(0, 2).map((tag, idx) => (
-                                                        <span key={idx} className="text-xs text-neutral-500">
+                                                        <span key={idx} className="text-xs text-stone-500">
                                                             #{tag}
                                                         </span>
                                                     ))}
                                                     {product.tags.length > 2 && (
-                                                        <span className="text-xs text-neutral-500">
+                                                        <span className="text-xs text-stone-500">
                                                             +{product.tags.length - 2}
                                                         </span>
                                                     )}
@@ -357,7 +357,7 @@ function ProductsContent() {
                                                     <>
                                                         <Link
                                                             href={`/admin/products/${product.id}/edit`}
-                                                            className="flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-neutral-700"
+                                                            className="flex-1 rounded-lg border border-stone-300 bg-stone-800 px-3 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-stone-700"
                                                         >
                                                             ✏️
                                                         </Link>
@@ -377,21 +377,21 @@ function ProductsContent() {
 
                             {/* Pagination Controls */}
                             {totalPages > 1 && (
-                                <div className="flex justify-center items-center gap-4 mt-8 pt-6 border-t border-neutral-800">
+                                <div className="flex justify-center items-center gap-4 mt-8 pt-6 border-t border-stone-200">
                                     <button
                                         onClick={() => setPage(p => Math.max(1, p - 1))}
                                         disabled={page === 1}
-                                        className="px-4 py-2 rounded-lg bg-neutral-900 border border-neutral-700 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-800 transition-colors"
+                                        className="px-4 py-2 rounded-lg bg-white border border-stone-300 text-stone-800 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-stone-50 transition-colors"
                                     >
                                         Anterior
                                     </button>
-                                    <span className="text-neutral-400">
-                                        Página <span className="text-white font-bold">{page}</span> de <span className="text-white font-bold">{totalPages}</span>
+                                    <span className="text-stone-600">
+                                        Página <span className="text-stone-900 font-bold">{page}</span> de <span className="text-stone-900 font-bold">{totalPages}</span>
                                     </span>
                                     <button
                                         onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                                         disabled={page === totalPages}
-                                        className="px-4 py-2 rounded-lg bg-neutral-900 border border-neutral-700 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-800 transition-colors"
+                                        className="px-4 py-2 rounded-lg bg-white border border-stone-300 text-stone-800 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-stone-50 transition-colors"
                                     >
                                         Próxima
                                     </button>
@@ -414,7 +414,7 @@ function ProductsContent() {
 
 export default function ProductsPage() {
     return (
-        <Suspense fallback={<div className="text-white text-center p-8">Carregando...</div>}>
+        <Suspense fallback={<div className="text-stone-700 text-center p-8">Carregando...</div>}>
             <ProductsContent />
         </Suspense>
     );

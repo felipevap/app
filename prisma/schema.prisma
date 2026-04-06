@@ -3,97 +3,124 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
-  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id          String       @id @default(uuid())
+  name        String
+  slug        String       @unique
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  users       User[]
+  garageSales GarageSale[]
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  passwordHash   String
+  name           String?
+  tenantId       String?
+  tenant         Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  isSuperAdmin   Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model GarageSale {
-  id            String    @id @default(uuid())
-  nome          String
-  dataInicio    DateTime
-  dataFim       DateTime?
-  endereco      String
-  responsavel   String?
-  email         String?
-  regras        String?
-  // banner removed
-  discount       Float?   @default(0)
-  cep           String?
-  cpf           String?
-  pix           String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
+  id          String    @id @default(uuid())
+  nome        String
+  dataInicio  DateTime
+  dataFim     DateTime?
+  endereco    String
+  responsavel String?
+  email       String?
+  regras      String?
+  discount    Float?    @default(0)
+  cep         String?
+  cpf         String?
+  pix         String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   products      Product[]
   sales         Sale[]
   pendingOrders PendingOrder[]
+
+  @@index([tenantId])
 }
 
 model Product {
-  id            String    @id @default(uuid())
-  nome          String
-  descricao     String?
-  preco         Float
-  imagens       String[]
-  categoria     String?
-  condicao      String?
-  tags          String[]
-  status        String    @default("disponível") // disponível, vendido, reservado
-  reservedBy    String?   // Session ID/Client ID
-  reservedByName String?
-  reservedByEmail String?
-  reservedByPhone String?
-  reservedAt    DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
+  id                String    @id @default(uuid())
+  nome              String
+  descricao         String?
+  preco             Float
+  imagens           Json      @default("[]")
+  categoria         String?
+  condicao          String?
+  tags              Json      @default("[]")
+  status            String    @default("disponível")
+  reservedBy        String?
+  reservedByName    String?
+  reservedByEmail   String?
+  reservedByPhone   String?
+  reservedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
 
-  garageSaleId  String
-  garageSale    GarageSale @relation(fields: [garageSaleId], references: [id])
-  saleItems     SaleItem[]
+  garageSaleId String
+  garageSale   GarageSale @relation(fields: [garageSaleId], references: [id])
+  saleItems    SaleItem[]
+
+  @@index([garageSaleId])
 }
 
 model Sale {
-  id            Int       @id @default(autoincrement())
-  totalValue    Float
-  date          DateTime  @default(now())
-  buyerName     String?
-  buyerPhone    String?
-  buyerEmail    String?
-  createdAt     DateTime  @default(now())
+  id          Int       @id @default(autoincrement())
+  totalValue  Float
+  date        DateTime  @default(now())
+  buyerName   String?
+  buyerPhone  String?
+  buyerEmail  String?
+  createdAt   DateTime  @default(now())
 
-  garageSaleId  String?
-  garageSale    GarageSale? @relation(fields: [garageSaleId], references: [id])
+  garageSaleId String?
+  garageSale   GarageSale? @relation(fields: [garageSaleId], references: [id])
 
-  items         SaleItem[]
-  payments      Payment[]
+  items    SaleItem[]
+  payments Payment[]
+
+  @@index([garageSaleId])
 }
 
 model SaleItem {
-  id            Int      @id @default(autoincrement())
-  description   String
-  price         Float
-  quantity      Int
-  
-  saleId        Int
-  sale          Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  
-  productId     String?
-  product       Product? @relation(fields: [productId], references: [id])
-
+  id              Int     @id @default(autoincrement())
+  description     String
+  price           Float
+  quantity        Int
+  saleId          Int
+  sale            Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId       String?
+  product         Product? @relation(fields: [productId], references: [id])
   originalPrice   Float?
   discountPercent Float?
 }
 
 model Payment {
-  id            Int      @id @default(autoincrement())
-  method        String
-  amount        Float
-
-  saleId        Int
-  sale          Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  id     Int    @id @default(autoincrement())
+  method String
+  amount Float
+  saleId Int
+  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
 }
 
 model PendingOrder {
@@ -107,19 +134,20 @@ model PendingOrder {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  garageSaleId  String
-  garageSale    GarageSale @relation(fields: [garageSaleId], references: [id])
+  garageSaleId String
+  garageSale   GarageSale @relation(fields: [garageSaleId], references: [id])
 
-  items         PendingOrderItem[]
+  items PendingOrderItem[]
+
+  @@index([garageSaleId])
 }
 
 model PendingOrderItem {
-  id            Int      @id @default(autoincrement())
-  productId     String
-  description   String
-  price         Float
-  quantity      Int
-
+  id             Int          @id @default(autoincrement())
+  productId      String
+  description    String
+  price          Float
+  quantity       Int
   pendingOrderId String
   pendingOrder   PendingOrder @relation(fields: [pendingOrderId], references: [id], onDelete: Cascade)
 }

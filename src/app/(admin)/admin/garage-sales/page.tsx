@@ -28,7 +28,7 @@ export default function GarageSalesPage() {
     };
 
     const handleDelete = async (id: string, nome: string) => {
-        if (confirm(`Tem certeza que deseja excluir a Garage Sale "${nome}"?`)) {
+        if (confirm(`Tem certeza que deseja excluir o evento "${nome}"?`)) {
             await deleteGarageSale(id);
             // If showing deleted, we just refresh to update status
             refreshData({ includeDeleted: showDeleted });
@@ -36,7 +36,7 @@ export default function GarageSalesPage() {
     };
 
     const handleRestore = async (id: string, nome: string) => {
-        if (confirm(`Deseja restaurar a Garage Sale "${nome}"?`)) {
+        if (confirm(`Deseja restaurar o evento "${nome}"?`)) {
             await updateGarageSale(id, { deletedAt: null });
             refreshData({ includeDeleted: showDeleted });
         }
@@ -44,7 +44,7 @@ export default function GarageSalesPage() {
 
     if (loading && garageSales.length === 0) {
         return (
-            <div className="flex h-screen items-center justify-center">
+            <div className="flex min-h-[calc(100dvh-8rem)] items-center justify-center">
                 <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
             </div>
         );
@@ -54,13 +54,13 @@ export default function GarageSalesPage() {
         <div className="space-y-6">
             <header className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Garage Sales</h1>
-                    <p className="text-neutral-400">Gerencie todos os eventos de Garage Sale</p>
+                    <h1 className="text-3xl font-bold text-stone-900">Eventos</h1>
+                    <p className="text-stone-600">Gerencie os eventos da sua organização</p>
                 </div>
                 <div className="flex gap-2">
                     <button
                         onClick={handleToggleDeleted}
-                        className={`rounded-xl px-4 py-2 font-bold text-white transition-all border ${showDeleted ? 'bg-red-900/50 border-red-500' : 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700'}`}
+                        className={`rounded-xl px-4 py-2 font-bold transition-all border ${showDeleted ? 'bg-red-100 border-red-400 text-red-800' : 'bg-stone-800 border-stone-700 text-white hover:bg-stone-700'}`}
                     >
                         {showDeleted ? 'Ocultar Excluídos' : 'Mostrar Excluídos'}
                     </button>
@@ -68,36 +68,36 @@ export default function GarageSalesPage() {
                         href="/admin/garage-sales/new"
                         className="rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl"
                     >
-                        + Nova Garage Sale
+                        + Novo evento
                     </Link>
                 </div>
             </header>
 
-            <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-4">
+            <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
                 <input
                     type="text"
                     placeholder="Buscar por nome ou responsável..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full rounded-lg border border-neutral-700 bg-neutral-900 p-3 text-white placeholder-neutral-500 focus:border-blue-500 focus:outline-none"
+                    className="w-full rounded-lg border border-stone-300 bg-white p-3 text-stone-900 placeholder-stone-400 focus:border-blue-500 focus:outline-none"
                 />
             </div>
 
             {filteredGarageSales.length === 0 ? (
-                <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-12 text-center">
+                <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-12 text-center">
                     <span className="mb-4 block text-6xl">🏪</span>
-                    <h3 className="mb-2 text-xl font-bold text-white">
-                        {searchTerm ? "Nenhuma Garage Sale encontrada" : "Nenhuma Garage Sale cadastrada"}
+                    <h3 className="mb-2 text-xl font-bold text-stone-900">
+                        {searchTerm ? "Nenhum evento encontrado" : "Nenhum evento cadastrado"}
                     </h3>
-                    <p className="mb-6 text-neutral-400">
-                        {searchTerm ? "Tente buscar com outros termos" : "Comece criando sua primeira Garage Sale"}
+                    <p className="mb-6 text-stone-600">
+                        {searchTerm ? "Tente buscar com outros termos" : "Comece criando seu primeiro evento"}
                     </p>
                     {!searchTerm && !showDeleted && (
                         <Link
                             href="/admin/garage-sales/new"
                             className="inline-block rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:scale-[1.02]"
                         >
-                            Criar Primeira Garage Sale
+                            Criar primeiro evento
                         </Link>
                     )}
                 </div>
@@ -110,15 +110,15 @@ export default function GarageSalesPage() {
                         return (
                             <div
                                 key={gs.id}
-                                className={`group rounded-xl border p-6 shadow-sm transition-all ${isDeleted ? 'border-red-900/30 bg-red-950/10 opacity-75' : 'border-neutral-800 bg-neutral-950 hover:border-neutral-700 hover:shadow-lg'}`}
+                                className={`group rounded-xl border p-6 shadow-sm transition-all ${isDeleted ? 'border-red-200 bg-red-50/80 opacity-90' : 'border-stone-200 bg-white hover:border-stone-300 hover:shadow-lg'}`}
                             >
                                 <div className="mb-4 flex items-start justify-between">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2">
-                                            <h3 className="text-xl font-bold text-white">{gs.nome}</h3>
+                                            <h3 className="text-xl font-bold text-stone-900">{gs.nome}</h3>
                                             {isDeleted && <span className="text-xs font-bold bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">EXCLUÍDO</span>}
                                         </div>
-                                        <p className="mt-1 text-sm text-neutral-400">
+                                        <p className="mt-1 text-sm text-stone-600">
                                             {formatDate(gs.dataInicio)} - {formatDate(gs.dataFim)}
                                         </p>
                                     </div>
@@ -128,23 +128,23 @@ export default function GarageSalesPage() {
                                 </div>
 
                                 <div className="space-y-2 text-sm">
-                                    <div className="flex items-center gap-2 text-neutral-300">
+                                    <div className="flex items-center gap-2 text-stone-700">
                                         <span>📍</span>
                                         <span>{gs.endereco}</span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-neutral-300">
+                                    <div className="flex items-center gap-2 text-stone-700">
                                         <span>👤</span>
                                         <span>{gs.responsavel}</span>
                                     </div>
-                                    <div className="flex items-center gap-2 text-neutral-300">
+                                    <div className="flex items-center gap-2 text-stone-700">
                                         <span>📧</span>
                                         <span>{gs.email}</span>
                                     </div>
                                 </div>
 
                                 {gs.regras && (
-                                    <div className="mt-4 rounded-lg border border-neutral-800 bg-neutral-900 p-3">
-                                        <p className="text-xs text-neutral-400 line-clamp-2">{gs.regras}</p>
+                                    <div className="mt-4 rounded-lg border border-stone-200 bg-stone-50 p-3">
+                                        <p className="text-xs text-stone-600 line-clamp-2">{gs.regras}</p>
                                     </div>
                                 )}
 
@@ -153,7 +153,7 @@ export default function GarageSalesPage() {
                                         <>
                                             <Link
                                                 href={`/admin/garage-sales/${gs.id}/edit`}
-                                                className="flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-4 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-neutral-700"
+                                                className="flex-1 rounded-lg border border-stone-300 bg-stone-800 px-4 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-stone-700"
                                             >
                                                 ✏️ Editar
                                             </Link>
@@ -175,7 +175,7 @@ export default function GarageSalesPage() {
                                             onClick={() => handleRestore(gs.id, gs.nome)}
                                             className="w-full rounded-lg border border-green-700 bg-green-600 px-4 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-green-500"
                                         >
-                                            ♻️ Restaurar Garage Sale
+                                            ♻️ Restaurar evento
                                         </button>
                                     )}
                                 </div>

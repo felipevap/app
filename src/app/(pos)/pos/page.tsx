@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import { formatDate, formatCurrency } from "@/utils/formatters";
 import Toast from "@/components/Toast";
+import PortalGarageLogo from "@/components/PortalGarageLogo";
 
 interface Item {
     productId?: string;
@@ -265,7 +266,7 @@ export default function POSPage() {
     };
 
     const generateReceiptText = (sale: Sale) => {
-        let text = `GARAGE SALE PREMIUM\n`;
+        let text = `GESTOR GARAGE\n`;
         text += `Recibo #${String(sale.id).padStart(4, '0')}\n`;
         text += `Data: ${formatDate(sale.date || sale.createdAt)}\n\n`; // Handle both date fields
         text += `ITENS:\n`;
@@ -307,7 +308,7 @@ export default function POSPage() {
 
     const generateReportHTML = () => {
         const summary = calculateSummary();
-        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório de Vendas</title>`;
+        let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório de Vendas — Portal Garage</title>`;
         html += `<style>body{font-family:sans-serif;padding:20px;max-width:800px;margin:0 auto;}`;
         html += `table{width:100%;border-collapse:collapse;margin:20px 0;}`;
         html += `th,td{border:1px solid #ddd;padding:8px;text-align:left;}`;
@@ -771,14 +772,12 @@ export default function POSPage() {
 
     if (!selectedGarageSaleId && garageSales.length > 0) {
         return (
-            <div className="flex h-screen flex-col bg-gray-100 text-slate-800 font-sans">
+            <div className="flex h-[calc(100dvh-7rem)] min-h-0 flex-col bg-stone-100 text-stone-800 font-sans">
                 <header className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm">
                     <div className="flex items-center gap-2">
                         <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                            <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-sm font-bold text-white">
-                                GS
-                            </div>
-                            <span className="hidden font-bold sm:block">Garage Sale</span>
+                            <PortalGarageLogo className="h-8 w-8 shrink-0" aria-hidden />
+                            <span className="hidden font-bold sm:block">Portal Garage</span>
                         </Link>
                     </div>
                 </header>
@@ -852,14 +851,12 @@ export default function POSPage() {
 
     if (garageSales.length === 0) {
         return (
-            <div className="flex h-screen flex-col bg-gray-100 text-slate-800 font-sans">
+            <div className="flex h-[calc(100dvh-7rem)] min-h-0 flex-col bg-stone-100 text-stone-800 font-sans">
                 <header className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm">
                     <div className="flex items-center gap-2">
                         <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                            <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-sm font-bold text-white">
-                                GS
-                            </div>
-                            <span className="hidden font-bold sm:block">Garage Sale</span>
+                            <PortalGarageLogo className="h-8 w-8 shrink-0" aria-hidden />
+                            <span className="hidden font-bold sm:block">Portal Garage</span>
                         </Link>
                     </div>
                 </header>
@@ -868,7 +865,7 @@ export default function POSPage() {
                     <div className="text-center">
                         <div className="text-6xl mb-4">🏪</div>
                         <h2 className="text-2xl font-bold text-gray-800 mb-2">Nenhum Evento Cadastrado</h2>
-                        <p className="text-gray-600 mb-6">Crie um evento no gerenciador para usar o PDV</p>
+                        <p className="text-gray-600 mb-6">Crie um evento no organizador para usar o PDV</p>
                         <Link
                             href="/admin/garage-sales/new"
                             className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg transition-colors"
@@ -887,14 +884,12 @@ export default function POSPage() {
     );
 
     return (
-        <div className="flex h-screen flex-col bg-gray-100 text-slate-800 font-sans">
+        <div className="flex h-[calc(100dvh-7rem)] min-h-0 flex-col bg-stone-100 text-stone-800 font-sans">
             <header className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm">
                 <div className="flex items-center gap-4">
                     <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                        <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-sm font-bold text-white">
-                            GS
-                        </div>
-                        <span className="hidden font-bold sm:block">Garage Sale</span>
+                        <PortalGarageLogo className="h-8 w-8 shrink-0" aria-hidden />
+                        <span className="hidden font-bold sm:block">Portal Garage</span>
                     </Link>
 
                     {garageSales.length > 0 && (
@@ -1578,7 +1573,7 @@ export default function POSPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <button
                                     onClick={downloadHTMLReport}
-                                    className="rounded bg-gray-800 px-4 py-3 font-bold text-white hover:bg-gray-900 transition-colors"
+                                    className="rounded bg-stone-800 px-4 py-3 font-bold text-white hover:bg-stone-900 transition-colors"
                                 >
                                     Salvar HTML
                                 </button>
@@ -1595,7 +1590,7 @@ export default function POSPage() {
             </main>
 
             {receiptData && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-sm p-4">
                     <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-200">
                         <div className="mb-4 text-center">
                             <div className="mb-2 inline-flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl text-green-600">
@@ -1643,7 +1638,7 @@ export default function POSPage() {
             )}
 
             {showSignaturePad && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/50 backdrop-blur-sm">
                     <div className="w-full max-w-md bg-white rounded-xl overflow-hidden shadow-2xl">
                         <div className="flex justify-between items-center bg-gray-100 px-4 py-3 border-b">
                             <h3 className="font-bold text-gray-700">Assinatura</h3>

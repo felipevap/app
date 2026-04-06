@@ -1,28 +1,35 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { jwtVerify } from "jose";
+import { SESSION_COOKIE } from "@/lib/session";
 
-export function middleware(request: NextRequest) {
-    // Check for auth cookie
-    const authCookie = request.cookies.get('auth');
-    const isAuthenticated = authCookie?.value === 'true';
+export async function middleware(request: NextRequest) {
+    const path = request.nextUrl.pathname;
+    const protectedPrefixes = ["/admin", "/pos", "/capture", "/dashboard", "/super"];
+    const isProtected = protectedPrefixes.some((p) => path.startsWith(p));
 
-    // Define protected paths
-    const protectedPaths = ['/admin', '/pos'];
-    const isProtectedPath = protectedPaths.some(path =>
-        request.nextUrl.pathname.startsWith(path)
-    );
-
-    if (isProtectedPath && !isAuthenticated) {
-        // Redirect to login page if not authenticated
-        const loginUrl = new URL('/login', request.url);
-        // Optional: Add 'from' param to redirect back after login
-        // loginUrl.searchParams.set('from', request.nextUrl.pathname);
-        return NextResponse.redirect(loginUrl);
+    if (!isProtected) {
+        return NextResponse.next();
     }
 
-    return NextResponse.next();
+    const token = request.cookies.get(SESSION_COOKIE)?.value;
+    if (!token) {
+        return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    const secret = process.env.AUTH_SECRET;
+    if (!secret || secret.length < 32) {
+        return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    try {
+        await jwtVerify(token, new TextEncoder().encode(secret));
+        return NextResponse.next();
+    } catch {
+        return NextResponse.redirect(new URL("/login", request.url));
+    }
 }
 
 export const config = {
-    matcher: ['/admin/:path*', '/pos/:path*'],
+    matcher: ["/admin/:path*", "/pos/:path*", "/capture/:path*", "/dashboard/:path*", "/super", "/super/:path*"],
 };

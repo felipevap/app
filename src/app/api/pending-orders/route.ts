@@ -1,55 +1,68 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireTenantSession } from "@/lib/require-tenant";
+import { garageSaleFindWhere, garageSaleRelationFilter } from "@/lib/tenant-scope";
 
 export async function GET(req: NextRequest) {
+    const session = await requireTenantSession(req);
+    if (session instanceof NextResponse) return session;
+
     try {
         const { searchParams } = new URL(req.url);
+        const expirationTime = new Date(Date.now() - 30 * 60 * 1000);
 
-        // Check for expired orders and release products
-        const expirationTime = new Date(Date.now() - 30 * 60 * 1000); // 30 minutes ago
         const expiredOrders = await prisma.pendingOrder.findMany({
             where: {
-                status: 'pending',
+                status: "pending",
                 isPaid: false,
-                createdAt: { lt: expirationTime }
+                createdAt: { lt: expirationTime },
+                garageSale: garageSaleRelationFilter(session),
             },
-            include: { items: true }
+            include: { items: true },
         });
 
         for (const order of expiredOrders) {
             await prisma.$transaction(async (tx) => {
                 await tx.pendingOrder.update({
                     where: { id: order.id },
-                    data: { status: 'expired' }
+                    data: { status: "expired" },
                 });
 
                 for (const item of order.items) {
-                    // Use updateMany to avoid error if product was deleted (P2025)
                     await tx.product.updateMany({
-                        where: { id: item.productId },
+                        where: {
+                            id: item.productId,
+                            garageSale: garageSaleRelationFilter(session),
+                        },
                         data: {
-                            status: 'disponível',
+                            status: "disponível",
                             reservedBy: null,
                             reservedByName: null,
                             reservedByEmail: null,
                             reservedByPhone: null,
-                            reservedAt: null
-                        }
+                            reservedAt: null,
+                        },
                     });
                 }
             });
         }
 
-        const garageSaleId = searchParams.get('garageSaleId');
+        const garageSaleId = searchParams.get("garageSaleId");
+        const customerEmail = searchParams.get("customerEmail");
+        const customerPhone = searchParams.get("customerPhone");
 
-        const customerEmail = searchParams.get('customerEmail');
-        const customerPhone = searchParams.get('customerPhone');
-
-        const where: any = { status: 'pending' };
+        const where: Record<string, unknown> = {
+            status: "pending",
+            garageSale: garageSaleRelationFilter(session),
+        };
 
         if (garageSaleId) {
+            const gs = await prisma.garageSale.findFirst({
+                where: garageSaleFindWhere(session, garageSaleId),
+            });
+            if (!gs) {
+                return NextResponse.json([]);
+            }
             where.garageSaleId = garageSaleId;
         }
 
@@ -58,7 +71,6 @@ export async function GET(req: NextRequest) {
         }
 
         if (customerPhone) {
-            // Basic normalization to ensure matching (optional but good practice)
             where.customerPhone = customerPhone;
         }
 
@@ -68,44 +80,50 @@ export async function GET(req: NextRequest) {
                 items: true,
             },
             orderBy: {
-                createdAt: 'asc',
+                createdAt: "asc",
             },
         });
 
         return NextResponse.json(pendingOrders);
     } catch (error) {
-        console.error('Error fetching pending orders:', error);
-        return NextResponse.json({ error: 'Failed to fetch pending orders' }, { status: 500 });
+        console.error("Error fetching pending orders:", error);
+        return NextResponse.json({ error: "Failed to fetch pending orders" }, { status: 500 });
     }
 }
 
 export async function POST(req: NextRequest) {
+    const session = await requireTenantSession(req);
+    if (session instanceof NextResponse) return session;
+
     try {
         const body = await req.json();
         const { customerName, customerPhone, customerEmail, total, garageSaleId, items } = body;
 
+        const gs = await prisma.garageSale.findFirst({
+            where: garageSaleFindWhere(session, garageSaleId),
+        });
+        if (!gs) {
+            return NextResponse.json({ error: "Evento inválido" }, { status: 403 });
+        }
+
         const result = await prisma.$transaction(async (tx) => {
-            // 1. Verify availability first
             for (const item of items) {
-                const product = await tx.product.findUnique({
-                    where: { id: item.productId }
+                const product = await tx.product.findFirst({
+                    where: { id: item.productId, garageSale: garageSaleRelationFilter(session) },
                 });
 
                 if (!product) {
                     throw new Error(`Produto não encontrado: ${item.desc}`);
                 }
 
-                if (product.status !== 'disponível') {
-                    // Allow if reserved by the current client
-                    if (product.status === 'reservado' && product.reservedBy === body.clientId) {
-                        // All good, proceed
+                if (product.status !== "disponível") {
+                    if (product.status === "reservado" && product.reservedBy === body.clientId) {
                     } else {
                         throw new Error(`Produto indisponível: ${product.nome}`);
                     }
                 }
             }
 
-            // 2. Create Pending Order
             const pendingOrder = await tx.pendingOrder.create({
                 data: {
                     customerName,
@@ -114,12 +132,14 @@ export async function POST(req: NextRequest) {
                     total,
                     garageSaleId,
                     items: {
-                        create: items.map((item: any) => ({
-                            productId: item.productId,
-                            description: item.desc,
-                            price: item.price,
-                            quantity: item.qty,
-                        })),
+                        create: items.map(
+                            (item: { productId: string; desc: string; price: number; qty: number }) => ({
+                                productId: item.productId,
+                                description: item.desc,
+                                price: item.price,
+                                quantity: item.qty,
+                            })
+                        ),
                     },
                 },
                 include: {
@@ -127,18 +147,17 @@ export async function POST(req: NextRequest) {
                 },
             });
 
-            // 3. Update products to reserved status with customer details
             for (const item of items) {
                 await tx.product.update({
                     where: { id: item.productId },
                     data: {
-                        status: 'reservado',
+                        status: "reservado",
                         reservedBy: pendingOrder.id,
                         reservedByName: customerName,
                         reservedByEmail: customerEmail,
                         reservedByPhone: customerPhone,
-                        reservedAt: new Date()
-                    }
+                        reservedAt: new Date(),
+                    },
                 });
             }
 
@@ -146,12 +165,12 @@ export async function POST(req: NextRequest) {
         });
 
         return NextResponse.json(result);
-    } catch (error: any) {
-        console.error('Error creating pending order:', error);
-        const message = error.message || 'Failed to create pending order';
+    } catch (error: unknown) {
+        console.error("Error creating pending order:", error);
+        const message = error instanceof Error ? error.message : "Failed to create pending order";
 
-        if (message.includes('indisponível')) {
-            return NextResponse.json({ error: message }, { status: 409 }); // Conflict
+        if (message.includes("indisponível")) {
+            return NextResponse.json({ error: message }, { status: 409 });
         }
 
         return NextResponse.json({ error: message }, { status: 500 });
@@ -159,20 +178,30 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+    const session = await requireTenantSession(req);
+    if (session instanceof NextResponse) return session;
+
     try {
         const { searchParams } = new URL(req.url);
-        const id = searchParams.get('id');
+        const id = searchParams.get("id");
         const body = await req.json().catch(() => ({}));
-        const status = body.status || searchParams.get('status') || 'paid';
+        const status = body.status || searchParams.get("status") || "paid";
 
         if (!id) {
-            return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
+            return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
+        }
+
+        const order = await prisma.pendingOrder.findFirst({
+            where: { id, garageSale: garageSaleRelationFilter(session) },
+        });
+        if (!order) {
+            return NextResponse.json({ error: "Order not found" }, { status: 404 });
         }
 
         const data: { status: string; isPaid?: boolean } = { status };
-        if (status === 'paid') {
+        if (status === "paid") {
             data.isPaid = true;
-        } else if (status === 'pending' || status === 'processing') {
+        } else if (status === "pending" || status === "processing") {
             data.isPaid = false;
         }
 
@@ -186,39 +215,44 @@ export async function PUT(req: NextRequest) {
 
         return NextResponse.json(updatedOrder);
     } catch (error) {
-        console.error('Error updating pending order:', error);
-        return NextResponse.json({ error: 'Failed to update pending order' }, { status: 500 });
+        console.error("Error updating pending order:", error);
+        return NextResponse.json({ error: "Failed to update pending order" }, { status: 500 });
     }
 }
 
 export async function DELETE(req: NextRequest) {
+    const session = await requireTenantSession(req);
+    if (session instanceof NextResponse) return session;
+
     try {
         const { searchParams } = new URL(req.url);
-        const id = searchParams.get('id');
+        const id = searchParams.get("id");
 
         if (!id) {
-            return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
+            return NextResponse.json({ error: "Order ID is required" }, { status: 400 });
         }
 
-        // Release products before deleting
-        const orderToDelete = await prisma.pendingOrder.findUnique({
-            where: { id },
-            include: { items: true }
+        const orderToDelete = await prisma.pendingOrder.findFirst({
+            where: { id, garageSale: garageSaleRelationFilter(session) },
+            include: { items: true },
         });
 
         if (orderToDelete) {
             await prisma.$transaction(async (tx) => {
                 for (const item of orderToDelete.items) {
-                    await tx.product.update({
-                        where: { id: item.productId },
+                    await tx.product.updateMany({
+                        where: {
+                            id: item.productId,
+                            garageSale: garageSaleRelationFilter(session),
+                        },
                         data: {
-                            status: 'disponível',
+                            status: "disponível",
                             reservedBy: null,
                             reservedByName: null,
                             reservedByEmail: null,
                             reservedByPhone: null,
-                            reservedAt: null
-                        }
+                            reservedAt: null,
+                        },
                     });
                 }
                 await tx.pendingOrder.delete({
@@ -229,7 +263,7 @@ export async function DELETE(req: NextRequest) {
 
         return NextResponse.json({ success: true });
     } catch (error) {
-        console.error('Error deleting pending order:', error);
-        return NextResponse.json({ error: 'Failed to delete pending order' }, { status: 500 });
+        console.error("Error deleting pending order:", error);
+        return NextResponse.json({ error: "Failed to delete pending order" }, { status: 500 });
     }
 }

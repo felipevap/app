@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Maju — Garage Sale · Apresentação</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0f1a;
+      --sidebar: #111827;
+      --card: #151d2e;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --gold: #e3b448;
+      --line: rgba(255,255,255,0.08);
+      --accent: #3b82f6;
+      --accent2: #22c55e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: "Source Sans 3", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+    .layout {
+      display: flex;
+      height: 100vh;
+    }
+    .sidebar {
+      width: min(300px, 92vw);
+      flex-shrink: 0;
+      background: var(--sidebar);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      z-index: 20;
+    }
+    .sidebar-head {
+      padding: 1rem 1rem 0.75rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .sidebar-head span {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.35rem;
+      padding-left: 0.1rem;
+    }
+    .nav-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem 0 1rem;
+    }
+    .nav-group-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0.85rem 1rem 0.35rem;
+    }
+    .nav-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 0.55rem 1rem 0.55rem 1.35rem;
+      border: none;
+      background: transparent;
+      color: #cbd5e1;
+      font-family: inherit;
+      font-size: 0.92rem;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      line-height: 1.35;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+    .nav-item.active {
+      background: rgba(59,130,246,0.12);
+      color: var(--text);
+      border-left-color: var(--accent);
+      font-weight: 600;
+    }
+    .nav-sub .nav-item { padding-left: 1.75rem; font-size: 0.88rem; color: #a8b3c4; }
+    .menu-toggle {
+      display: none;
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      z-index: 30;
+      padding: 0.65rem 1rem;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--text);
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      position: relative;
+    }
+    .main-corner-logo {
+      position: absolute;
+      right: clamp(0.15rem, 0.6vw, 0.4rem);
+      bottom: 6.85rem;
+      z-index: 14;
+      pointer-events: none;
+      background: #ffffff;
+      padding: 1rem 1.25rem;
+      border-radius: 22px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+    }
+    .main-corner-logo img {
+      display: block;
+      height: clamp(8.5rem, 18.5vw, 12.5rem);
+      width: auto;
+      max-width: min(520px, 76vw);
+      object-fit: contain;
+    }
+    .slide-brand-top {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto 1.45rem;
+      padding: 1.35rem 2.75rem;
+      width: fit-content;
+      max-width: 100%;
+      background: #ffffff;
+      border-radius: 22px;
+      box-shadow: 0 6px 28px rgba(0,0,0,0.22);
+    }
+    .slide-brand-top img {
+      display: block;
+      height: clamp(9.5rem, 24vw, 14rem);
+      width: auto;
+      max-width: min(880px, 99vw);
+      object-fit: contain;
+    }
+    .panel-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: clamp(1rem, 2.5vw, 2rem);
+    }
+    .panel {
+      display: none;
+      max-width: 920px;
+      margin: 0 auto;
+      animation: fade 0.35s ease;
+    }
+    .panel.active { display: block; }
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .card {
+      background: linear-gradient(165deg, var(--card) 0%, #0f172a 100%);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: clamp(1.25rem, 3vw, 2.25rem);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+    }
+    h1 {
+      font-family: Fraunces, Georgia, serif;
+      font-size: clamp(1.85rem, 4vw, 2.75rem);
+      font-weight: 700;
+      line-height: 1.12;
+      margin-bottom: 0.5rem;
+    }
+    h2 {
+      font-family: Fraunces, Georgia, serif;
+      font-size: clamp(1.45rem, 3vw, 2rem);
+      color: var(--gold);
+      margin-bottom: 0.85rem;
+    }
+    h3 {
+      font-size: clamp(1.05rem, 2vw, 1.2rem);
+      color: #93c5fd;
+      margin: 1.25rem 0 0.5rem;
+    }
+    .lead {
+      font-size: clamp(1.05rem, 2.2vw, 1.25rem);
+      color: var(--muted);
+      line-height: 1.55;
+      margin-bottom: 1rem;
+    }
+    .slide-note {
+      margin: 1rem 0 0;
+      padding: 0.85rem 1rem;
+      border-radius: 12px;
+      font-size: 0.98rem;
+      line-height: 1.5;
+      color: #a8b8ce;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line);
+    }
+    .cols-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    @media (max-width: 720px) {
+      .cols-2 { grid-template-columns: 1fr; }
+    }
+    .field-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: clamp(0.92rem, 1.8vw, 1.02rem);
+      margin: 0.75rem 0 1rem;
+    }
+    .field-table th, .field-table td {
+      border: 1px solid var(--line);
+      padding: 0.55rem 0.65rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .field-table th {
+      background: rgba(59,130,246,0.12);
+      color: #bfdbfe;
+      font-weight: 600;
+      width: 32%;
+    }
+    ul.bullets {
+      list-style: none;
+      font-size: clamp(1rem, 2vw, 1.12rem);
+      line-height: 1.6;
+    }
+    ul.bullets li {
+      padding: 0.4rem 0 0.4rem 1.5rem;
+      position: relative;
+    }
+    ul.bullets li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.85rem;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent2);
+    }
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 1rem 0;
+      font-size: 0.95rem;
+    }
+    .flow span {
+      background: rgba(255,255,255,0.06);
+      padding: 0.4rem 0.65rem;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+    }
+    .flow i { color: var(--muted); font-style: normal; }
+    .bar-bottom {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.85rem clamp(1rem, 2vw, 1.5rem);
+      border-top: 1px solid var(--line);
+      background: rgba(17,24,39,0.95);
+    }
+    .bar-bottom button {
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 0.65rem 1.25rem;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+    }
+    .bar-bottom .primary { background: var(--gold); color: #1a1406; }
+    .bar-bottom .secondary {
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+    .bar-bottom button:disabled { opacity: 0.35; cursor: not-allowed; }
+    .progress-mini {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 99px;
+      overflow: hidden;
+      min-width: 80px;
+    }
+    .progress-mini i {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--gold));
+      border-radius: 99px;
+      transition: width 0.3s ease;
+    }
+    .hint {
+      margin-top: 1rem;
+      padding: 0.85rem 1rem;
+      border-radius: 12px;
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.25);
+      font-size: 0.98rem;
+      line-height: 1.5;
+    }
+    .cover-brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 1.25rem 0.35rem;
+      margin: 0 0 1.25rem;
+      background: transparent;
+    }
+    .sidebar-head .sidebar-brand-text {
+      display: block;
+      font-family: Fraunces, Georgia, serif;
+      font-size: 1.45rem;
+      margin-bottom: 0.25rem;
+    }
+    .cover-tag {
+      margin-top: 0.35rem;
+      font-size: clamp(0.95rem, 2vw, 1.1rem);
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #64748b;
+    }
+    .panel.panel--wide {
+      max-width: min(1080px, 100%);
+    }
+    .panel.panel--wide .card {
+      padding: clamp(1.25rem, 3vw, 2rem);
+    }
+    .mapa-intro {
+      font-size: clamp(1.08rem, 2.4vw, 1.22rem);
+      color: #b8c5d9;
+      line-height: 1.65;
+      margin-bottom: 1.35rem;
+      max-width: 52rem;
+    }
+    .mapa-hub {
+      text-align: center;
+      padding: clamp(1.35rem, 3vw, 2rem);
+      margin-bottom: 1.25rem;
+      border-radius: 24px;
+      background:
+        radial-gradient(ellipse 120% 80% at 50% 0%, rgba(227,180,72,0.22), transparent 55%),
+        linear-gradient(145deg, rgba(59,130,246,0.14), rgba(15,23,42,0.9));
+      border: 1px solid rgba(227,180,72,0.35);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset, 0 20px 50px rgba(0,0,0,0.35);
+      position: relative;
+      overflow: hidden;
+    }
+    .mapa-hub::after {
+      content: "";
+      position: absolute;
+      inset: -40% -20% auto;
+      height: 60%;
+      background: radial-gradient(circle, rgba(59,130,246,0.12), transparent 70%);
+      pointer-events: none;
+    }
+    .mapa-hub-inner { position: relative; z-index: 1; }
+    .mapa-hub-badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.5rem;
+    }
+    .mapa-hub h3 {
+      font-family: Fraunces, Georgia, serif;
+      font-size: clamp(1.35rem, 3vw, 1.85rem);
+      color: var(--text);
+      margin: 0 0 0.35rem;
+    }
+    .mapa-hub p {
+      margin: 0;
+      font-size: clamp(1rem, 2.2vw, 1.12rem);
+      color: #b8c8dc;
+      line-height: 1.55;
+    }
+    .mapa-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.85rem;
+      margin-bottom: 1.35rem;
+    }
+    .mapa-grid.mapa-grid--people .mapa-node:last-child {
+      grid-column: 1 / -1;
+    }
+    @media (max-width: 720px) {
+      .mapa-grid { grid-template-columns: 1fr; }
+      .mapa-grid.mapa-grid--people .mapa-node:last-child { grid-column: 1; }
+    }
+    .mapa-node {
+      border-radius: 18px;
+      padding: 1rem 1.1rem;
+      border: 1px solid var(--line);
+      background: linear-gradient(160deg, rgba(30,41,59,0.95) 0%, rgba(15,23,42,0.98) 100%);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+      position: relative;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .mapa-node:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,0.12);
+    }
+    .mapa-node--blue { border-left: 4px solid #3b82f6; }
+    .mapa-node--green { border-left: 4px solid #22c55e; }
+    .mapa-node--gold { border-left: 4px solid var(--gold); }
+    .mapa-node--violet { border-left: 4px solid #a78bfa; }
+    .mapa-node--rose { border-left: 4px solid #f472b6; }
+    .mapa-node h4 {
+      font-size: clamp(0.88rem, 2vw, 0.98rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #e2e8f0;
+      margin: 0 0 0.65rem;
+    }
+    .mapa-node ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      font-size: clamp(0.98rem, 2.2vw, 1.08rem);
+      line-height: 1.65;
+      color: #c8d4e8;
+    }
+    .mapa-node li { padding: 0.2rem 0; padding-left: 0.85rem; position: relative; }
+    .mapa-node li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.55rem;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+    }
+    .mapa-flow-title {
+      font-family: Fraunces, Georgia, serif;
+      font-size: 1.05rem;
+      color: var(--gold);
+      margin: 0 0 1rem;
+    }
+    .mapa-flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+      gap: 0;
+      margin-bottom: 1.25rem;
+      padding: 1.15rem 1rem;
+      border-radius: 20px;
+      background: rgba(0,0,0,0.28);
+      border: 1px solid var(--line);
+    }
+    .mapa-flow-step {
+      flex: 1 1 auto;
+      min-width: 5.5rem;
+      text-align: center;
+      padding: 0.65rem 0.5rem;
+    }
+    .mapa-flow-step strong {
+      display: block;
+      font-size: clamp(0.92rem, 2vw, 1.05rem);
+      color: var(--text);
+      margin-bottom: 0.35rem;
+      line-height: 1.3;
+    }
+    .mapa-flow-step span {
+      font-size: clamp(0.82rem, 1.8vw, 0.95rem);
+      color: #a8b8ce;
+      line-height: 1.45;
+    }
+    .mapa-flow-arr {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      color: rgba(227,180,72,0.65);
+      font-size: 1.1rem;
+      padding: 0 0.15rem;
+      user-select: none;
+    }
+    @media (max-width: 640px) {
+      .mapa-flow { flex-direction: column; gap: 0.35rem; }
+      .mapa-flow-arr { transform: rotate(90deg); padding: 0.25rem 0; justify-content: center; }
+    }
+    @keyframes mapaFade {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .mapa-hub, .mapa-node, .mapa-flow {
+      animation: mapaFade 0.55s ease backwards;
+    }
+    .mapa-node:nth-child(1) { animation-delay: 0.06s; }
+    .mapa-node:nth-child(2) { animation-delay: 0.1s; }
+    .mapa-node:nth-child(3) { animation-delay: 0.14s; }
+    .mapa-node:nth-child(4) { animation-delay: 0.18s; }
+    .mapa-flow { animation-delay: 0.22s; }
+    @media (max-width: 900px) {
+      .brand-316-footer img {
+        width: clamp(140px, 42vw, 260px);
+        max-height: min(36vh, 260px);
+      }
+      .layout { flex-direction: column; }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        box-shadow: 8px 0 40px rgba(0,0,0,0.5);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .menu-toggle { display: block; }
+      .main { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <button type="button" class="menu-toggle" id="menuToggle" aria-expanded="false">Menu</button>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar" aria-label="Índice da apresentação">
+      <div class="sidebar-head">
+        <strong class="sidebar-brand-text">Maju</strong>
+        <span>Garage Sale — índice</span>
+      </div>
+      <div class="nav-scroll" id="navRoot"></div>
+    </aside>
+    <div class="main">
+      <div class="panel-wrap" id="panelWrap">
+        <div class="panel active" data-panel="p0">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <div class="cover-brand">
+              <p class="cover-tag">Apresentação</p>
+            </div>
+            <p class="lead">Plataforma <strong>premium</strong> para <strong>garage sale</strong>: organiza vendas em evento — do cadastro e das fotos inteligentes à <strong>checagem de preço</strong> no piso (proprietário e equipe Maju), até o PDV. Há <strong>gráficos</strong> para acompanhar o vendido, o repasse ao <strong>proprietário</strong> e o que fica para a <strong>Maju</strong>. Ao criar a garage sale, o <strong>usuário proprietário</strong> e o <strong>portal próprio</strong> são gerados automaticamente, com contratos em etapas.</p>
+            <ul class="bullets">
+              <li>Use o <strong>menu à esquerda</strong> para ir direto a qualquer assunto.</li>
+              <li>Use <strong>Anterior</strong> e <strong>Próximo</strong> para seguir na ordem sugerida.</li>
+              <li>Em tela cheia no navegador: tecla <strong>F11</strong> (pressione de novo para sair).</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="p1">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <h2>O que o aplicativo faz</h2>
+            <p class="lead">É uma plataforma pensada para <strong>um evento de vendas</strong> (garage sale). Tudo gira em torno de um único lugar: criar o evento, cadastrar o que será vendido, <strong>conferir preço e status dos produtos</strong> com o aplicativo (proprietário e funcionários da Maju) e fechar vendas no ponto de venda (PDV).</p>
+            <p class="slide-note">O que está na mesa no dia do evento vira cadastro digital: foto, preço e status (disponível, reservado, vendido).</p>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="p2">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <h2>Quem utiliza</h2>
+            <div class="cols-2">
+              <div>
+                <h3>Administrador</h3>
+                <ul class="bullets">
+                  <li>Cria o evento e preenche os dados oficiais.</li>
+                  <li>Cadastra produtos, fotos e preços.</li>
+                  <li>Ao criar a garage sale, o sistema <strong>gera automaticamente</strong> o <strong>usuário proprietário</strong> daquele evento, com portal próprio.</li>
+                  <li>Acompanha vendas, relatórios e <strong>gráficos</strong> (volume vendido, repasse ao proprietário e receita Maju).</li>
+                </ul>
+              </div>
+              <div>
+                <h3>Caixa (PDV)</h3>
+                <ul class="bullets">
+                  <li>Opera vendas do dia no evento selecionado.</li>
+                  <li>Registra pagamentos e encerra vendas.</li>
+                </ul>
+                <h3>Checagem de preço (proprietário e Maju)</h3>
+                <ul class="bullets">
+                  <li>No evento, usam o aplicativo com <strong>câmera ou foto</strong> para identificar o produto no catálogo.</li>
+                  <li>Veem <strong>preço cadastrado</strong>, descrição e <strong>status</strong> (disponível, reservado, vendido) na hora.</li>
+                  <li>Uso operacional para conferência — não como canal público para o visitante.</li>
+                </ul>
+                <h3>Proprietário do evento (portal)</h3>
+                <ul class="bullets">
+                  <li>O acesso nasce <strong>junto com a garage sale</strong> — usuário e portal são criados automaticamente.</li>
+                  <li>Acessa o <strong>portal exclusivo</strong> daquele evento: contratos, lista de itens e relatório (somente leitura).</li>
+                </ul>
+              </div>
+            </div>
+            <p class="slide-note">Administrador, caixa, quem faz checagem no salão e o proprietário no portal: perfis diferentes, mesma base de dados do evento.</p>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="p3">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <h2>Criar o evento (Garage Sale)</h2>
+            <p class="lead">O evento é a “pasta-mestra”: todos os produtos e vendas ficam ligados a ele. O administrador preenche um formulário único por evento.</p>
+            <p class="lead" style="margin-top:0.75rem;">Na criação da <strong>garage sale</strong>, o sistema <strong>cria automaticamente</strong> o <strong>usuário proprietário</strong> vinculado a esse evento. Esse usuário já possui o <strong>portal próprio</strong> — o mesmo espaço em que assinará contratos, verá produtos e status e receberá o relatório final.</p>
+            <p class="slide-note">Criar o evento amarra nome, datas, endereço e responsáveis ao lugar real onde o lote será vendido.</p>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="p4">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <h2>Campos do evento</h2>
+            <p class="lead">Estes são os dados que o administrador informa ao criar cada garage sale. Campos obrigatórios garantem que contratos e comunicação tenham base completa.</p>
+            <h3>Detalhes do evento</h3>
+            <table class="field-table">
+              <tr><th>Nome da Garage Sale</th><td>Nome comercial do evento (ex.: Garage Sale Verão 2026).</td></tr>
+              <tr><th>Data de início</th><td>Quando o evento começa.</td></tr>
+              <tr><th>Data de término</th><td>Quando o evento encerra.</td></tr>
+              <tr><th>Endereço</th><td>Logradouro completo onde ocorrerá a venda.</td></tr>
+            </table>
+            <h3>Responsável</h3>
+            <table class="field-table">
+              <tr><th>Nome do responsável</th><td>Pessoa de contato operacional.</td></tr>
+              <tr><th>E-mail do responsável</th><td>Para avisos e acesso ao sistema quando aplicável.</td></tr>
+            </table>
+            <h3>Regras e configuração</h3>
+            <table class="field-table">
+              <tr><th>CEP</th><td>Localização postal (formato facilitado na digitação).</td></tr>
+              <tr><th>CPF (responsável)</th><td>Opcional no cadastro; validado quando preenchido.</td></tr>
+              <tr><th>Chave Pix</th><td>E-mail, CPF, telefone ou chave aleatória para recebimentos.</td></tr>
+              <tr><th>Regras e termos</th><td>Texto livre com normas específicas daquele evento.</td></tr>
+            </table>
+            <p class="hint">Esses mesmos dados podem alimentar automaticamente o <strong>texto do contrato</strong> que o proprietário assina no portal — sem redigir tudo de novo à mão.</p>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="p5">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <h2>Cadastro de produtos</h2>
+            <p class="lead">Cada item do evento vira um registro no sistema: identificação, preço, estado, fotos e vínculo obrigatório ao evento.</p>
+            <p class="slide-note">Cada peça vira ficha no sistema: nome, categoria, condição, preço e fotos ligadas à garage sale certa.</p>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="p6">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <h2>Campos de cada produto</h2>
+            <table class="field-table">
+              <tr><th>Nome</th><td>Título do anúncio da peça.</td></tr>
+              <tr><th>Descrição</th><td>Detalhes do anúncio; pode ser sugerida pelo sistema a partir do nome e categoria.</td></tr>
+              <tr><th>Preço</th><td>Valor de venda.</td></tr>
+              <tr><th>Imagens</th><td>Uma ou várias fotos por produto.</td></tr>
+              <tr><th>Categoria</th><td>Ex.: Eletrônicos, Roupas, Móveis, Livros, Brinquedos, Decoração, entre outras.</td></tr>
+              <tr><th>Condição</th><td>Estado do item (ex.: usado bom, novo).</td></tr>
+              <tr><th>Tags</th><td>Palavras-chave extras para busca e organização.</td></tr>
+              <tr><th>Evento (Garage Sale)</th><td>Produto sempre ligado a um evento específico.</td></tr>
+            </table>
+            <h3>Status do produto</h3>
+            <ul class="bullets">
+              <li><strong>Disponível</strong> — à venda.</li>
+              <li><strong>Reservado</strong> — alguém manifestou interesse;</li>
+              <li><strong>Vendido</strong> — após confirmação no PDV.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="p7">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <h2>Fotos do produto — visão geral</h2>
+            <p class="lead">O administrador pode <strong>tirar foto na hora</strong> (câmera do aparelho) ou <strong>enviar arquivo</strong> da galeria. A partir da imagem, o sistema trabalha em etapas para ganhar tempo e padronizar o cadastro.</p>
+            <p class="slide-note">No salão ou no backoffice: câmera ou galeria — a foto entra no fluxo de análise e confirmação antes de virar anúncio.</p>
+            <div class="flow">
+              <span>Foto capturada</span>
+              <i>→</i>
+              <span>Análise automática</span>
+              <i>→</i>
+              <span>Recorte do objeto</span>
+              <i>→</i>
+              <span>Sugestões de texto</span>
+              <i>→</i>
+              <span>Revisão humana</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="p8">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <h2>Como funciona a foto passo a passo</h2>
+            <ol style="font-size:1.05rem;line-height:1.65;padding-left:1.25rem;margin:0.75rem 0 1rem;">
+              <li style="margin-bottom:0.65rem;"><strong>Captura ou upload</strong> — a imagem entra no cadastro.</li>
+              <li style="margin-bottom:0.65rem;"><strong>Detecção de objeto</strong> — o aplicativo procura o principal objeto na foto (modelo de visão computacional). Se encontrar, desenha uma área sugerida em volta dele.</li>
+              <li style="margin-bottom:0.65rem;"><strong>Se não encontrar</strong> — aparece uma área central para o usuário ajustar manualmente (arrastar e redimensionar).</li>
+              <li style="margin-bottom:0.65rem;"><strong>Confirmação do recorte</strong> — só a região escolhida vira foto oficial do produto (fundo mais limpo, foco no item).</li>
+              <li style="margin-bottom:0.65rem;"><strong>Opcional</strong> — manter a foto inteira, sem recorte, se fizer mais sentido para aquele caso.</li>
+            </ol>
+            <p class="slide-note">Depois do recorte (ou da foto inteira, se preferir), o catálogo fica com imagem clara e focada na peça.</p>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="p9">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <h2>O que o aplicativo sugere automaticamente</h2>
+            <p class="lead">Depois que o objeto é identificado na foto, o sistema pode preencher ou sugerir campos — sempre editáveis pelo administrador.</p>
+            <ul class="bullets">
+              <li><strong>Nome do produto</strong> — traduzido para português a partir do tipo detectado (ex.: “cadeira”, “livro”, “notebook”), quando houver detecção confiável.</li>
+              <li><strong>Categoria</strong> — mapeamento do tipo detectado para uma das categorias do evento (ex.: móvel → Móveis).</li>
+              <li><strong>Descrição</strong> — texto comercial gerado combinando nome sugerido, categoria e condição do item (o sistema escolhe entre variações naturais de frase).</li>
+            </ul>
+            <p class="hint">Há também um botão para <strong>sugerir descrição de novo</strong> a qualquer momento, desde que o nome do produto já esteja preenchido — útil para testar outro tom de texto.</p>
+            <h3>Resumo</h3>
+            <table class="field-table">
+              <tr><th>Entrada</th><td>Foto do produto.</td></tr>
+              <tr><th>Processamento</th><td>Detecção do objeto + recorte opcional.</td></tr>
+              <tr><th>Saída sugerida</th><td>Nome, categoria e descrição (editáveis).</td></tr>
+              <tr><th>Controle final</th><td>Sempre com o administrador antes de salvar.</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="p10">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <h2>Checagem de preço no evento</h2>
+            <p class="lead">O <strong>proprietário</strong> e os <strong>funcionários da Maju</strong> usam o aplicativo no celular ou tablet durante o evento. Na tela de <strong>captura</strong>, apontam a câmera para a peça (ou enviam uma foto): o sistema compara com as imagens cadastradas e indica qual produto é, com <strong>preço oficial</strong> e <strong>status</strong> atualizado.</p>
+            <ul class="bullets">
+              <li>Busca visual por similaridade de imagem — a mesma base usada no cadastro.</li>
+              <li>Resposta rápida: nome, categoria, valor e se o item está disponível, reservado ou já vendido.</li>
+              <li>Serve para <strong>conferência</strong>, alinhamento com etiquetas e apoio à equipe no dia da venda.</li>
+            </ul>
+            <p class="slide-note">Celular ou tablet no evento: a equipe confere na tela o mesmo preço e status cadastrados para a peça na mesa.</p>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="p11">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <h2>Ponto de venda (PDV)</h2>
+            <p class="lead">No caixa, o operador escolhe qual <strong>evento</strong> está ativo e registra as vendas do dia.</p>
+            <ul class="bullets">
+              <li>Inclusão de itens vindos do catálogo ou valores avulsos.</li>
+              <li>Descontos por item ou desconto geral na venda.</li>
+              <li>Vários meios de pagamento na mesma venda (ex.: parte Pix, parte dinheiro).</li>
+              <li>Dados do comprador quando necessário (nome, telefone, e-mail).</li>
+              <li>Histórico de vendas e <strong>relatório</strong> do evento.</li>
+              <li><strong>Gráficos</strong> para acompanhar o <strong>quanto foi vendido</strong>, o <strong>valor que o proprietário vai receber</strong> e o <strong>que a Maju fica</strong> (comissão ou taxa conforme o contrato).</li>
+            </ul>
+            <p class="slide-note">Fechamento no caixa: pagamento registrado, itens marcados como vendidos e totais alimentando relatório e gráficos.</p>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="p12">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <h2>Portal do proprietário</h2>
+            <p class="lead">Quando uma <strong>garage sale</strong> é criada, o <strong>usuário proprietário</strong> é gerado <strong>automaticamente</strong> no sistema — não é um cadastro separado feito à mão. Esse usuário acessa o <strong>portal exclusivo</strong> daquele evento, em modo <strong>somente leitura</strong>, para acompanhar contratos, produtos e vendas sem alterar preços nem operar o caixa.</p>
+            <div>
+              <h3>O que aparece no portal</h3>
+              <ul class="bullets">
+                <li><strong>Contratos</strong> — documentos que precisam ser lidos e assinados.</li>
+                <li><strong>Lista de produtos</strong> — tudo que foi cadastrado para aquele evento.</li>
+                <li><strong>Status em tempo real</strong> — disponível, reservado ou vendido, à medida que o dia de vendas avança.</li>
+                <li><strong>Relatório final</strong> — fechamento claro do evento para o proprietário.</li>
+                <li><strong>Gráficos</strong> — visão do volume vendido, repasse ao proprietário e participação da Maju, alinhados ao contrato.</li>
+              </ul>
+              <p class="slide-note">Portal em modo leitura: contratos, lista, status e visão agregada (incluindo gráficos de vendas e repasses).</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="p13">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <h2>Contratos em duas etapas</h2>
+            <p class="lead">O proprietário assina dois momentos do mesmo processo legal-operacional, com clareza de responsabilidades.</p>
+            <h3>Primeira etapa — prestação de serviço</h3>
+            <ul class="bullets">
+              <li>Contrato-base de prestação de serviço entre as partes.</li>
+              <li>Os <strong>campos preenchidos pelo administrador</strong> no evento (nome, datas, endereço, regras, dados de contato, Pix, etc.) entram automaticamente no texto.</li>
+              <li>O proprietário lê e assina digitalmente.</li>
+            </ul>
+            <h3>Segunda etapa — confirmação do catálogo</h3>
+            <ul class="bullets">
+              <li>Depois que <strong>todos os produtos</strong> previstos estiverem cadastrados no sistema, abre-se a segunda assinatura.</li>
+              <li>O proprietário declara que <strong>revisa e aceita a lista</strong> de itens que poderão ser comercializados naquele evento.</li>
+              <li>O sistema só libera essa etapa quando o catálogo estiver completo conforme a regra do negócio — evitando assinatura sobre lista incompleta.</li>
+            </ul>
+            <p class="hint">Assim fica registrado: acordo inicial de serviço + confirmação explícita do que pode ser vendido, em duas datas lógicas do projeto.</p>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="p14">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <h2>Jornada completa (resumo)</h2>
+            <div class="flow" style="flex-direction:column;align-items:stretch;">
+              <span>1. Administrador cria a garage sale; o <strong>usuário proprietário</strong> e o <strong>portal</strong> são criados automaticamente.</span>
+              <span>2. Proprietário assina o contrato de prestação de serviço (dados automáticos do formulário).</span>
+              <span>3. Administrador cadastra produtos com fotos; o sistema sugere nome, categoria e descrição quando possível.</span>
+              <span>4. Proprietário assina a confirmação do catálogo completo.</span>
+              <span>5. Proprietário e equipe Maju usam checagem de preço no app; caixa opera o PDV; status atualizam para os perfis autorizados.</span>
+              <span>6. Proprietário acompanha em tempo real, vê gráficos (vendas, repasse e Maju) e recebe o relatório final no portal.</span>
+            </div>
+            <p class="slide-note">Do cadastro à checagem, ao PDV e ao portal: o mesmo catálogo físico refletido no sistema, até o fechamento com números claros.</p>
+          </div>
+        </div>
+
+        <div class="panel panel--wide" data-panel="p15">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <h2>As partes do sistema, em linguagem simples</h2>
+            <p class="mapa-intro">Este desenho serve só para lembrar <strong>o que cada pedaço faz</strong> no dia a dia da garage sale — sem nomes de programa, endereços de internet ou detalhes de informática. A faixa abaixo segue a <strong>ordem natural do trabalho</strong>, como uma história: do preparo até o fechamento.</p>
+            <div class="mapa-hub">
+              <div class="mapa-hub-inner">
+                <div class="mapa-hub-badge">Em resumo</div>
+                <h3>Maju organiza a venda em um só lugar</h3>
+                <p>Desde anotar o que vai ser vendido até conferir preço no salão, passar no caixa e o dono do evento acompanhar por fora — sempre com a mesma lista de peças e preços.</p>
+              </div>
+            </div>
+            <div class="mapa-grid mapa-grid--people">
+              <div class="mapa-node mapa-node--blue">
+                <h4>Tela inicial</h4>
+                <ul>
+                  <li>É a <strong>primeira tela</strong> ao abrir o aplicativo no celular ou computador.</li>
+                  <li>Mostra atalhos: quem <strong>prepara a venda</strong> ou trabalha no <strong>caixa</strong> entra com login e senha; a <strong>checagem de preço</strong> no dia do evento pode ser usada direto, sem complicação.</li>
+                </ul>
+              </div>
+              <div class="mapa-node mapa-node--gold">
+                <h4>Preparar a venda</h4>
+                <ul>
+                  <li>Para a <strong>equipe que monta o evento</strong>: cadastra a garage sale (datas, endereço, responsáveis).</li>
+                  <li>Cadastra cada <strong>peça</strong> com foto, preço e descrição; vê <strong>resumo e vendas</strong> num painel de gestão.</li>
+                </ul>
+              </div>
+              <div class="mapa-node mapa-node--green">
+                <h4>No salão: checagem de preço</h4>
+                <ul>
+                  <li>Para o <strong>dono do evento</strong> e a <strong>equipe Maju</strong> durante a venda.</li>
+                  <li>Aponta a <strong>câmera</strong> (ou manda uma foto) para o objeto; na hora aparece o <strong>preço certo</strong> e se a peça está disponível, reservada ou já vendida.</li>
+                </ul>
+              </div>
+              <div class="mapa-node mapa-node--violet">
+                <h4>No salão: caixa</h4>
+                <ul>
+                  <li>Quem está no <strong>ponto de venda</strong> registra o que o cliente leva e <strong>como pagou</strong> (Pix, dinheiro, cartão, etc.).</li>
+                  <li>Depois de confirmar, o sistema <strong>marca a peça como vendida</strong> e entra nos totais do dia.</li>
+                </ul>
+              </div>
+              <div class="mapa-node mapa-node--rose">
+                <h4>Para o dono da garage sale</h4>
+                <ul>
+                  <li><strong>Portal próprio</strong> do evento: assina contratos, vê a <strong>lista de tudo que foi cadastrado</strong> e o <strong>andamento das vendas</strong> (incluindo gráficos de quanto vendeu, quanto fica para o dono e quanto fica para a Maju, conforme o combinado).</li>
+                  <li>É <strong>só leitura</strong> para o dono: ele não altera preço nem opera o caixa por ali.</li>
+                </ul>
+              </div>
+            </div>
+            <h3 class="mapa-flow-title">Ordem natural do trabalho (do começo ao fim)</h3>
+            <div class="mapa-flow" role="list">
+              <div class="mapa-flow-step" role="listitem">
+                <strong>Preparar</strong>
+                <span>Cadastrar evento e peças</span>
+              </div>
+              <span class="mapa-flow-arr" aria-hidden="true">→</span>
+              <div class="mapa-flow-step" role="listitem">
+                <strong>Dia da venda</strong>
+                <span>Conferir preço no salão</span>
+              </div>
+              <span class="mapa-flow-arr" aria-hidden="true">→</span>
+              <div class="mapa-flow-step" role="listitem">
+                <strong>Caixa</strong>
+                <span>Cobrar e fechar a compra</span>
+              </div>
+              <span class="mapa-flow-arr" aria-hidden="true">→</span>
+              <div class="mapa-flow-step" role="listitem">
+                <strong>Acompanhar</strong>
+                <span>Dono vê tudo no portal</span>
+              </div>
+            </div>
+            <p class="hint" style="margin-top:1rem;margin-bottom:0;">Esta mesma apresentação pode ser aberta de novo pelo menu à esquerda, no ritmo que fizer conforto para conversar.</p>
+          </div>
+        </div>
+
+        <div class="panel" data-panel="p16">
+          <div class="card">
+            <div class="slide-brand-top" aria-hidden="true"><img src="maju-logo.png" alt="" width="800" height="250" /></div>
+            <h2>Maju</h2>
+            <p class="lead">Obrigado pela atenção. Esta apresentação pode ser percorrida pelo menu à esquerda na ordem que fizer mais sentido para a conversa.</p>
+            <p style="font-size:clamp(1.15rem,2.5vw,1.35rem);color:var(--muted);margin-top:1rem;font-family:Fraunces,Georgia,serif;">Maju · Garage Sale</p>
+          </div>
+        </div>
+      </div>
+      <div class="main-corner-logo" aria-hidden="true">
+        <img src="logo.jpeg" alt="" width="500" height="162" />
+      </div>
+      <div class="bar-bottom">
+        <button type="button" class="secondary" id="btnPrev" disabled>Anterior</button>
+        <div class="progress-mini"><i id="progBar"></i></div>
+        <span id="progLabel" style="font-size:0.9rem;color:var(--muted);min-width:3.5rem;">1 / 17</span>
+        <button type="button" class="primary" id="btnNext">Próximo</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var order = [
+        "p0","p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11","p12","p13","p14","p15","p16"
+      ];
+      var navDef = [
+        { g: "Introdução", items: [
+          { id: "p0", label: "Capa" },
+          { id: "p1", label: "O que o aplicativo faz" },
+          { id: "p2", label: "Quem utiliza" }
+        ]},
+        { g: "O evento", items: [
+          { id: "p3", label: "Criar o evento" },
+          { id: "p4", label: "Campos do evento" }
+        ]},
+        { g: "Produtos", items: [
+          { id: "p5", label: "Cadastro de produtos" },
+          { id: "p6", label: "Campos de cada produto" }
+        ]},
+        { g: "Fotos e inteligência", items: [
+          { id: "p7", label: "Visão geral das fotos" },
+          { id: "p8", label: "Passo a passo da foto" },
+          { id: "p9", label: "Sugestões automáticas" }
+        ]},
+        { g: "Operação no evento", items: [
+          { id: "p10", label: "Checagem de preço" },
+          { id: "p11", label: "PDV (caixa)" }
+        ]},
+        { g: "Proprietário e contratos", items: [
+          { id: "p12", label: "Portal do proprietário" },
+          { id: "p13", label: "Contratos em duas etapas" }
+        ]},
+        { g: "Encerramento", items: [
+          { id: "p14", label: "Jornada completa" },
+          { id: "p15", label: "Partes do sistema (simples)" },
+          { id: "p16", label: "Agradecimento" }
+        ]}
+      ];
+      var panels = {};
+      order.forEach(function (pid) {
+        panels[pid] = document.querySelector('[data-panel="' + pid + '"]');
+      });
+      var idx = 0;
+      var navRoot = document.getElementById("navRoot");
+      var btnPrev = document.getElementById("btnPrev");
+      var btnNext = document.getElementById("btnNext");
+      var progBar = document.getElementById("progBar");
+      var progLabel = document.getElementById("progLabel");
+      var sidebar = document.getElementById("sidebar");
+      var menuToggle = document.getElementById("menuToggle");
+      var navButtons = [];
+
+      navDef.forEach(function (group) {
+        var t = document.createElement("div");
+        t.className = "nav-group-title";
+        t.textContent = group.g;
+        navRoot.appendChild(t);
+        var sub = document.createElement("div");
+        sub.className = "nav-sub";
+        group.items.forEach(function (it) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "nav-item";
+          b.textContent = it.label;
+          b.setAttribute("data-target", it.id);
+          b.addEventListener("click", function () {
+            var i = order.indexOf(it.id);
+            if (i >= 0) go(i);
+            sidebar.classList.remove("open");
+            menuToggle.setAttribute("aria-expanded", "false");
+          });
+          sub.appendChild(b);
+          navButtons.push({ id: it.id, el: b });
+        });
+        navRoot.appendChild(sub);
+      });
+
+      function syncNav(activeId) {
+        navButtons.forEach(function (nb) {
+          nb.el.classList.toggle("active", nb.id === activeId);
+        });
+      }
+
+      function go(i) {
+        idx = Math.max(0, Math.min(i, order.length - 1));
+        var pid = order[idx];
+        order.forEach(function (p) {
+          if (panels[p]) panels[p].classList.toggle("active", p === pid);
+        });
+        btnPrev.disabled = idx === 0;
+        btnNext.disabled = idx === order.length - 1;
+        btnNext.textContent = idx === order.length - 1 ? "Fim" : "Próximo";
+        progBar.style.width = ((idx + 1) / order.length * 100).toFixed(1) + "%";
+        progLabel.textContent = idx + 1 + " / " + order.length;
+        syncNav(pid);
+        document.getElementById("panelWrap").scrollTop = 0;
+      }
+
+      btnPrev.addEventListener("click", function () { go(idx - 1); });
+      btnNext.addEventListener("click", function () { go(idx + 1); });
+
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowRight") { e.preventDefault(); go(idx + 1); }
+        else if (e.key === "ArrowLeft") { e.preventDefault(); go(idx - 1); }
+      });
+
+      menuToggle.addEventListener("click", function () {
+        var open = !sidebar.classList.contains("open");
+        sidebar.classList.toggle("open", open);
+        menuToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+
+      go(0);
+    })();
+  </script>
+</body>
+</html>

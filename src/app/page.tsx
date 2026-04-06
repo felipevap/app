@@ -1,75 +1,89 @@
 import Link from "next/link";
-import NextImage from "next/image";
-import { cookies } from "next/headers";
-import AuthButton from "@/components/AuthButton";
+import { getSessionFromCookies } from "@/lib/session";
+import PortalGarageLogo from "@/components/PortalGarageLogo";
 
 export default async function Home() {
-  const cookieStore = await cookies();
-  const isLoggedIn = cookieStore.get("auth")?.value === "true";
+    const session = await getSessionFromCookies();
+    const isLoggedIn = !!session;
 
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-black p-4 text-center">
-      <div className="absolute top-4 right-4">
-        <AuthButton isLoggedIn={isLoggedIn} />
-      </div>
+    return (
+        <div className="flex min-h-[calc(100dvh-6rem)] flex-col items-center justify-center bg-gradient-to-b from-stone-50 to-stone-100 p-4 text-center">
+            <PortalGarageLogo className="h-20 w-20 drop-shadow-md sm:h-24 sm:w-24" />
+            <h1 className="mt-6 text-5xl font-bold tracking-tight text-stone-900 sm:text-6xl">Portal Garage</h1>
+            <p className="mt-3 max-w-xl text-lg text-amber-800 sm:text-xl">
+                O portal do seu bazar: cadastro de itens, checagem de preço no evento e PDV — multi-organização, cada
+                conta isolada.
+            </p>
+            <p className="mt-4 max-w-2xl text-stone-600">
+                Ideal para quem organiza vendas de garagem, bazares solidários ou liquidações com equipe no chão e caixa
+                integrado.
+            </p>
 
-
-
-      <NextImage
-        src="/logo-home-v3.png" // Updated to use new logo
-        alt="Garage Sale Premium"
-        width={600}
-        height={300}
-        priority
-        className="mx-auto rounded-xl shadow-2xl mb-8 object-contain"
-      />
-      <p className="mt-4 text-xl text-gray-400">Sistema de Gerenciamento Premium de Garage Sales</p>
-
-      <div className="mt-12 flex flex-wrap justify-center gap-6 w-full max-w-5xl">
-        {isLoggedIn && (
-          <Link
-            href="/admin"
-            className="group relative overflow-hidden rounded-2xl bg-neutral-900 p-8 transition-all hover:scale-105 hover:bg-neutral-800 w-full sm:w-80"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-            <div className="relative z-10">
-              <span className="text-4xl">📊</span>
-              <h2 className="mt-4 text-2xl font-bold text-white">Gerenciador</h2>
-              <p className="mt-2 text-sm text-gray-400">Gerenciar Produtos e Vendas</p>
+            <div className="mt-10 flex flex-wrap justify-center gap-4">
+                {!isLoggedIn && (
+                    <>
+                        <Link
+                            href="/associacao"
+                            className="rounded-full bg-amber-600 px-8 py-3 text-sm font-semibold text-black transition-colors hover:bg-amber-500"
+                        >
+                            Associação
+                        </Link>
+                        <Link
+                            href="/login"
+                            className="rounded-full border border-stone-300 px-8 py-3 text-sm font-semibold text-stone-800 hover:bg-stone-100"
+                        >
+                            Entrar
+                        </Link>
+                    </>
+                )}
+                {isLoggedIn && (
+                    <Link
+                        href={session?.superAdmin ? "/super" : "/dashboard"}
+                        className="rounded-full bg-amber-600 px-8 py-3 text-sm font-semibold text-black transition-colors hover:bg-amber-500"
+                    >
+                        {session?.superAdmin ? "Super Admin" : "Ir ao painel"}
+                    </Link>
+                )}
             </div>
-          </Link>
-        )}
 
-        <Link
-          href="/capture"
-          className="group relative overflow-hidden rounded-2xl bg-neutral-900 p-8 transition-all hover:scale-105 hover:bg-neutral-800 w-full sm:w-80"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-          <div className="relative z-10">
-            <span className="text-4xl">🤝</span>
-            <h2 className="mt-4 text-2xl font-bold text-white">Cliente</h2>
-            <p className="mt-2 text-sm text-gray-400">Consultar Preços e Comprar</p>
-          </div>
-        </Link>
-
-        {isLoggedIn && (
-          <Link
-            href="/pos"
-            className="group relative overflow-hidden rounded-2xl bg-neutral-900 p-8 transition-all hover:scale-105 hover:bg-neutral-800 w-full sm:w-80"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-            <div className="relative z-10">
-              <span className="text-4xl">🛒</span>
-              <h2 className="mt-4 text-2xl font-bold text-white">PDV</h2>
-              <p className="mt-2 text-sm text-gray-400">Processar Transações</p>
+            <div className="mt-14 grid w-full max-w-4xl gap-4 text-left sm:grid-cols-3">
+                <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+                    <h2 className="font-semibold text-stone-900">Eventos</h2>
+                    <p className="mt-2 text-sm text-stone-600">Vários bazares por organização, com regras e dados do evento.</p>
+                </div>
+                <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+                    <h2 className="font-semibold text-stone-900">Operação</h2>
+                    <p className="mt-2 text-sm text-stone-600">Checagem de preço e PDV alinhados ao mesmo catálogo.</p>
+                </div>
+                <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+                    <h2 className="font-semibold text-stone-900">Isolamento</h2>
+                    <p className="mt-2 text-sm text-stone-600">Cada organização vê só seus produtos e vendas.</p>
+                </div>
             </div>
-          </Link>
-        )}
-      </div>
 
-      <footer className="mt-16 text-sm text-neutral-600">
-        &copy; 2026 Garage Sale Premium <span className="mx-2">|</span> v1.1.0
-      </footer>
-    </div>
-  );
+            {isLoggedIn && !session?.superAdmin && (
+                <div className="mt-12 flex flex-wrap justify-center gap-4">
+                    <Link
+                        href="/admin"
+                        className="rounded-xl bg-stone-800 px-6 py-3 text-sm text-white hover:bg-stone-700"
+                    >
+                        Organizador
+                    </Link>
+                    <Link
+                        href="/capture"
+                        className="rounded-xl bg-emerald-600 px-6 py-3 text-sm text-white hover:bg-emerald-700"
+                    >
+                        Checagem de preço
+                    </Link>
+                    <Link href="/pos" className="rounded-xl bg-rose-600 px-6 py-3 text-sm text-white hover:bg-rose-700">
+                        PDV
+                    </Link>
+                </div>
+            )}
+
+            <footer className="mt-16 text-sm text-stone-500">
+                &copy; {new Date().getFullYear()} Portal Garage <span className="mx-2">|</span> v0.7.0
+            </footer>
+        </div>
+    );
 }
