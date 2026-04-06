@@ -4,7 +4,7 @@ import { getPortalContractSignPayload } from "@/lib/portal-contract-gate";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
     const session = await requireOwnerSession(req);
     if (session instanceof NextResponse) return session;
 
