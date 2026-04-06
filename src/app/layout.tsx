@@ -22,21 +22,22 @@ export const metadata: Metadata = {
   },
 };
 
-// import { ProductProvider } from "@/contexts/ProductContext";
 import { GarageSaleProvider } from "@/contexts/GarageSaleContext";
 import SiteHeader from "@/components/SiteHeader";
+import { getSessionFromCookies } from "@/lib/session";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getSessionFromCookies();
   return (
     <html lang="pt-BR">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <GarageSaleProvider>
+        <GarageSaleProvider initialAuthenticated={!!session}>
           <SiteHeader />
           <div className="pt-28">{children}</div>
         </GarageSaleProvider>

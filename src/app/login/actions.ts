@@ -14,7 +14,13 @@ export async function login(formData: FormData) {
         return { error: "Preencha email e senha" };
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    let user;
+    try {
+        user = await prisma.user.findUnique({ where: { email } });
+    } catch {
+        return { error: "Serviço indisponível. Tente novamente em instantes." };
+    }
+
     if (!user) {
         return { error: "Credenciais inválidas" };
     }
@@ -24,7 +30,13 @@ export async function login(formData: FormData) {
         return { error: "Credenciais inválidas" };
     }
 
-    const token = await signSession(user.id, user.tenantId, user.isSuperAdmin);
+    let token: string;
+    try {
+        token = await signSession(user.id, user.tenantId, user.isSuperAdmin);
+    } catch {
+        return { error: "Autenticação não configurada corretamente no servidor." };
+    }
+
     const jar = await cookies();
     jar.set(SESSION_COOKIE, token, sessionCookieOptions(7 * 24 * 60 * 60));
 

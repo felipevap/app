@@ -1,21 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import { prisma } from "@/lib/prisma";
 import { getSessionFromCookies } from "@/lib/session";
 import SiteHeaderClient from "@/components/SiteHeaderClient";
 
 export default async function SiteHeader() {
     const session = await getSessionFromCookies();
     const loggedIn = !!session;
-
-    let isSuperAdmin = false;
-    if (session) {
-        const u = await prisma.user.findUnique({
-            where: { id: session.userId },
-            select: { isSuperAdmin: true },
-        });
-        isSuperAdmin = u?.isSuperAdmin ?? false;
-    }
+    const isSuperAdmin = session?.superAdmin ?? false;
 
     return (
         <header className="fixed top-0 left-0 right-0 z-[100] flex h-28 items-center border-b border-stone-200 bg-white/95 px-4 shadow-sm backdrop-blur-md">

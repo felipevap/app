@@ -58,10 +58,13 @@ interface GarageSaleContextType {
 
 const GarageSaleContext = createContext<GarageSaleContextType | undefined>(undefined);
 
-export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const GarageSaleProvider: React.FC<{ children: ReactNode; initialAuthenticated?: boolean }> = ({
+    children,
+    initialAuthenticated = false,
+}) => {
     const [garageSales, setGarageSales] = useState<GarageSale[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(initialAuthenticated);
 
     const fetchData = useCallback(async (options?: { includeDeleted?: boolean; silent?: boolean }) => {
         try {
@@ -89,8 +92,12 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode }> = ({ children
     }, []);
 
     useEffect(() => {
+        if (!initialAuthenticated) {
+            setLoading(false);
+            return;
+        }
         fetchData();
-    }, [fetchData]);
+    }, [initialAuthenticated, fetchData]);
 
     const addGarageSale = useCallback(async (garageSale: Omit<GarageSale, 'id' | 'criadoEm'> & { tenantId?: string }): Promise<GarageSale> => {
         const { tenantId, ...rest } = garageSale;
