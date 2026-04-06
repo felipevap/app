@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
@@ -54,6 +55,20 @@ export default function EditProductPage() {
             }
         }
     }, [id, getProduct]);
+
+    useEffect(() => {
+        if (!showCamera) return;
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setShowCamera(false);
+        };
+        window.addEventListener("keydown", onKey);
+        return () => {
+            document.body.style.overflow = prev;
+            window.removeEventListener("keydown", onKey);
+        };
+    }, [showCamera]);
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
@@ -127,6 +142,7 @@ export default function EditProductPage() {
                 ctx.drawImage(img, 0, 0, width, height);
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
                 setFormData(prev => ({ ...prev, imagens: [...prev.imagens, dataUrl] }));
+                setShowCamera(false);
             }
         };
         img.src = imageSrc;
@@ -265,34 +281,59 @@ export default function EditProductPage() {
                         </button>
                     </div>
 
-                    {showCamera && (
-                        <div className="mb-4 rounded-xl overflow-hidden border-2 border-blue-500 shadow-xl">
-                            <div className="bg-stone-100 p-2">
-                                <p className="text-center text-stone-800 text-sm font-semibold">📸 Posicione o produto e clique para capturar</p>
-                            </div>
-                            <Webcam
-                                ref={webcamRef}
-                                audio={false}
-                                screenshotFormat="image/jpeg"
-                                screenshotQuality={1}
-                                videoConstraints={{
-                                    facingMode: "environment",
-                                    width: { ideal: 1920 },
-                                    height: { ideal: 1080 }
-                                }}
-                                className="w-full h-96 object-cover"
-                            />
-                            <div className="bg-stone-100 p-6 flex justify-center gap-4">
-                                <button
-                                    type="button"
-                                    onClick={capturePhoto}
-                                    className="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded-lg font-bold text-white transition-colors text-lg shadow-lg"
+                    {showCamera &&
+                        createPortal(
+                            <div
+                                className="fixed inset-0 z-[9999] flex flex-col bg-black"
+                                role="dialog"
+                                aria-modal="true"
+                                aria-label="Captura de foto"
+                            >
+                                <div
+                                    className="shrink-0 flex items-center justify-between gap-2 px-3 py-3 bg-black/70 text-white"
+                                    style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}
                                 >
-                                    📸 Capturar Foto
-                                </button>
-                            </div>
-                        </div>
-                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCamera(false)}
+                                        className="rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/20"
+                                    >
+                                        Fechar
+                                    </button>
+                                    <p className="pointer-events-none flex-1 text-center text-sm font-semibold">
+                                        Posicione o produto na câmera
+                                    </p>
+                                    <span className="w-[4.5rem] shrink-0" aria-hidden />
+                                </div>
+                                <div className="relative min-h-0 flex-1">
+                                    <Webcam
+                                        ref={webcamRef}
+                                        audio={false}
+                                        screenshotFormat="image/jpeg"
+                                        screenshotQuality={1}
+                                        videoConstraints={{
+                                            facingMode: "environment",
+                                            width: { ideal: 1920 },
+                                            height: { ideal: 1080 },
+                                        }}
+                                        className="absolute inset-0 h-full w-full object-cover"
+                                    />
+                                </div>
+                                <div
+                                    className="shrink-0 flex justify-center bg-black/70 px-4 py-4"
+                                    style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={capturePhoto}
+                                        className="rounded-full bg-blue-600 px-10 py-4 text-lg font-bold text-white shadow-lg hover:bg-blue-500"
+                                    >
+                                        Capturar foto
+                                    </button>
+                                </div>
+                            </div>,
+                            document.body
+                        )}
 
                     {formData.imagens.length > 0 && (
                         <div className="border border-stone-200 rounded-xl p-4 bg-stone-50">
