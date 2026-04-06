@@ -772,7 +772,7 @@ export default function POSPage() {
 
     if (!selectedGarageSaleId && garageSales.length > 0) {
         return (
-            <div className="flex h-[calc(100dvh-7rem)] min-h-0 flex-col bg-stone-100 text-stone-800 font-sans">
+            <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col bg-stone-100 text-stone-800 font-sans">
                 <header className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm">
                     <div className="flex items-center gap-2">
                         <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -851,7 +851,7 @@ export default function POSPage() {
 
     if (garageSales.length === 0) {
         return (
-            <div className="flex h-[calc(100dvh-7rem)] min-h-0 flex-col bg-stone-100 text-stone-800 font-sans">
+            <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col bg-stone-100 text-stone-800 font-sans">
                 <header className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm">
                     <div className="flex items-center gap-2">
                         <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -884,7 +884,7 @@ export default function POSPage() {
     );
 
     return (
-        <div className="flex h-[calc(100dvh-7rem)] min-h-0 flex-col bg-stone-100 text-stone-800 font-sans">
+        <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col bg-stone-100 text-stone-800 font-sans">
             <header className="flex h-16 items-center justify-between border-b bg-white px-4 shadow-sm">
                 <div className="flex items-center gap-4">
                     <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">

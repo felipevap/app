@@ -23,7 +23,7 @@ export default function AdminLayout({
     ];
 
     return (
-        <div className="flex h-[calc(100dvh-7rem)] min-h-0 bg-stone-100 text-stone-900 overflow-hidden">
+        <div className="flex h-[calc(100dvh-4rem)] min-h-0 bg-stone-100 text-stone-900 overflow-hidden">
             {/* Mobile Header */}
             <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-stone-200 z-40 flex items-center justify-between px-4 shadow-sm">
                 <span className="flex min-w-0 items-center gap-2 text-lg font-bold tracking-tight text-stone-900">
@@ -113,7 +113,7 @@ export default function AdminLayout({
             </aside >
 
             {/* Main Content */}
-            <main className="flex-1 overflow-auto bg-stone-50 p-4 md:p-8 pt-28 md:pt-8 w-full">
+            <main className="flex-1 overflow-auto bg-stone-50 p-4 md:p-8 pt-20 md:pt-8 w-full">
                 {children}
             </main>
         </div >

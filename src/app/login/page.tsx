@@ -13,9 +13,9 @@ function SubmitButton() {
         <button
             type="submit"
             disabled={pending}
-            className="w-full transform rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 font-semibold text-white transition-all hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 px-4 py-3.5 text-sm font-semibold text-slate-950 shadow-lg shadow-amber-500/25 transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
         >
-            {pending ? "Entrando..." : "Entrar"}
+            {pending ? "Entrando…" : "Entrar"}
         </button>
     );
 }
@@ -31,57 +31,57 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="flex min-h-[calc(100dvh-7rem)] w-full items-center justify-center bg-gradient-to-br from-sky-50 via-violet-50 to-amber-50 p-4">
-            <div className="w-full max-w-md overflow-hidden rounded-2xl border border-stone-200 bg-white p-8 shadow-xl">
+        <div className="flex min-h-[calc(100dvh-4rem)] w-full items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4">
+            <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-8 shadow-2xl shadow-black/40 backdrop-blur-xl">
                 <div className="mb-8 flex flex-col items-center text-center">
-                    <PortalGarageLogo className="h-14 w-14" />
-                    <h1 className="mt-4 bg-gradient-to-r from-amber-700 via-amber-600 to-stone-800 bg-clip-text text-4xl font-bold text-transparent">
-                        Portal Garage
-                    </h1>
-                    <p className="mt-2 text-sm uppercase tracking-widest text-amber-800/90">Acesso ao painel</p>
+                    <PortalGarageLogo className="h-14 w-14 drop-shadow-[0_0_24px_rgba(251,191,36,0.35)]" />
+                    <h1 className="mt-4 text-2xl font-semibold text-white">Portal Garage</h1>
+                    <p className="mt-2 text-xs font-medium uppercase tracking-[0.2em] text-amber-400/90">Acesso ao painel</p>
                 </div>
 
-                <form action={clientAction} className="space-y-6">
+                <form action={clientAction} className="space-y-5">
                     <div>
-                        <label className="block text-sm font-medium text-stone-700">Email</label>
+                        <label className="block text-sm font-medium text-slate-200">Email</label>
                         <input
                             type="email"
                             name="email"
                             autoComplete="email"
-                            className="mt-1 block w-full rounded-lg border border-stone-300 bg-stone-50 px-4 py-3 text-stone-900 placeholder-stone-400 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                            className="mt-1.5 block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/40"
                             placeholder="voce@exemplo.com"
                             required
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-stone-700">Senha</label>
+                        <label className="block text-sm font-medium text-slate-200">Senha</label>
                         <input
                             type="password"
                             name="password"
                             autoComplete="current-password"
-                            className="mt-1 block w-full rounded-lg border border-stone-300 bg-stone-50 px-4 py-3 text-stone-900 placeholder-stone-400 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                            className="mt-1.5 block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/40"
                             placeholder="••••••••"
                             required
                         />
                     </div>
 
                     {state.error && (
-                        <div className="rounded-lg bg-red-50 p-3 text-center text-sm text-red-700">{state.error}</div>
+                        <div className="rounded-xl border border-red-500/30 bg-red-950/50 p-3 text-center text-sm text-red-200">
+                            {state.error}
+                        </div>
                     )}
 
                     <SubmitButton />
                 </form>
 
-                <p className="mt-6 text-center text-sm text-stone-600">
+                <p className="mt-6 text-center text-sm text-slate-400">
                     Primeira vez?{" "}
-                    <Link href="/associacao" className="text-amber-800 hover:text-amber-900 font-medium">
-                        Associação
+                    <Link href="/#passaporte" className="font-medium text-amber-400/90 hover:text-amber-300">
+                        Pedir passaporte
                     </Link>
                 </p>
                 <div className="mt-4 text-center">
-                    <Link href="/" className="text-sm text-stone-500 transition-colors hover:text-stone-800">
-                        ← Voltar para Início
+                    <Link href="/" className="text-sm text-slate-500 transition-colors hover:text-slate-300">
+                        ← Voltar ao início
                     </Link>
                 </div>
             </div>

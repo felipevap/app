@@ -18,20 +18,20 @@ export default function SiteHeaderClient({ loggedIn, isSuperAdmin }: Props) {
     }
 
     return (
-        <div className="ml-auto flex items-center gap-3 pr-1">
+        <div className="ml-auto flex items-center gap-2 pr-1 sm:gap-3">
             {loggedIn ? (
                 <>
                     {isSuperAdmin ? (
                         <Link
                             href="/super"
-                            className="text-sm font-medium text-amber-800 transition-colors hover:text-amber-700"
+                            className="text-sm font-medium text-amber-400/90 transition-colors hover:text-amber-300"
                         >
                             Super Admin
                         </Link>
                     ) : (
                         <Link
                             href="/dashboard"
-                            className="text-sm font-medium text-stone-600 transition-colors hover:text-stone-900"
+                            className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
                         >
                             Painel
                         </Link>
@@ -39,7 +39,7 @@ export default function SiteHeaderClient({ loggedIn, isSuperAdmin }: Props) {
                     <button
                         type="button"
                         onClick={() => void logout()}
-                        className="rounded-full bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-100"
+                        className="rounded-full border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm font-medium text-red-200 transition-colors hover:bg-red-950/60 sm:px-4"
                     >
                         Sair
                     </button>
@@ -47,14 +47,14 @@ export default function SiteHeaderClient({ loggedIn, isSuperAdmin }: Props) {
             ) : (
                 <>
                     <Link
-                        href="/associacao"
-                        className="text-sm font-medium text-amber-800 transition-colors hover:text-amber-900"
+                        href="/#passaporte"
+                        className="text-sm font-medium text-amber-400/90 transition-colors hover:text-amber-300"
                     >
-                        Associação
+                        Passaporte
                     </Link>
                     <Link
                         href="/login"
-                        className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                        className="rounded-full bg-gradient-to-r from-amber-500 to-amber-400 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:brightness-105 sm:px-4"
                     >
                         Entrar
                     </Link>

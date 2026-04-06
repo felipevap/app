@@ -866,7 +866,7 @@ export default function CapturePage() {
     const foundProductImages = foundProduct?.imagens.filter(Boolean) ?? [];
 
     return (
-        <div className="h-[calc(100dvh-7rem)] min-h-0 w-full bg-stone-200 relative overflow-hidden font-sans text-stone-900">
+        <div className="h-[calc(100dvh-4rem)] min-h-0 w-full bg-stone-200 relative overflow-hidden font-sans text-stone-900">
             {cameraError ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-50 bg-white text-stone-800">
                     <p className="text-red-500 font-bold mb-4 text-xl">Câmera Indisponível</p>

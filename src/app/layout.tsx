@@ -39,7 +39,7 @@ export default async function RootLayout({
       >
         <GarageSaleProvider initialAuthenticated={!!session}>
           <SiteHeader />
-          <div className="pt-28">{children}</div>
+          <div className="pt-16">{children}</div>
         </GarageSaleProvider>
       </body>
     </html>
