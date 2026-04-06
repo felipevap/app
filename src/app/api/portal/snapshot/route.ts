@@ -53,6 +53,18 @@ export async function GET(req: NextRequest) {
 
         const summary = computeClosureSummary(sales);
 
+        const contractAcceptances = await prisma.garageSaleContractAcceptance.findMany({
+            where: { garageSaleId: gid, signerUserId: session.userId },
+            orderBy: { acceptedAt: "asc" },
+            select: {
+                id: true,
+                phase: true,
+                acceptedAt: true,
+                renderedBody: true,
+                signaturePng: true,
+            },
+        });
+
         const totalSold = sales.reduce((acc, x) => acc + x.totalValue, 0);
         const stillToSell = products
             .filter((p) => p.status !== "vendido")
@@ -63,6 +75,13 @@ export async function GET(req: NextRequest) {
             products,
             sales,
             summary,
+            contractAcceptances: contractAcceptances.map((c) => ({
+                id: c.id,
+                phase: c.phase,
+                acceptedAt: c.acceptedAt.toISOString(),
+                renderedBody: c.renderedBody,
+                signaturePng: c.signaturePng,
+            })),
             metrics: {
                 totalSold,
                 stillToSell,

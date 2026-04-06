@@ -11,7 +11,7 @@ export default async function SuperAdminPage() {
 
     const user = await prisma.user.findUnique({ where: { id: session.userId } });
     if (!user?.isSuperAdmin) {
-        redirect("/dashboard");
+        redirect("/administracao");
     }
 
     const tenants = await prisma.tenant.findMany({

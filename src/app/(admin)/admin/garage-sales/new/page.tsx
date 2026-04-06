@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Toast from "@/components/Toast";
+import ContractSegmentsBuilder from "@/components/ContractSegmentsBuilder";
+import type { ContractSegment } from "@/lib/contract";
 
 type TenantOption = { id: string; name: string; slug: string };
 
@@ -27,6 +29,8 @@ export default function NewGarageSalePage() {
         pix: "",
     });
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
+    const [contractSegments, setContractSegments] = useState<ContractSegment[]>([]);
+    const [contractFileName, setContractFileName] = useState<string | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -89,6 +93,14 @@ export default function NewGarageSalePage() {
             await addGarageSale({
                 ...formData,
                 ...(tenantOptions.length > 0 && tenantId ? { tenantId } : {}),
+                ...(contractSegments.length > 0
+                    ? {
+                          contractOnboarding: {
+                              sourceFileName: contractFileName,
+                              segments: contractSegments,
+                          },
+                      }
+                    : {}),
             });
             showToast("Evento criado com sucesso!", "success");
             setTimeout(() => {
@@ -310,6 +322,13 @@ export default function NewGarageSalePage() {
                     </div>
 
                 </div>
+
+                <ContractSegmentsBuilder
+                    segments={contractSegments}
+                    onChange={setContractSegments}
+                    sourceFileName={contractFileName}
+                    onSourceFileName={setContractFileName}
+                />
 
                 <div className="flex justify-end pt-4">
                     <button

@@ -10,6 +10,8 @@ import CadastroOrganizacaoForm from "@/components/home/CadastroOrganizacaoForm";
 type Props = {
     isLoggedIn: boolean;
     isSuperAdmin: boolean;
+    panelHref: string;
+    showTenantAdminShortcuts: boolean;
 };
 
 const fadeUp = {
@@ -44,7 +46,12 @@ const cards = [
     },
 ];
 
-export default function HomeLanding({ isLoggedIn, isSuperAdmin }: Props) {
+export default function HomeLanding({
+    isLoggedIn,
+    isSuperAdmin,
+    panelHref,
+    showTenantAdminShortcuts,
+}: Props) {
     return (
         <div className="relative min-h-[calc(100dvh-4rem)] text-slate-100">
             <HomeAnimatedBackdrop />
@@ -113,14 +120,14 @@ export default function HomeLanding({ isLoggedIn, isSuperAdmin }: Props) {
                         )}
                         {isLoggedIn && (
                             <Link
-                                href={isSuperAdmin ? "/super" : "/dashboard"}
+                                href={isSuperAdmin ? "/super" : panelHref}
                                 className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 px-8 py-3.5 text-sm font-semibold text-slate-950 shadow-lg shadow-amber-500/30 transition hover:brightness-105"
                             >
                                 {isSuperAdmin ? "Super Admin" : "Ir ao painel"}
                             </Link>
                         )}
                     </motion.div>
-                    {isLoggedIn && !isSuperAdmin && (
+                    {isLoggedIn && showTenantAdminShortcuts && (
                         <motion.div
                             custom={5}
                             initial="hidden"
@@ -241,7 +248,7 @@ export default function HomeLanding({ isLoggedIn, isSuperAdmin }: Props) {
                                 <div className="py-8 text-center">
                                     <p className="text-slate-300">Você já está com sessão ativa.</p>
                                     <Link
-                                        href={isSuperAdmin ? "/super" : "/dashboard"}
+                                        href={isSuperAdmin ? "/super" : panelHref}
                                         className="mt-6 inline-flex rounded-xl bg-amber-500 px-6 py-3 text-sm font-semibold text-slate-950"
                                     >
                                         Ir ao painel

@@ -73,7 +73,7 @@ export async function registerOrganization(formData: FormData) {
         const jar = await cookies();
         jar.set(SESSION_COOKIE, token, sessionCookieOptions(7 * 24 * 60 * 60));
 
-        redirect("/dashboard");
+        redirect("/administracao");
     } catch (e) {
         if (isRedirectError(e)) throw e;
         console.error("[registerOrganization]", e);

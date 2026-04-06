@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 type Props = {
     loggedIn: boolean;
     isSuperAdmin: boolean;
+    panelHref: string;
 };
 
-export default function SiteHeaderClient({ loggedIn, isSuperAdmin }: Props) {
+export default function SiteHeaderClient({ loggedIn, isSuperAdmin, panelHref }: Props) {
     const router = useRouter();
 
     async function logout() {
@@ -30,7 +31,7 @@ export default function SiteHeaderClient({ loggedIn, isSuperAdmin }: Props) {
                         </Link>
                     ) : (
                         <Link
-                            href="/dashboard"
+                            href={panelHref}
                             className="text-sm font-medium text-slate-300 transition-colors hover:text-white"
                         >
                             Painel

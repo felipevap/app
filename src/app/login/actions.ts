@@ -66,5 +66,5 @@ export async function login(formData: FormData) {
     if (dbRole === "owner" && ownerGid) {
         redirect("/portal");
     }
-    redirect("/dashboard");
+    redirect("/administracao");
 }

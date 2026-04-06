@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Toast from "@/components/Toast";
+import ContractSegmentsBuilder from "@/components/ContractSegmentsBuilder";
+import type { ContractSegment } from "@/lib/contract";
+import { normalizeSegments } from "@/lib/contract";
 
 export default function EditGarageSalePage() {
     const router = useRouter();
@@ -25,10 +28,48 @@ export default function EditGarageSalePage() {
         pix: "",
     });
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
+    const [preEventSegments, setPreEventSegments] = useState<ContractSegment[]>([]);
+    const [preEventFileName, setPreEventFileName] = useState<string | null>(null);
+    const [itemsComplete, setItemsComplete] = useState(false);
+    const [itemsCompleteAt, setItemsCompleteAt] = useState<string | null>(null);
+    type AccRow = {
+        id: string;
+        phase: string;
+        acceptedAt: string;
+        renderedBody: string;
+        signaturePng: string;
+        signer: { email: string; name: string | null };
+    };
+    const [acceptances, setAcceptances] = useState<AccRow[]>([]);
+    const [contractsLoading, setContractsLoading] = useState(true);
 
     const showToast = (message: string, type: 'success' | 'error' | 'info') => {
         setToast({ message, type, isVisible: true });
     };
+
+    const loadContracts = useCallback(async () => {
+        if (!id) return;
+        setContractsLoading(true);
+        try {
+            const res = await fetch(`/api/garage-sales/${id}/contracts`, { cache: "no-store" });
+            if (!res.ok) return;
+            const j = (await res.json()) as {
+                itemsRegistrationComplete?: boolean;
+                itemsRegistrationCompletedAt?: string | null;
+                templates?: { phase: string; sourceFileName: string | null; segments: unknown }[];
+                acceptances?: AccRow[];
+            };
+            setItemsComplete(!!j.itemsRegistrationComplete);
+            setItemsCompleteAt(j.itemsRegistrationCompletedAt ?? null);
+            setAcceptances(Array.isArray(j.acceptances) ? j.acceptances : []);
+            const pre = j.templates?.find((t) => t.phase === "pre_event");
+            const segs = pre?.segments ? normalizeSegments(pre.segments) : null;
+            setPreEventSegments(segs ?? []);
+            setPreEventFileName(pre?.sourceFileName ?? null);
+        } finally {
+            setContractsLoading(false);
+        }
+    }, [id]);
 
     useEffect(() => {
         if (id) {
@@ -46,9 +87,16 @@ export default function EditGarageSalePage() {
                     cpf: garageSale.cpf || "",
                     pix: garageSale.pix || "",
                 });
+                if (typeof garageSale.itemsRegistrationComplete === "boolean") {
+                    setItemsComplete(garageSale.itemsRegistrationComplete);
+                }
             }
         }
     }, [id, getGarageSale]);
+
+    useEffect(() => {
+        void loadContracts();
+    }, [loadContracts]);
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -65,10 +113,60 @@ export default function EditGarageSalePage() {
             setTimeout(() => {
                 router.push("/admin/garage-sales");
             }, 1000);
-        } catch (error) {
+        } catch {
             showToast("Erro ao atualizar evento.", "error");
         }
     };
+
+    async function savePreEventTemplate() {
+        if (!id || preEventSegments.length === 0) {
+            showToast("Carregue e monte o contrato pré-evento antes de salvar.", "error");
+            return;
+        }
+        const res = await fetch(`/api/garage-sales/${id}/contract-template`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                phase: "pre_event",
+                sourceFileName: preEventFileName,
+                segments: preEventSegments,
+            }),
+        });
+        if (!res.ok) {
+            showToast("Falha ao salvar modelo do contrato pré-evento.", "error");
+            return;
+        }
+        showToast("Contrato pré-evento salvo.", "success");
+        void loadContracts();
+    }
+
+    async function toggleItemsComplete() {
+        if (!id) return;
+        const next = !itemsComplete;
+        const res = await fetch(`/api/garage-sales/${id}/items-registration-complete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ complete: next }),
+        });
+        if (!res.ok) {
+            showToast("Falha ao atualizar status dos itens.", "error");
+            return;
+        }
+        const j = (await res.json()) as { itemsRegistrationComplete?: boolean; itemsRegistrationCompletedAt?: string | null };
+        setItemsComplete(!!j.itemsRegistrationComplete);
+        setItemsCompleteAt(j.itemsRegistrationCompletedAt ?? null);
+        showToast(
+            j.itemsRegistrationComplete ? "Marcado: todos os itens cadastrados." : "Status de itens reaberto.",
+            "success"
+        );
+        void loadContracts();
+    }
+
+    function phaseLabel(phase: string) {
+        if (phase === "onboarding") return "Adesão (primeiro acesso)";
+        if (phase === "pre_event") return "Pré-evento";
+        return phase;
+    }
 
     return (
         <div className="max-w-4xl mx-auto">
@@ -259,6 +357,84 @@ export default function EditGarageSalePage() {
                 </div>
 
             </form>
+
+            <section className="mt-10 space-y-6 rounded-2xl border border-amber-200 bg-amber-50/30 p-8 shadow-sm">
+                <h2 className="text-xl font-semibold text-amber-950">Cadastro de itens e contrato pré-evento</h2>
+                <p className="text-sm text-amber-950/85">
+                    Quando todos os produtos estiverem cadastrados, confirme abaixo. Em seguida configure o segundo contrato
+                    (arquivo .txt com parâmetros). O proprietário só poderá aceitá-lo após essa confirmação; o aceite
+                    libera o fluxo do evento conforme combinado com a operação.
+                </p>
+                <div className="flex flex-wrap items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={() => void toggleItemsComplete()}
+                        className={`rounded-xl px-5 py-3 text-sm font-semibold text-white shadow ${
+                            itemsComplete ? "bg-stone-600 hover:bg-stone-700" : "bg-amber-600 hover:bg-amber-700"
+                        }`}
+                    >
+                        {itemsComplete
+                            ? "Reabrir cadastro de itens (desmarcar conclusão)"
+                            : "Confirmar: todos os itens foram cadastrados"}
+                    </button>
+                    {itemsComplete && itemsCompleteAt ? (
+                        <span className="text-sm text-stone-700">
+                            Concluído em {new Date(itemsCompleteAt).toLocaleString("pt-BR")}
+                        </span>
+                    ) : null}
+                </div>
+
+                {contractsLoading ? (
+                    <p className="text-sm text-stone-600">Carregando contratos…</p>
+                ) : (
+                    <ContractSegmentsBuilder
+                        title="Contrato parametrizável pré-evento"
+                        description="Mesmo fluxo do primeiro contrato: envie .txt por parágrafos e marque trechos parametrizáveis. O proprietário verá este texto para assinar depois que você marcar o cadastro de itens como concluído."
+                        segments={preEventSegments}
+                        onChange={setPreEventSegments}
+                        sourceFileName={preEventFileName}
+                        onSourceFileName={setPreEventFileName}
+                    />
+                )}
+                <button
+                    type="button"
+                    onClick={() => void savePreEventTemplate()}
+                    className="rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-700"
+                >
+                    Salvar modelo do contrato pré-evento
+                </button>
+            </section>
+
+            <section className="mt-10 space-y-4 rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
+                <h2 className="text-xl font-semibold text-stone-900">Assinaturas do proprietário</h2>
+                <p className="text-sm text-stone-600">
+                    O mesmo registro fica disponível no portal do proprietário (aba Contratos).
+                </p>
+                {acceptances.length === 0 ? (
+                    <p className="text-sm text-stone-500">Nenhuma assinatura registrada ainda.</p>
+                ) : (
+                    <ul className="space-y-6">
+                        {acceptances.map((a) => (
+                            <li key={a.id} className="rounded-xl border border-stone-100 bg-stone-50 p-4">
+                                <div className="flex flex-wrap justify-between gap-2">
+                                    <span className="font-semibold text-stone-900">{phaseLabel(a.phase)}</span>
+                                    <span className="text-xs text-stone-500">
+                                        {new Date(a.acceptedAt).toLocaleString("pt-BR")} · {a.signer.email}
+                                    </span>
+                                </div>
+                                <p className="mt-2 whitespace-pre-wrap text-sm text-stone-800">{a.renderedBody}</p>
+                                <p className="mt-2 text-xs font-medium text-stone-500">Assinatura</p>
+                                <img
+                                    src={a.signaturePng}
+                                    alt=""
+                                    className="mt-1 max-h-36 max-w-full rounded border border-stone-200 bg-white"
+                                />
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </section>
+
             {
                 toast.isVisible && (
                     <Toast

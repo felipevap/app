@@ -15,7 +15,8 @@ export default function AdminLayout({
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const navItems = [
-        { name: "Painel", href: "/admin", icon: "📊" },
+        { name: "Central", href: "/administracao", icon: "🏠" },
+        { name: "Resumo", href: "/admin", icon: "📊" },
         { name: "Eventos", href: "/admin/garage-sales", icon: "🏪" },
         { name: "Produtos", href: "/admin/products", icon: "📦" },
         { name: "Vendas", href: "/admin/sales", icon: "💰" },

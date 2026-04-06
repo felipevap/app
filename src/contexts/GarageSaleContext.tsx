@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
+import type { ContractSegment } from '@/lib/contract';
 
 export interface GarageSale {
     id: string;
@@ -11,12 +12,14 @@ export interface GarageSale {
     responsavel: string;
     email: string;
     regras: string;
-    // banner removed
     criadoEm: number;
     deletedAt?: string | null;
     cep?: string | null;
     cpf?: string | null;
     pix?: string | null;
+    itemsRegistrationComplete?: boolean;
+    itemsRegistrationCompletedAt?: string | null;
+    createdAt?: string;
 }
 
 export interface Product {
@@ -42,7 +45,12 @@ interface GarageSaleContextType {
     garageSales: GarageSale[];
     products: Product[];
     loading: boolean;
-    addGarageSale: (garageSale: Omit<GarageSale, 'id' | 'criadoEm'> & { tenantId?: string }) => Promise<GarageSale>;
+    addGarageSale: (
+        garageSale: Omit<GarageSale, 'id' | 'criadoEm'> & {
+            tenantId?: string;
+            contractOnboarding?: { sourceFileName: string | null; segments: ContractSegment[] };
+        }
+    ) => Promise<GarageSale>;
     updateGarageSale: (id: string, garageSale: Partial<GarageSale>) => Promise<void>;
     deleteGarageSale: (id: string) => Promise<void>;
     getGarageSale: (id: string) => GarageSale | undefined;
@@ -99,9 +107,14 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode; initialAuthenti
         fetchData();
     }, [initialAuthenticated, fetchData]);
 
-    const addGarageSale = useCallback(async (garageSale: Omit<GarageSale, 'id' | 'criadoEm'> & { tenantId?: string }): Promise<GarageSale> => {
-        const { tenantId, ...rest } = garageSale;
-        const body = tenantId ? { ...rest, tenantId } : rest;
+    const addGarageSale = useCallback(async (
+        garageSale: Omit<GarageSale, 'id' | 'criadoEm'> & {
+            tenantId?: string;
+            contractOnboarding?: { sourceFileName: string | null; segments: ContractSegment[] };
+        }
+    ): Promise<GarageSale> => {
+        const { tenantId, contractOnboarding, ...rest } = garageSale;
+        const body = { ...rest, ...(tenantId ? { tenantId } : {}), ...(contractOnboarding ? { contractOnboarding } : {}) };
         const res = await fetch('/api/garage-sales', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
