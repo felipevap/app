@@ -16,6 +16,10 @@ export function mysqlDatabaseUrlProblem(): string | null {
 
 export function prismaErrorUserMessage(e: unknown): string | null {
     if (e instanceof PrismaClientInitializationError) {
+        const msg = e.message ?? "";
+        if (/authentication failed|credentials are not valid|access denied for user/i.test(msg)) {
+            return "O MySQL recusou o utilizador ou a palavra-passe em DATABASE_URL. No painel (ex.: Hostinger → Websites → Bases de dados MySQL), confira o utilizador e a palavra-passe do mesmo, copie a connection string correta para as variáveis de ambiente da app Node e reinicie. Se a palavra-passe tiver @, # ou outros caracteres especiais, codifique-os na URL (ex.: @ → %40).";
+        }
         return "Não foi possível ligar ao MySQL. Confirme DATABASE_URL, rede/firewall e se o servidor MySQL está a correr. Rode npx prisma migrate deploy se ainda não aplicou as migrations.";
     }
     if (e instanceof PrismaClientKnownRequestError) {
