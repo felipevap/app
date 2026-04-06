@@ -34,7 +34,12 @@ export default function LoginPage() {
         <div className="flex min-h-[calc(100dvh-4rem)] w-full items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4">
             <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-8 shadow-2xl shadow-black/40 backdrop-blur-xl">
                 <div className="mb-8 flex flex-col items-center text-center">
-                    <PortalGarageLogo className="h-14 w-14 drop-shadow-[0_0_24px_rgba(251,191,36,0.35)]" />
+                    <Link
+                        href="/"
+                        className="inline-flex rounded-2xl outline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-500/80"
+                    >
+                        <PortalGarageLogo className="h-14 w-14 drop-shadow-[0_0_24px_rgba(251,191,36,0.35)]" />
+                    </Link>
                     <h1 className="mt-4 text-2xl font-semibold text-white">Portal Garage</h1>
                     <p className="mt-2 text-xs font-medium uppercase tracking-[0.2em] text-amber-400/90">Acesso ao painel</p>
                 </div>
@@ -75,8 +80,8 @@ export default function LoginPage() {
 
                 <p className="mt-6 text-center text-sm text-slate-400">
                     Primeira vez?{" "}
-                    <Link href="/#passaporte" className="font-medium text-amber-400/90 hover:text-amber-300">
-                        Pedir passaporte
+                    <Link href="/#cadastro" className="font-medium text-amber-400/90 hover:text-amber-300">
+                        Criar cadastro
                     </Link>
                 </p>
                 <div className="mt-4 text-center">

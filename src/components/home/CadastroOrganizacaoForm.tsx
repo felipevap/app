@@ -13,12 +13,12 @@ function SubmitButton() {
             disabled={pending}
             className="w-full rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 px-4 py-3.5 text-sm font-semibold text-slate-950 shadow-lg shadow-amber-500/25 transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
         >
-            {pending ? "Emitindo seu passaporte…" : "Emitir passaporte e criar organização"}
+            {pending ? "Criando seu cadastro…" : "Criar cadastro e organização"}
         </button>
     );
 }
 
-export default function PassaporteForm() {
+export default function CadastroOrganizacaoForm() {
     const [state, setState] = useState<{ error?: string }>({});
 
     async function clientAction(formData: FormData) {
@@ -37,7 +37,7 @@ export default function PassaporteForm() {
                     name="tenantName"
                     required
                     className="mt-1.5 block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 backdrop-blur-sm transition focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/40"
-                    placeholder="Ex.: Bazar Solidário Jardim das Flores"
+                    placeholder="Ex.: Garage Sale Solidário Jardim das Flores"
                 />
             </div>
             <div>

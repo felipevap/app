@@ -14,7 +14,7 @@ function SubmitButton() {
             disabled={pending}
             className="w-full rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 px-4 py-3.5 text-sm font-semibold text-slate-950 shadow-lg shadow-amber-500/25 transition hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
         >
-            {pending ? "Emitindo passaporte…" : "Emitir passaporte"}
+            {pending ? "Criando cadastro…" : "Criar cadastro"}
         </button>
     );
 }
@@ -33,9 +33,14 @@ export default function AssociacaoPage() {
         <div className="flex min-h-[calc(100dvh-4rem)] w-full items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4">
             <div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] p-8 shadow-2xl shadow-black/40 backdrop-blur-xl">
                 <div className="mb-8 flex flex-col items-center text-center">
-                    <PortalGarageLogo className="h-14 w-14 drop-shadow-[0_0_24px_rgba(251,191,36,0.35)]" />
+                    <Link
+                        href="/"
+                        className="inline-flex rounded-2xl outline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-500/80"
+                    >
+                        <PortalGarageLogo className="h-14 w-14 drop-shadow-[0_0_24px_rgba(251,191,36,0.35)]" />
+                    </Link>
                     <h1 className="mt-4 text-2xl font-semibold text-white">Portal Garage</h1>
-                    <p className="mt-2 text-sm font-medium text-amber-400/90">Passaporte</p>
+                    <p className="mt-2 text-sm font-medium text-amber-400/90">Criação de cadastro</p>
                     <p className="mt-1 text-sm text-slate-400">
                         Crie sua organização e entre no painel em um único passo.
                     </p>
@@ -49,7 +54,7 @@ export default function AssociacaoPage() {
                             name="tenantName"
                             required
                             className="mt-1.5 block w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/40"
-                            placeholder="Ex.: Bazar da Vila"
+                            placeholder="Ex.: Garage Sale da Vila"
                         />
                     </div>
                     <div>

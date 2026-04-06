@@ -26,10 +26,13 @@ export default function AdminLayout({
         <div className="flex h-[calc(100dvh-4rem)] min-h-0 bg-stone-100 text-stone-900 overflow-hidden">
             {/* Mobile Header */}
             <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-stone-200 z-40 flex items-center justify-between px-4 shadow-sm">
-                <span className="flex min-w-0 items-center gap-2 text-lg font-bold tracking-tight text-stone-900">
+                <Link
+                    href="/"
+                    className="flex min-w-0 items-center gap-2 text-lg font-bold tracking-tight text-stone-900 outline-offset-4 focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-600"
+                >
                     <PortalGarageLogo className="h-8 w-8 shrink-0" aria-hidden />
                     <span className="truncate">Portal Garage</span>
-                </span>
+                </Link>
                 <button
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     className="p-2 text-stone-500 hover:text-stone-900"

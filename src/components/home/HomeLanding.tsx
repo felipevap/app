@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Package, ScanBarcode, Store, ShieldCheck, Sparkles, Ticket } from "lucide-react";
+import { Package, ScanBarcode, Store, ShieldCheck, Sparkles, UserPlus } from "lucide-react";
 import PortalGarageLogo from "@/components/PortalGarageLogo";
 import HomeAnimatedBackdrop from "@/components/home/HomeAnimatedBackdrop";
-import PassaporteForm from "@/components/home/PassaporteForm";
+import CadastroOrganizacaoForm from "@/components/home/CadastroOrganizacaoForm";
 
 type Props = {
     isLoggedIn: boolean;
@@ -24,8 +24,8 @@ const fadeUp = {
 const cards = [
     {
         icon: Store,
-        title: "Eventos e bazares",
-        text: "Vários eventos por organização, com dados e regras centralizados para cada venda de garagem ou bazar.",
+        title: "Eventos e Garage Sales",
+        text: "Vários eventos por organização, com dados e regras centralizados para cada Garage Sale.",
     },
     {
         icon: Package,
@@ -51,7 +51,12 @@ export default function HomeLanding({ isLoggedIn, isSuperAdmin }: Props) {
             <div className="relative z-10">
                 <section className="mx-auto flex max-w-6xl flex-col items-center px-4 pb-20 pt-12 text-center sm:pt-16 md:pt-20">
                     <motion.div custom={0} initial="hidden" animate="visible" variants={fadeUp}>
-                        <PortalGarageLogo className="mx-auto h-20 w-20 drop-shadow-[0_0_40px_rgba(251,191,36,0.35)] sm:h-24 sm:w-24" />
+                        <Link
+                            href="/"
+                            className="mx-auto inline-flex rounded-3xl outline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-500/80"
+                        >
+                            <PortalGarageLogo className="h-20 w-20 drop-shadow-[0_0_40px_rgba(251,191,36,0.35)] sm:h-24 sm:w-24" />
+                        </Link>
                     </motion.div>
                     <motion.p
                         custom={1}
@@ -70,7 +75,7 @@ export default function HomeLanding({ isLoggedIn, isSuperAdmin }: Props) {
                         variants={fadeUp}
                         className="mt-6 max-w-4xl text-4xl font-semibold tracking-tight text-white sm:text-5xl md:text-6xl md:leading-[1.08]"
                     >
-                        O sistema que organiza seu bazar do cadastro ao caixa
+                        O sistema que organiza seu Garage Sale do cadastro ao caixa
                     </motion.h1>
                     <motion.p
                         custom={3}
@@ -79,7 +84,7 @@ export default function HomeLanding({ isLoggedIn, isSuperAdmin }: Props) {
                         variants={fadeUp}
                         className="mt-6 max-w-2xl text-lg text-slate-400 sm:text-xl"
                     >
-                        Portal Garage é a plataforma para associações e equipes que realizam vendas de garagem, bazares
+                        Portal Garage é a plataforma para associações e equipes que realizam Garage Sales, eventos
                         solidários e liquidações: um fluxo só, do estoque à conferência de preços no evento e ao PDV.
                     </motion.p>
                     <motion.div
@@ -92,11 +97,11 @@ export default function HomeLanding({ isLoggedIn, isSuperAdmin }: Props) {
                         {!isLoggedIn && (
                             <>
                                 <a
-                                    href="#passaporte"
+                                    href="#cadastro"
                                     className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 px-8 py-3.5 text-sm font-semibold text-slate-950 shadow-lg shadow-amber-500/30 transition hover:brightness-105"
                                 >
-                                    <Ticket className="h-4 w-4" aria-hidden />
-                                    Pedir passaporte
+                                    <UserPlus className="h-4 w-4" aria-hidden />
+                                    Criar cadastro
                                 </a>
                                 <Link
                                     href="/login"
@@ -180,7 +185,7 @@ export default function HomeLanding({ isLoggedIn, isSuperAdmin }: Props) {
                 </section>
 
                 <section
-                    id="passaporte"
+                    id="cadastro"
                     className="scroll-mt-24 border-t border-white/[0.06] bg-slate-950/50 py-20 backdrop-blur-sm"
                 >
                     <div className="mx-auto grid max-w-6xl gap-12 px-4 lg:grid-cols-2 lg:items-start lg:gap-16">
@@ -191,16 +196,16 @@ export default function HomeLanding({ isLoggedIn, isSuperAdmin }: Props) {
                             transition={{ duration: 0.5 }}
                         >
                             <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/5 px-3 py-1 text-xs font-medium text-amber-200/90">
-                                <Ticket className="h-3.5 w-3.5" aria-hidden />
-                                Passaporte Portal Garage
+                                <UserPlus className="h-3.5 w-3.5" aria-hidden />
+                                Cadastro Portal Garage
                             </div>
                             <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                                Faça parte com o seu passaporte
+                                Cadastre sua organização
                             </h2>
                             <p className="mt-4 text-slate-400 leading-relaxed">
-                                O passaporte é a sua entrada: ao concluir o cadastro, criamos automaticamente a
-                                organização (tenant) da sua associação ou equipe e vinculamos sua conta como
-                                administradora. Você já entra no painel para cadastrar o primeiro evento e os produtos.
+                                Ao concluir o cadastro, criamos automaticamente a organização (tenant) da sua associação
+                                ou equipe e vinculamos sua conta como administradora. Você já entra no painel para
+                                cadastrar o primeiro evento e os produtos.
                             </p>
                             <ul className="mt-8 space-y-3 text-sm text-slate-300">
                                 <li className="flex gap-3">
@@ -231,7 +236,7 @@ export default function HomeLanding({ isLoggedIn, isSuperAdmin }: Props) {
                             className="rounded-3xl border border-white/10 bg-white/[0.04] p-8 shadow-2xl shadow-black/40 backdrop-blur-xl"
                         >
                             {!isLoggedIn ? (
-                                <PassaporteForm />
+                                <CadastroOrganizacaoForm />
                             ) : (
                                 <div className="py-8 text-center">
                                     <p className="text-slate-300">Você já está com sessão ativa.</p>

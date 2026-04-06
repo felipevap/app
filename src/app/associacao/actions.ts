@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { SESSION_COOKIE, sessionCookieOptions, signSession } from "@/lib/session";
@@ -22,21 +23,30 @@ export async function registerOrganization(formData: FormData) {
         return { error: "Senha deve ter no mínimo 8 caracteres" };
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
-        return { error: "Este email já está cadastrado" };
+    if (!process.env.DATABASE_URL?.trim()) {
+        return { error: "Cadastro indisponível: configure a base de dados no ambiente." };
     }
 
-    let slug = `${slugifyBase(tenantName)}-${randomUUID().slice(0, 8)}`;
-    for (let i = 0; i < 12; i++) {
-        const clash = await prisma.tenant.findUnique({ where: { slug } });
-        if (!clash) break;
-        slug = `${slugifyBase(tenantName)}-${randomUUID().slice(0, 8)}`;
+    const authSecret = process.env.AUTH_SECRET;
+    if (!authSecret || authSecret.length < 32) {
+        return { error: "Cadastro indisponível: configure AUTH_SECRET (mín. 32 caracteres)." };
     }
-
-    const passwordHash = await bcrypt.hash(password, 12);
 
     try {
+        const existing = await prisma.user.findUnique({ where: { email } });
+        if (existing) {
+            return { error: "Este email já está cadastrado" };
+        }
+
+        let slug = `${slugifyBase(tenantName)}-${randomUUID().slice(0, 8)}`;
+        for (let i = 0; i < 12; i++) {
+            const clash = await prisma.tenant.findUnique({ where: { slug } });
+            if (!clash) break;
+            slug = `${slugifyBase(tenantName)}-${randomUUID().slice(0, 8)}`;
+        }
+
+        const passwordHash = await bcrypt.hash(password, 12);
+
         const { user } = await prisma.$transaction(async (tx) => {
             const tenant = await tx.tenant.create({
                 data: { name: tenantName, slug },
@@ -52,12 +62,18 @@ export async function registerOrganization(formData: FormData) {
             return { user };
         });
 
-        const token = await signSession(user.id, user.tenantId, false);
+        const tenantId = user.tenantId;
+        if (!tenantId) {
+            return { error: "Não foi possível concluir o cadastro. Tente novamente." };
+        }
+
+        const token = await signSession(user.id, tenantId, false);
         const jar = await cookies();
         jar.set(SESSION_COOKIE, token, sessionCookieOptions(7 * 24 * 60 * 60));
-    } catch {
-        return { error: "Não foi possível concluir o cadastro. Tente outro nome ou email." };
-    }
 
-    redirect("/dashboard");
+        redirect("/dashboard");
+    } catch (e) {
+        if (isRedirectError(e)) throw e;
+        return { error: "Não foi possível concluir o cadastro. Verifique a conexão com o banco ou tente outro email." };
+    }
 }

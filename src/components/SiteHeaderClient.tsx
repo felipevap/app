@@ -47,10 +47,10 @@ export default function SiteHeaderClient({ loggedIn, isSuperAdmin }: Props) {
             ) : (
                 <>
                     <Link
-                        href="/#passaporte"
+                        href="/#cadastro"
                         className="text-sm font-medium text-amber-400/90 transition-colors hover:text-amber-300"
                     >
-                        Passaporte
+                        Cadastro
                     </Link>
                     <Link
                         href="/login"

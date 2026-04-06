@@ -17,7 +17,10 @@ export async function login(formData: FormData) {
     let user;
     try {
         user = await prisma.user.findUnique({ where: { email } });
-    } catch {
+    } catch (e) {
+        if (process.env.NODE_ENV === "development") {
+            console.error(e);
+        }
         return { error: "Serviço indisponível. Tente novamente em instantes." };
     }
 

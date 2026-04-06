@@ -152,7 +152,7 @@ export default function NewGarageSalePage() {
                                 value={formData.nome}
                                 onChange={handleChange}
                                 className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                placeholder="Bazar Verão 2026"
+                                placeholder="Garage Sale Verão 2026"
                                 required
                             />
                         </div>
