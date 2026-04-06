@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
+import { mysqlDatabaseUrlProblem, prismaErrorUserMessage } from "@/lib/db-client-errors";
 import { prisma } from "@/lib/prisma";
 import { SESSION_COOKIE, sessionCookieOptions, signSession } from "@/lib/session";
 
@@ -14,12 +15,19 @@ export async function login(formData: FormData) {
         return { error: "Preencha email e senha" };
     }
 
+    const urlProblem = mysqlDatabaseUrlProblem();
+    if (urlProblem) {
+        return { error: urlProblem };
+    }
+
     let user;
     try {
         user = await prisma.user.findUnique({ where: { email } });
     } catch (e) {
-        if (process.env.NODE_ENV === "development") {
-            console.error(e);
+        console.error("[login]", e);
+        const mapped = prismaErrorUserMessage(e);
+        if (mapped) {
+            return { error: mapped };
         }
         return { error: "Serviço indisponível. Tente novamente em instantes." };
     }

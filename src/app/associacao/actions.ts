@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import bcrypt from "bcryptjs";
+import { mysqlDatabaseUrlProblem, prismaErrorUserMessage } from "@/lib/db-client-errors";
 import { prisma } from "@/lib/prisma";
 import { SESSION_COOKIE, sessionCookieOptions, signSession } from "@/lib/session";
 import { randomUUID } from "crypto";
@@ -23,8 +24,9 @@ export async function registerOrganization(formData: FormData) {
         return { error: "Senha deve ter no mínimo 8 caracteres" };
     }
 
-    if (!process.env.DATABASE_URL?.trim()) {
-        return { error: "Cadastro indisponível: configure a base de dados no ambiente." };
+    const urlProblem = mysqlDatabaseUrlProblem();
+    if (urlProblem) {
+        return { error: `Cadastro indisponível: ${urlProblem}` };
     }
 
     const authSecret = process.env.AUTH_SECRET;
@@ -74,6 +76,11 @@ export async function registerOrganization(formData: FormData) {
         redirect("/dashboard");
     } catch (e) {
         if (isRedirectError(e)) throw e;
+        console.error("[registerOrganization]", e);
+        const mapped = prismaErrorUserMessage(e);
+        if (mapped) {
+            return { error: mapped };
+        }
         return { error: "Não foi possível concluir o cadastro. Verifique a conexão com o banco ou tente outro email." };
     }
 }
