@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" role="img" aria-label="Gestor Garage">
+  <defs>
+    <linearGradient id="ggm" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="45%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="ggb" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="9" fill="url(#ggb)"/>
+  <rect x="1" y="1" width="30" height="30" rx="8" stroke="url(#ggm)" stroke-opacity="0.85" stroke-width="1"/>
+  <path d="M7 24V14.5Q16 7.5 25 14.5V24" stroke="url(#ggm)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M11 24V18h3v6M18 24V18h3v6" stroke="url(#ggm)" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

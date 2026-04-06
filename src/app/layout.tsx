@@ -13,12 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Gestor Garage", template: "%s | Gestor Garage" },
+  title: { default: "Portal Garage", template: "%s | Portal Garage" },
   description:
-    "Gestor Garage: gestão multi-organização de bazares e vendas — cadastro, checagem de preço no evento, PDV e painel do organizador.",
+    "Portal Garage: gestão multi-organização de bazares e vendas — cadastro, checagem de preço no evento, PDV e painel do organizador.",
   icons: {
-    icon: "/portal-garage-mark.svg",
-    apple: "/portal-garage-mark.svg",
+    icon: "/gestor-garage-mark.svg",
+    apple: "/gestor-garage-mark.svg",
   },
 };
 
@@ -38,7 +38,7 @@ export default function RootLayout({
       >
         <GarageSaleProvider>
           <SiteHeader />
-          <div className="pt-24">{children}</div>
+          <div className="pt-28">{children}</div>
         </GarageSaleProvider>
       </body>
     </html>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { registerOrganization } from "./actions";
-import GestorGarageLogo from "@/components/GestorGarageLogo";
+import PortalGarageLogo from "@/components/PortalGarageLogo";
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -30,11 +30,11 @@ export default function AssociacaoPage() {
     }
 
     return (
-        <div className="flex min-h-[calc(100dvh-6rem)] w-full items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-stone-100 p-4">
+        <div className="flex min-h-[calc(100dvh-7rem)] w-full items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-stone-100 p-4">
             <div className="w-full max-w-md overflow-hidden rounded-2xl border border-stone-200 bg-white p-8 shadow-xl">
                 <div className="mb-8 flex flex-col items-center text-center">
-                    <GestorGarageLogo className="h-12 w-12" />
-                    <h1 className="mt-4 text-3xl font-bold text-stone-900">Gestor Garage</h1>
+                    <PortalGarageLogo className="h-12 w-12" />
+                    <h1 className="mt-4 text-3xl font-bold text-stone-900">Portal Garage</h1>
                     <p className="mt-2 text-sm text-amber-800">Associação — sua organização</p>
                     <p className="mt-1 text-sm text-stone-600">
                         Um usuário, uma organização. Cadastre-se para gerir seus eventos.

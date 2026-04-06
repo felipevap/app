@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { login } from "./actions";
-import GestorGarageLogo from "@/components/GestorGarageLogo";
+import PortalGarageLogo from "@/components/PortalGarageLogo";
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -31,12 +31,12 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="flex min-h-[calc(100dvh-6rem)] w-full items-center justify-center bg-gradient-to-br from-sky-50 via-violet-50 to-amber-50 p-4">
+        <div className="flex min-h-[calc(100dvh-7rem)] w-full items-center justify-center bg-gradient-to-br from-sky-50 via-violet-50 to-amber-50 p-4">
             <div className="w-full max-w-md overflow-hidden rounded-2xl border border-stone-200 bg-white p-8 shadow-xl">
                 <div className="mb-8 flex flex-col items-center text-center">
-                    <GestorGarageLogo className="h-14 w-14" />
+                    <PortalGarageLogo className="h-14 w-14" />
                     <h1 className="mt-4 bg-gradient-to-r from-amber-700 via-amber-600 to-stone-800 bg-clip-text text-4xl font-bold text-transparent">
-                        Gestor Garage
+                        Portal Garage
                     </h1>
                     <p className="mt-2 text-sm uppercase tracking-widest text-amber-800/90">Acesso ao painel</p>
                 </div>

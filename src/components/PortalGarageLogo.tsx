@@ -7,10 +7,10 @@ type Props = {
     "aria-hidden"?: boolean;
 };
 
-export default function GestorGarageLogo({ className = "h-10 w-10", "aria-hidden": ariaHidden }: Props) {
+export default function PortalGarageLogo({ className = "h-10 w-10", "aria-hidden": ariaHidden }: Props) {
     const id = useId().replace(/:/g, "");
-    const gStroke = `gg-stroke-${id}`;
-    const gFill = `gg-fill-${id}`;
+    const gStroke = `pg-stroke-${id}`;
+    const gFill = `pg-fill-${id}`;
 
     return (
         <svg
@@ -19,7 +19,7 @@ export default function GestorGarageLogo({ className = "h-10 w-10", "aria-hidden
             fill="none"
             role={ariaHidden ? undefined : "img"}
             aria-hidden={ariaHidden ? true : undefined}
-            aria-label={ariaHidden ? undefined : "Gestor Garage"}
+            aria-label={ariaHidden ? undefined : "Portal Garage"}
         >
             <defs>
                 <linearGradient id={gStroke} x1="0%" y1="0%" x2="100%" y2="100%">
