@@ -10,6 +10,7 @@ import { loadModel, detectObjects, cropImage, DetectionResult } from "@/utils/ob
 import { Suspense } from "react";
 
 import { COCO_TO_CATEGORY_MAP } from "@/utils/imageMatching";
+import { computeProductEmbeddingMean } from "@/utils/productEmbedding";
 
 const CATEGORIES = ["Eletrônicos", "Roupas", "Móveis", "Livros", "Brinquedos", "Esportes", "Decoração", "CD", "DVD", "LP", "Itens cozinha", "Ferramentas", "Itens piscina", "Cama mesa e banho", "Eletrodomésticos", "Saúde", "Outros"];
 
@@ -572,7 +573,14 @@ function NewProductContent() {
         }
 
         try {
-            await addProduct(formData);
+            const embedding =
+                formData.imagens.length === 0
+                    ? null
+                    : (await computeProductEmbeddingMean(formData.imagens)) ?? null;
+            await addProduct({
+                ...formData,
+                embedding,
+            });
             showToast('Produto cadastrado com sucesso!', 'success');
             setTimeout(() => {
                 router.push(`/admin/products?garageSale=${formData.garageSaleId}`);

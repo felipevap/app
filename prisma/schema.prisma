@@ -59,23 +59,24 @@ model GarageSale {
 }
 
 model Product {
-  id                String    @id @default(uuid())
-  nome              String
-  descricao         String?
-  preco             Float
-  imagens           Json      @default("[]")
-  categoria         String?
-  condicao          String?
-  tags              Json      @default("[]")
-  status            String    @default("disponível")
-  reservedBy        String?
-  reservedByName    String?
-  reservedByEmail   String?
-  reservedByPhone   String?
-  reservedAt        DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  deletedAt         DateTime?
+  id            String    @id @default(uuid())
+  nome          String
+  descricao     String?
+  preco         Float
+  imagens       Json      @default("[]")
+  embedding     Json?
+  categoria     String?
+  condicao      String?
+  tags          Json      @default("[]")
+  status        String    @default("disponível")
+  reservedBy    String?
+  reservedByName String?
+  reservedByEmail String?
+  reservedByPhone String?
+  reservedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
 
   garageSaleId String
   garageSale   GarageSale @relation(fields: [garageSaleId], references: [id])

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireTenantSession } from "@/lib/require-tenant";
 import { garageSaleFindWhere, garageSaleRelationFilter } from "@/lib/tenant-scope";
+import { parseEmbeddingInput } from "@/lib/productEmbeddingValidation";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -109,6 +111,21 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const { nome, descricao, preco, imagens, categoria, condicao, tags, garageSaleId } = body;
+        let embeddingPayload: number[] | null | undefined = undefined;
+        if (Object.prototype.hasOwnProperty.call(body, 'embedding')) {
+            const p = parseEmbeddingInput(body.embedding);
+            if (p === undefined && body.embedding !== null) {
+                return NextResponse.json({ error: 'Invalid embedding' }, { status: 400 });
+            }
+            embeddingPayload = p === undefined ? undefined : p;
+        }
+
+        const embeddingForDb =
+            embeddingPayload === undefined
+                ? undefined
+                : embeddingPayload === null
+                  ? Prisma.JsonNull
+                  : embeddingPayload;
 
         const gs = await prisma.garageSale.findFirst({
             where: garageSaleFindWhere(session, garageSaleId),
@@ -123,6 +140,7 @@ export async function POST(req: NextRequest) {
                 descricao,
                 preco: parseFloat(preco),
                 imagens: imagens || [],
+                ...(embeddingForDb !== undefined ? { embedding: embeddingForDb } : {}),
                 categoria,
                 condicao,
                 tags: tags || [],

@@ -20,7 +20,7 @@ const verifyApi = async () => {
         // Test POST /garage-sales (with new fields)
         console.log('Testing POST /api/garage-sales...');
         const newGS = {
-            nome: "Teste Vercel Fix",
+            nome: "Teste API",
             dataInicio: "2026-03-01",
             dataFim: "2026-03-02",
             endereco: "123 Test St",

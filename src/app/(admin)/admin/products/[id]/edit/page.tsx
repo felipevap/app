@@ -6,6 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Webcam from "react-webcam";
 import Toast from "@/components/Toast";
+import { computeProductEmbeddingMean } from "@/utils/productEmbedding";
 
 const CATEGORIES = ["Eletrônicos", "Roupas", "Móveis", "Livros", "Brinquedos", "Esportes", "Decoração", "CD", "DVD", "LP", "Itens cozinha", "Ferramentas", "Itens piscina", "Cama mesa e banho", "Eletrodomésticos", "Saúde", "Outros"];
 
@@ -174,7 +175,14 @@ export default function EditProductPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await updateProduct(id, formData);
+            const embedding =
+                formData.imagens.length === 0
+                    ? null
+                    : (await computeProductEmbeddingMean(formData.imagens)) ?? null;
+            await updateProduct(id, {
+                ...formData,
+                embedding,
+            });
             showToast('Produto atualizado com sucesso!', 'success');
             setTimeout(() => {
                 router.push(`/admin/products?garageSale=${formData.garageSaleId}`);
