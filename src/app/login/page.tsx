@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { login } from "./actions";
 import PortalGarageLogo from "@/components/PortalGarageLogo";
 
@@ -21,12 +22,19 @@ function SubmitButton() {
 }
 
 export default function LoginPage() {
+    const router = useRouter();
     const [state, setState] = useState<{ error?: string }>({});
 
     async function clientAction(formData: FormData) {
         const result = await login(formData);
         if (result?.error) {
             setState({ error: result.error });
+            return;
+        }
+        if (result?.redirectTo) {
+            setState({});
+            router.replace(result.redirectTo);
+            router.refresh();
         }
     }
 

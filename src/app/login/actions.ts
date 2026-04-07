@@ -1,14 +1,18 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { getTenantBlockedLoginMessage } from "@/lib/billing";
 import { mysqlDatabaseUrlProblem, prismaErrorUserMessage } from "@/lib/db-client-errors";
 import { prisma } from "@/lib/prisma";
 import { SESSION_COOKIE, sessionCookieOptions, signSession } from "@/lib/session";
 
-export async function login(formData: FormData) {
+type LoginResult = {
+    error?: string;
+    redirectTo?: "/super" | "/portal" | "/administracao";
+};
+
+export async function login(formData: FormData): Promise<LoginResult> {
     const email = (formData.get("email") as string)?.trim().toLowerCase();
     const password = formData.get("password") as string;
 
@@ -87,10 +91,10 @@ export async function login(formData: FormData) {
     jar.set(SESSION_COOKIE, token, sessionCookieOptions(7 * 24 * 60 * 60));
 
     if (user.isSuperAdmin) {
-        redirect("/super");
+        return { redirectTo: "/super" };
     }
     if (dbRole === "owner" && ownerGid) {
-        redirect("/portal");
+        return { redirectTo: "/portal" };
     }
-    redirect("/administracao");
+    return { redirectTo: "/administracao" };
 }
