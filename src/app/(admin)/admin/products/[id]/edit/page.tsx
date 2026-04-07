@@ -7,6 +7,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Webcam from "react-webcam";
 import Toast from "@/components/Toast";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import { computeProductEmbeddingMean } from "@/utils/productEmbedding";
 
 const CATEGORIES = ["Eletrônicos", "Roupas", "Móveis", "Livros", "Brinquedos", "Esportes", "Decoração", "CD", "DVD", "LP", "Itens cozinha", "Ferramentas", "Itens piscina", "Cama mesa e banho", "Eletrodomésticos", "Saúde", "Outros"];
@@ -32,6 +33,7 @@ export default function EditProductPage() {
         status: "disponível" as "disponível" | "vendido" | "reservado",
     });
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const showToast = (message: string, type: 'success' | 'error' | 'info') => {
         setToast({ message, type, isVisible: true });
@@ -190,6 +192,9 @@ export default function EditProductPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSubmitting) return;
+
+        setIsSubmitting(true);
         try {
             const embedding =
                 formData.imagens.length === 0
@@ -203,8 +208,9 @@ export default function EditProductPage() {
             setTimeout(() => {
                 router.push(`/admin/products?garageSale=${formData.garageSaleId}`);
             }, 1000);
-        } catch (error) {
+        } catch {
             showToast('Erro ao atualizar produto.', 'error');
+            setIsSubmitting(false);
         }
     };
 
@@ -217,7 +223,7 @@ export default function EditProductPage() {
                 </div>
                 <Link
                     href={`/admin/products${formData.garageSaleId ? `?garageSale=${formData.garageSaleId}` : ''}`}
-                    className="rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
+                    className={`rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 ${isSubmitting ? "pointer-events-none opacity-60" : "hover:bg-stone-50"}`}
                 >
                     Cancelar
                 </Link>
@@ -253,6 +259,7 @@ export default function EditProductPage() {
                                 type="file"
                                 accept="image/*"
                                 multiple
+                                disabled={isSubmitting}
                                 onChange={handleImageUpload}
                                 className="hidden"
                             />
@@ -267,7 +274,8 @@ export default function EditProductPage() {
                         <button
                             type="button"
                             onClick={() => setShowCamera(!showCamera)}
-                            className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-xl p-6 hover:border-blue-500 transition-colors"
+                            disabled={isSubmitting}
+                            className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-xl p-6 hover:border-blue-500 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             <div className="w-10 h-10 mb-2">
                                 <svg className="w-full h-full text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -296,7 +304,8 @@ export default function EditProductPage() {
                                     <button
                                         type="button"
                                         onClick={() => setShowCamera(false)}
-                                        className="rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/20"
+                                        disabled={isSubmitting}
+                                        className="rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
                                     >
                                         Fechar
                                     </button>
@@ -326,9 +335,13 @@ export default function EditProductPage() {
                                     <button
                                         type="button"
                                         onClick={capturePhoto}
-                                        className="rounded-full bg-blue-600 px-10 py-4 text-lg font-bold text-white shadow-lg hover:bg-blue-500"
+                                        disabled={isSubmitting}
+                                        className="rounded-full bg-blue-600 px-10 py-4 text-lg font-bold text-white shadow-lg hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-70"
                                     >
-                                        Capturar foto
+                                        <span className="flex items-center justify-center gap-3">
+                                            {isSubmitting ? <LoadingSpinner label="Salvando produto" className="text-white" /> : null}
+                                            {isSubmitting ? "Salvando..." : "Capturar foto"}
+                                        </span>
                                     </button>
                                 </div>
                             </div>,
@@ -444,7 +457,7 @@ export default function EditProductPage() {
                         <label className="block text-sm font-medium text-stone-700 mb-2">Status</label>
                         <select
                             value={formData.status}
-                            onChange={e => setFormData({ ...formData, status: e.target.value as any })}
+                            onChange={e => setFormData({ ...formData, status: e.target.value as typeof formData.status })}
                             className="w-full bg-white border border-stone-300 rounded-lg p-3 text-stone-900 focus:border-blue-500 outline-none"
                             required
                         >
@@ -468,7 +481,8 @@ export default function EditProductPage() {
                             <button
                                 type="button"
                                 onClick={() => handleAddTag()}
-                                className="px-6 py-2 bg-blue-600 rounded-lg hover:bg-blue-500 transition-colors font-bold text-white"
+                                disabled={isSubmitting}
+                                className="px-6 py-2 bg-blue-600 rounded-lg hover:bg-blue-500 transition-colors font-bold text-white disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 +
                             </button>
@@ -497,9 +511,11 @@ export default function EditProductPage() {
 
                 <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl"
+                    disabled={isSubmitting}
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-4 rounded-xl font-bold text-white flex items-center justify-center gap-3 transition-all shadow-lg hover:from-blue-500 hover:to-purple-500 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:shadow-lg"
                 >
-                    💾 Salvar Alterações
+                    {isSubmitting ? <LoadingSpinner label="Salvando alterações do produto" className="text-white" /> : null}
+                    {isSubmitting ? "Salvando alterações..." : "Salvar alterações"}
                 </button>
             </form>
             {toast.isVisible && (

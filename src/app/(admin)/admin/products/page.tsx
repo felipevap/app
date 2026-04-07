@@ -341,13 +341,13 @@ function ProductsContent() {
                                                     <div className="flex w-full gap-2">
                                                         <button
                                                             onClick={() => handleRestore(product.id, product.nome)}
-                                                            className="flex-1 rounded-lg border border-green-700 bg-green-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-green-500"
+                                                            className="flex-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 transition-colors hover:border-emerald-300 hover:bg-emerald-100"
                                                         >
                                                             ♻️ Restaurar
                                                         </button>
                                                         <button
                                                             onClick={() => handlePermanentDelete(product.id, product.nome)}
-                                                            className="rounded-lg border border-red-900 bg-red-800 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+                                                            className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 transition-colors hover:border-rose-300 hover:bg-rose-100"
                                                             title="Excluir Permanentemente"
                                                         >
                                                             💥
@@ -357,13 +357,13 @@ function ProductsContent() {
                                                     <>
                                                         <Link
                                                             href={`/admin/products/${product.id}/edit`}
-                                                            className="flex-1 rounded-lg border border-stone-300 bg-stone-800 px-3 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-stone-700"
+                                                            className="flex-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-center text-sm font-medium text-blue-700 transition-colors hover:border-blue-300 hover:bg-blue-100"
                                                         >
                                                             ✏️
                                                         </Link>
                                                         <button
                                                             onClick={() => handleDelete(product.id, product.nome)}
-                                                            className="rounded-lg border border-red-700 bg-red-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500"
+                                                            className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 transition-colors hover:border-rose-300 hover:bg-rose-100"
                                                         >
                                                             🗑️
                                                         </button>

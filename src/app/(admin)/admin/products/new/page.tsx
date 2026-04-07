@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Webcam from "react-webcam";
 import Toast from "@/components/Toast";
+import LoadingSpinner from "@/components/LoadingSpinner";
 import { loadModel, detectObjects, cropImage, DetectionResult } from "@/utils/objectDetection";
 import { Suspense } from "react";
 
@@ -117,6 +118,8 @@ function NewProductContent() {
         garageSaleId: "",
     });
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCropping, setIsCropping] = useState(false);
 
     // Object Detection & Cropping State
     const [isModelLoaded, setIsModelLoaded] = useState(false);
@@ -406,16 +409,24 @@ function NewProductContent() {
         }
     };
 
-    const handleCropConfirm = () => {
-        if (!currentImageForSelection || !cropBox) return;
+    const handleCropConfirm = async () => {
+        if (!currentImageForSelection || !cropBox || isCropping) return;
 
-        const img = new Image();
-        img.src = currentImageForSelection;
-        img.onload = () => {
+        setIsCropping(true);
+
+        try {
+            const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+                const nextImage = new Image();
+                nextImage.onload = () => resolve(nextImage);
+                nextImage.onerror = () => reject(new Error("Falha ao preparar imagem para recorte."));
+                nextImage.src = currentImageForSelection;
+            });
             const croppedUrl = cropImage(img, [cropBox.x, cropBox.y, cropBox.w, cropBox.h], 0);
             if (croppedUrl) {
                 setFormData(prev => {
-                    const updates: any = { imagens: [...prev.imagens, croppedUrl] };
+                    const updates: Partial<typeof prev> & Pick<typeof prev, "imagens"> = {
+                        imagens: [...prev.imagens, croppedUrl]
+                    };
 
                     // Auto-fill logic
                     if (selectedDetectionClass) {
@@ -441,7 +452,12 @@ function NewProductContent() {
                 });
             }
             closeSelectionModal();
-        };
+        } catch (error) {
+            console.error("Crop confirm error:", error);
+            showToast("Erro ao salvar o recorte da imagem.", "error");
+        } finally {
+            setIsCropping(false);
+        }
     };
 
     // ... (rest of the file)
@@ -462,6 +478,8 @@ function NewProductContent() {
     };
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (processingImage || isSubmitting) return;
+
         const files = e.target.files;
         if (!files) return;
 
@@ -503,6 +521,7 @@ function NewProductContent() {
     };
 
     const capturePhoto = () => {
+        if (processingImage || isSubmitting) return;
         if (!webcamRef.current) return;
         const imageSrc = webcamRef.current.getScreenshot();
         if (!imageSrc) return;
@@ -581,11 +600,14 @@ function NewProductContent() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isSubmitting || processingImage || isCropping) return;
 
         if (!formData.garageSaleId) {
             showToast('Por favor, selecione um evento.', 'error');
             return;
         }
+
+        setIsSubmitting(true);
 
         try {
             const embedding =
@@ -600,8 +622,9 @@ function NewProductContent() {
             setTimeout(() => {
                 router.push(`/admin/products?garageSale=${formData.garageSaleId}`);
             }, 1000);
-        } catch (error) {
+        } catch {
             showToast('Erro ao cadastrar produto.', 'error');
+            setIsSubmitting(false);
         }
     };
 
@@ -636,7 +659,7 @@ function NewProductContent() {
                 </div>
                 <Link
                     href={`/admin/products${formData.garageSaleId ? `?garageSale=${formData.garageSaleId}` : ''}`}
-                    className="w-full sm:w-auto text-center rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
+                    className={`w-full sm:w-auto text-center rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm text-stone-700 ${isSubmitting ? "pointer-events-none opacity-60" : "hover:bg-stone-50"}`}
                 >
                     Cancelar
                 </Link>
@@ -667,11 +690,12 @@ function NewProductContent() {
                     </label>
 
                     <div className="flex flex-col sm:flex-row gap-2 mb-4">
-                        <label className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-xl p-6 hover:border-blue-500 transition-colors cursor-pointer">
+                        <label className={`flex-1 flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-xl p-6 transition-colors ${processingImage || isSubmitting ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:border-blue-500"}`}>
                             <input
                                 type="file"
                                 accept="image/*"
                                 multiple
+                                disabled={processingImage || isSubmitting}
                                 onChange={handleImageUpload}
                                 className="hidden"
                             />
@@ -686,7 +710,8 @@ function NewProductContent() {
                         <button
                             type="button"
                             onClick={() => setShowCamera(!showCamera)}
-                            className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-xl p-6 hover:border-blue-500 transition-colors"
+                            disabled={processingImage || isSubmitting}
+                            className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-stone-300 rounded-xl p-6 transition-colors hover:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             <div className="w-10 h-10 mb-2">
                                 <svg className="w-full h-full text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -715,7 +740,8 @@ function NewProductContent() {
                                     <button
                                         type="button"
                                         onClick={() => setShowCamera(false)}
-                                        className="rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/20"
+                                        disabled={processingImage || isSubmitting}
+                                        className="rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
                                     >
                                         Fechar
                                     </button>
@@ -745,9 +771,13 @@ function NewProductContent() {
                                     <button
                                         type="button"
                                         onClick={capturePhoto}
-                                        className="rounded-full bg-blue-600 px-10 py-4 text-lg font-bold text-white shadow-lg hover:bg-blue-500"
+                                        disabled={processingImage || isSubmitting}
+                                        className="rounded-full bg-blue-600 px-10 py-4 text-lg font-bold text-white shadow-lg hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-70"
                                     >
-                                        Capturar foto
+                                        <span className="flex items-center justify-center gap-3">
+                                            {processingImage ? <LoadingSpinner label="Processando captura" className="text-white" /> : null}
+                                            {processingImage ? "Processando foto..." : "Capturar foto"}
+                                        </span>
                                     </button>
                                 </div>
                             </div>,
@@ -773,6 +803,13 @@ function NewProductContent() {
                             <p className="text-center text-stone-600 text-sm mt-2">
                                 {formData.imagens.length} imagem(ns) adicionada(s)
                             </p>
+                        </div>
+                    )}
+
+                    {(processingImage || isCropping) && (
+                        <div className="mt-4 flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+                            <LoadingSpinner label="Processando imagem" className="text-blue-600" />
+                            {isCropping ? "Salvando o recorte da imagem..." : "Processando imagem..."}
                         </div>
                     )}
                 </div>
@@ -808,7 +845,8 @@ function NewProductContent() {
                             <button
                                 type="button"
                                 onClick={handleSuggestDescription}
-                                className="text-xs flex items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors"
+                                disabled={isSubmitting}
+                                className="text-xs flex items-center gap-1 text-blue-400 transition-colors hover:text-blue-300 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 ✨ Sugerir Descrição
                             </button>
@@ -885,7 +923,8 @@ function NewProductContent() {
                             <button
                                 type="button"
                                 onClick={() => handleAddTag()}
-                                className="px-6 py-2 bg-blue-600 rounded-lg hover:bg-blue-500 transition-colors font-bold text-white"
+                                disabled={isSubmitting}
+                                className="px-6 py-2 bg-blue-600 rounded-lg hover:bg-blue-500 transition-colors font-bold text-white disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 +
                             </button>
@@ -914,9 +953,11 @@ function NewProductContent() {
 
                 <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl"
+                    disabled={isSubmitting || processingImage || isCropping}
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 py-4 rounded-xl font-bold text-white flex items-center justify-center gap-3 transition-all shadow-lg hover:from-blue-500 hover:to-purple-500 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:shadow-lg"
                 >
-                    💾 Salvar Produto
+                    {isSubmitting ? <LoadingSpinner label="Salvando produto" className="text-white" /> : null}
+                    {isSubmitting ? "Salvando produto..." : "Salvar produto"}
                 </button>
 
             </form>
@@ -1026,17 +1067,24 @@ function NewProductContent() {
                             </div>
                             <div className="flex gap-3">
                                 <button
+                                    type="button"
                                     onClick={handleKeepOriginal}
-                                    className="px-4 py-2 rounded-lg border border-stone-300 hover:bg-stone-100 text-stone-800 transition-colors"
+                                    disabled={isCropping}
+                                    className="px-4 py-2 rounded-lg border border-stone-300 hover:bg-stone-100 text-stone-800 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                     Manter Original
                                 </button>
                                 {cropBox && (
                                     <button
+                                        type="button"
                                         onClick={handleCropConfirm}
-                                        className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-bold transition-colors shadow-lg"
+                                        disabled={isCropping}
+                                        className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-bold transition-colors shadow-lg disabled:cursor-not-allowed disabled:opacity-70"
                                     >
-                                        ✂️ Salvar Recorte
+                                        <span className="flex items-center gap-2">
+                                            {isCropping ? <LoadingSpinner label="Salvando recorte" className="text-white" /> : null}
+                                            {isCropping ? "Salvando recorte..." : "Salvar recorte"}
+                                        </span>
                                     </button>
                                 )}
                             </div>
