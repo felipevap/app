@@ -18,6 +18,8 @@ export type SessionPayload = {
     superAdmin: boolean;
     role: "owner" | "staff";
     ownerGarageSaleId: string | null;
+    impersonating: boolean;
+    impersonatedTenantId: string | null;
 };
 
 export function parseSessionFromJwtPayload(
@@ -25,19 +27,30 @@ export function parseSessionFromJwtPayload(
     payload: Record<string, unknown>
 ): SessionPayload | null {
     if (payload.sa === true) {
-        return { userId, tenantId: null, superAdmin: true, role: "staff", ownerGarageSaleId: null };
+        return {
+            userId,
+            tenantId: null,
+            superAdmin: true,
+            role: "staff",
+            ownerGarageSaleId: null,
+            impersonating: false,
+            impersonatedTenantId: null,
+        };
     }
     const tid = payload.tid;
     if (typeof tid !== "string") return null;
     const r = payload.r === "owner" ? "owner" : "staff";
     const g = typeof payload.g === "string" ? payload.g : null;
     if (r === "owner" && !g) return null;
+    const impersonating = payload.imp === true;
     return {
         userId,
         tenantId: tid,
         superAdmin: false,
         role: r,
         ownerGarageSaleId: r === "owner" ? g : null,
+        impersonating,
+        impersonatedTenantId: impersonating ? tid : null,
     };
 }
 
@@ -45,7 +58,7 @@ export async function signSession(
     userId: string,
     tenantId: string | null,
     isSuperAdmin: boolean,
-    opts?: { role?: "owner" | "staff"; ownerGarageSaleId?: string | null }
+    opts?: { role?: "owner" | "staff"; ownerGarageSaleId?: string | null; impersonating?: boolean }
 ): Promise<string> {
     if (isSuperAdmin) {
         return new SignJWT({ sa: true })
@@ -60,16 +73,21 @@ export async function signSession(
     }
     const role = opts?.role ?? "staff";
     const gid = opts?.ownerGarageSaleId ?? null;
+    const impersonating = opts?.impersonating === true;
     const body: Record<string, unknown> =
         role === "owner" && gid
-            ? { sa: false, tid: tenantId, r: "owner", g: gid }
-            : { sa: false, tid: tenantId, r: "staff" };
+            ? { sa: false, tid: tenantId, r: "owner", g: gid, ...(impersonating ? { imp: true } : {}) }
+            : { sa: false, tid: tenantId, r: "staff", ...(impersonating ? { imp: true } : {}) };
     return new SignJWT(body)
         .setProtectedHeader({ alg: "HS256" })
         .setSubject(userId)
         .setIssuedAt()
         .setExpirationTime("7d")
         .sign(getSecretKey());
+}
+
+export async function signTenantImpersonationSession(userId: string, tenantId: string): Promise<string> {
+    return signSession(userId, tenantId, false, { role: "staff", impersonating: true });
 }
 
 export async function getSessionFromRequest(req: NextRequest): Promise<SessionPayload | null> {

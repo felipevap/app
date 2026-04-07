@@ -8,6 +8,7 @@ export default async function SiteHeader() {
     const session = await getSessionFromCookies();
     const loggedIn = !!session;
     const isSuperAdmin = session?.superAdmin ?? false;
+    const isImpersonating = session?.impersonating ?? false;
     const panelHref = getPanelHref(session);
 
     return (
@@ -19,7 +20,7 @@ export default async function SiteHeader() {
                 <PortalGarageLogo className="h-9 w-9 shrink-0 sm:h-10 sm:w-10" aria-hidden />
                 <span className="truncate text-lg font-semibold tracking-tight text-white sm:text-xl">Portal Garage</span>
             </Link>
-            <SiteHeaderClient loggedIn={loggedIn} isSuperAdmin={isSuperAdmin} panelHref={panelHref} />
+            <SiteHeaderClient loggedIn={loggedIn} isSuperAdmin={isSuperAdmin} isImpersonating={isImpersonating} panelHref={panelHref} />
         </header>
     );
 }

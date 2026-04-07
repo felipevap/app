@@ -13,6 +13,15 @@ model Tenant {
   slug                     String       @unique
   adminLogoDataUrl         String?      @db.LongText
   defaultCommissionPercent Float        @default(20)
+  subscriptionPlanCode     String       @default("premium-full")
+  subscriptionPlanName     String       @default("Premium Full")
+  subscriptionStatus       String       @default("trialing")
+  subscriptionMonthlyPriceCents Int     @default(19700)
+  billingEmail             String?
+  subscriptionStartedAt    DateTime?
+  trialEndsAt              DateTime?
+  nextBillingAt            DateTime?
+  lastPaymentAt            DateTime?
   createdAt                DateTime     @default(now())
   updatedAt                DateTime     @updatedAt
   users              User[]
@@ -27,6 +36,7 @@ model User {
   tenantId          String?
   tenant            Tenant?     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   isSuperAdmin      Boolean     @default(false)
+  isActive          Boolean     @default(true)
   role              String      @default("staff")
   ownerGarageSaleId String?     @unique
   ownerGarageSale   GarageSale? @relation("GarageSaleOwner", fields: [ownerGarageSaleId], references: [id], onDelete: SetNull)

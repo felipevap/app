@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
+import { getTenantBlockedLoginMessage } from "@/lib/billing";
 import { mysqlDatabaseUrlProblem, prismaErrorUserMessage } from "@/lib/db-client-errors";
 import { prisma } from "@/lib/prisma";
 import { SESSION_COOKIE, sessionCookieOptions, signSession } from "@/lib/session";
@@ -36,9 +37,34 @@ export async function login(formData: FormData) {
         return { error: "Credenciais inválidas" };
     }
 
+    if (!user.isActive) {
+        return { error: "Este usuário está inativo. Peça ao super admin para reativar o acesso." };
+    }
+
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) {
         return { error: "Credenciais inválidas" };
+    }
+
+    if (!user.isSuperAdmin) {
+        const tenantId = user.tenantId;
+        if (!tenantId) {
+            return { error: "Usuário sem tenant vinculado. Verifique o cadastro no super admin." };
+        }
+
+        const tenant = await prisma.tenant.findUnique({
+            where: { id: tenantId },
+            select: { subscriptionStatus: true, trialEndsAt: true },
+        });
+
+        if (!tenant) {
+            return { error: "Tenant não encontrado. Verifique o cadastro no super admin." };
+        }
+
+        const blockedMessage = getTenantBlockedLoginMessage(tenant);
+        if (blockedMessage) {
+            return { error: blockedMessage };
+        }
     }
 
     const dbRole = user.role === "owner" ? "owner" : "staff";

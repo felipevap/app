@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Package, ScanBarcode, Store, ShieldCheck, Sparkles, UserPlus } from "lucide-react";
+import { ArrowRight, Check, CreditCard, Gem, Package, ScanBarcode, ShieldCheck, Sparkles, Store, UserPlus } from "lucide-react";
 import PortalGarageLogo from "@/components/PortalGarageLogo";
 import HomeAnimatedBackdrop from "@/components/home/HomeAnimatedBackdrop";
 import CadastroOrganizacaoForm from "@/components/home/CadastroOrganizacaoForm";
+import { formatCurrencyBRLFromCents, PREMIUM_FULL_PLAN } from "@/lib/billing";
 
 type Props = {
     isLoggedIn: boolean;
@@ -19,239 +20,176 @@ const fadeUp = {
     visible: (i: number) => ({
         opacity: 1,
         y: 0,
-        transition: { delay: i * 0.08, duration: 0.55, ease: [0.22, 1, 0.36, 1] as const },
+        transition: { delay: i * 0.08, duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
     }),
 };
 
-const cards = [
-    {
-        icon: Store,
-        title: "Eventos e Garage Sales",
-        text: "Vários eventos por organização, com dados e regras centralizados para cada Garage Sale.",
-    },
-    {
-        icon: Package,
-        title: "Catálogo unificado",
-        text: "Cadastro de produtos com fotos e preços — a mesma base alimenta checagem no chão e o caixa.",
-    },
-    {
-        icon: ScanBarcode,
-        title: "Checagem no evento",
-        text: "Consulta rápida de preço e disponibilidade com a câmera, sem planilhas soltas.",
-    },
-    {
-        icon: ShieldCheck,
-        title: "Multi-organização",
-        text: "Cada associação tem seu ambiente isolado: produtos, vendas e relatórios só do seu grupo.",
-    },
+const features = [
+    { icon: Store, title: "Operação por tenant", text: "Cada organização com ambiente isolado, usuários próprios, eventos separados e visão limpa para o time." },
+    { icon: Package, title: "Estoque vivo", text: "Catálogo de produtos com fotos, preços, disponibilidade e base única para cadastro, checagem e venda." },
+    { icon: ScanBarcode, title: "Checagem no evento", text: "Consulta rápida com câmera para reduzir fila, dúvida de preço e retrabalho da equipe no salão." },
+    { icon: ShieldCheck, title: "Controle premium", text: "Painel do organizador, gestão administrativa e super admin para controlar toda a operação paga." },
 ];
 
-export default function HomeLanding({
-    isLoggedIn,
-    isSuperAdmin,
-    panelHref,
-    showTenantAdminShortcuts,
-}: Props) {
+const benefits = [
+    "14 dias grátis para validar o processo inteiro com sua equipe",
+    "Plano único Premium Full com tudo liberado desde o primeiro login",
+    "Tenant criado já com cobrança, trial e acesso administrativo configurados",
+];
+
+export default function HomeLanding({ isLoggedIn, isSuperAdmin, panelHref, showTenantAdminShortcuts }: Props) {
     return (
-        <div className="relative min-h-[calc(100dvh-4rem)] text-slate-100">
+        <div className="relative min-h-[calc(100dvh-4rem)] overflow-hidden bg-[#070b11] text-stone-100">
             <HomeAnimatedBackdrop />
             <div className="relative z-10">
-                <section className="mx-auto flex max-w-6xl flex-col items-center px-4 pb-20 pt-12 text-center sm:pt-16 md:pt-20">
-                    <motion.div custom={0} initial="hidden" animate="visible" variants={fadeUp}>
-                        <Link
-                            href="/"
-                            className="mx-auto inline-flex rounded-3xl outline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-500/80"
-                        >
-                            <PortalGarageLogo className="h-20 w-20 drop-shadow-[0_0_40px_rgba(251,191,36,0.35)] sm:h-24 sm:w-24" />
-                        </Link>
-                    </motion.div>
-                    <motion.p
-                        custom={1}
-                        initial="hidden"
-                        animate="visible"
-                        variants={fadeUp}
-                        className="mt-6 inline-flex items-center gap-2 rounded-full border border-amber-500/25 bg-amber-500/10 px-4 py-1.5 text-xs font-medium uppercase tracking-[0.2em] text-amber-200/90"
-                    >
-                        <Sparkles className="h-3.5 w-3.5 text-amber-400" aria-hidden />
-                        Gestão premium para garage sales
-                    </motion.p>
-                    <motion.h1
-                        custom={2}
-                        initial="hidden"
-                        animate="visible"
-                        variants={fadeUp}
-                        className="mt-6 max-w-4xl text-4xl font-semibold tracking-tight text-white sm:text-5xl md:text-6xl md:leading-[1.08]"
-                    >
-                        O sistema que organiza seu Garage Sale do cadastro ao caixa
-                    </motion.h1>
-                    <motion.p
-                        custom={3}
-                        initial="hidden"
-                        animate="visible"
-                        variants={fadeUp}
-                        className="mt-6 max-w-2xl text-lg text-slate-400 sm:text-xl"
-                    >
-                        Portal Garage é a plataforma para associações e equipes que realizam Garage Sales, eventos
-                        solidários e liquidações: um fluxo só, do estoque à conferência de preços no evento e ao PDV.
-                    </motion.p>
-                    <motion.div
-                        custom={4}
-                        initial="hidden"
-                        animate="visible"
-                        variants={fadeUp}
-                        className="mt-10 flex flex-wrap items-center justify-center gap-3"
-                    >
-                        {!isLoggedIn && (
-                            <>
-                                <a
-                                    href="#cadastro"
-                                    className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 px-8 py-3.5 text-sm font-semibold text-slate-950 shadow-lg shadow-amber-500/30 transition hover:brightness-105"
-                                >
-                                    <UserPlus className="h-4 w-4" aria-hidden />
-                                    Criar cadastro
-                                </a>
-                                <Link
-                                    href="/login"
-                                    className="rounded-full border border-white/15 bg-white/5 px-8 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/25 hover:bg-white/10"
-                                >
-                                    Entrar
+                <section className="mx-auto max-w-7xl px-4 pb-16 pt-12 sm:px-6 sm:pt-16 lg:px-8 lg:pt-20">
+                    <div className="grid gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+                        <div>
+                            <motion.div custom={0} initial="hidden" animate="visible" variants={fadeUp}>
+                                <Link href="/" className="inline-flex rounded-3xl outline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-200/80">
+                                    <PortalGarageLogo className="h-20 w-20 drop-shadow-[0_0_40px_rgba(251,191,36,0.35)] sm:h-24 sm:w-24" />
                                 </Link>
-                            </>
-                        )}
-                        {isLoggedIn && (
-                            <Link
-                                href={isSuperAdmin ? "/super" : panelHref}
-                                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 px-8 py-3.5 text-sm font-semibold text-slate-950 shadow-lg shadow-amber-500/30 transition hover:brightness-105"
-                            >
-                                {isSuperAdmin ? "Super Admin" : "Ir ao painel"}
-                            </Link>
-                        )}
-                    </motion.div>
-                    {isLoggedIn && showTenantAdminShortcuts && (
-                        <motion.div
-                            custom={5}
-                            initial="hidden"
-                            animate="visible"
-                            variants={fadeUp}
-                            className="mt-8 flex flex-wrap justify-center gap-3"
-                        >
-                            <Link
-                                href="/admin"
-                                className="rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-white backdrop-blur-sm hover:bg-white/10"
-                            >
-                                Organizador
-                            </Link>
-                            <Link
-                                href="/capture"
-                                className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-2.5 text-sm font-medium text-emerald-200 hover:bg-emerald-500/15"
-                            >
-                                Checagem
-                            </Link>
-                            <Link
-                                href="/pos"
-                                className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-5 py-2.5 text-sm font-medium text-rose-200 hover:bg-rose-500/15"
-                            >
-                                PDV
-                            </Link>
+                            </motion.div>
+
+                            <motion.div custom={1} initial="hidden" animate="visible" variants={fadeUp} className="mt-6 inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-amber-100">
+                                <Sparkles className="h-3.5 w-3.5" />
+                                Premium SaaS para Garage Sales
+                            </motion.div>
+
+                            <motion.h1 custom={2} initial="hidden" animate="visible" variants={fadeUp} className="mt-6 max-w-4xl text-5xl leading-[0.95] text-white sm:text-6xl lg:text-7xl font-[family:var(--font-display)]">
+                                Venda a operação inteira, não só o cadastro.
+                            </motion.h1>
+
+                            <motion.p custom={3} initial="hidden" animate="visible" variants={fadeUp} className="mt-6 max-w-2xl text-lg leading-8 text-stone-300">
+                                O Portal Garage nasceu para associações, equipes e operações de bazar que precisam controlar produtos, checagem de preços e vendas em um fluxo premium, multi-tenant e pronto para monetização.
+                            </motion.p>
+
+                            <motion.div custom={4} initial="hidden" animate="visible" variants={fadeUp} className="mt-8 flex flex-wrap gap-3">
+                                {!isLoggedIn ? (
+                                    <>
+                                        <a href="#planos" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-stone-50 px-7 py-3.5 text-sm font-semibold text-slate-950 shadow-[0_18px_50px_rgba(251,191,36,0.3)] transition hover:brightness-105">
+                                            Começar 14 dias grátis
+                                            <ArrowRight className="h-4 w-4" />
+                                        </a>
+                                        <Link href="/login" className="rounded-full border border-white/15 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/25 hover:bg-white/10">
+                                            Entrar
+                                        </Link>
+                                    </>
+                                ) : (
+                                    <Link href={isSuperAdmin ? "/super" : panelHref} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-stone-50 px-7 py-3.5 text-sm font-semibold text-slate-950 shadow-[0_18px_50px_rgba(251,191,36,0.3)] transition hover:brightness-105">
+                                        {isSuperAdmin ? "Ir para o Super Admin" : "Ir para o painel"}
+                                    </Link>
+                                )}
+                            </motion.div>
+
+                            <motion.div custom={5} initial="hidden" animate="visible" variants={fadeUp} className="mt-8 grid gap-3 sm:grid-cols-3">
+                                {benefits.map((item) => (
+                                    <div key={item} className="rounded-[1.4rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm text-stone-200 backdrop-blur-sm">
+                                        <div className="flex items-start gap-3">
+                                            <Check className="mt-0.5 h-4 w-4 shrink-0 text-amber-200" />
+                                            <span>{item}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </motion.div>
+
+                            {isLoggedIn && showTenantAdminShortcuts && (
+                                <motion.div custom={6} initial="hidden" animate="visible" variants={fadeUp} className="mt-8 flex flex-wrap gap-3">
+                                    <Link href="/admin" className="rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-white hover:bg-white/10">Organizador</Link>
+                                    <Link href="/capture" className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-5 py-2.5 text-sm font-medium text-emerald-100 hover:bg-emerald-500/15">Checagem</Link>
+                                    <Link href="/pos" className="rounded-full border border-rose-400/20 bg-rose-500/10 px-5 py-2.5 text-sm font-medium text-rose-100 hover:bg-rose-500/15">PDV</Link>
+                                </motion.div>
+                            )}
+                        </div>
+
+                        <motion.div custom={4} initial="hidden" animate="visible" variants={fadeUp} className="relative">
+                            <div className="absolute -inset-6 rounded-[2rem] bg-gradient-to-br from-amber-300/20 via-transparent to-sky-400/10 blur-3xl" />
+                            <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:p-8">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div>
+                                        <p className="text-xs uppercase tracking-[0.2em] text-amber-100/70">Plano disponível</p>
+                                        <h2 className="mt-2 text-3xl text-white font-[family:var(--font-display)]">{PREMIUM_FULL_PLAN.name}</h2>
+                                    </div>
+                                    <div className="rounded-[1.4rem] border border-white/10 bg-black/20 px-4 py-3 text-right">
+                                        <p className="text-xs uppercase tracking-[0.18em] text-stone-400">Mensal</p>
+                                        <p className="mt-1 text-3xl font-semibold text-white">{formatCurrencyBRLFromCents(PREMIUM_FULL_PLAN.monthlyPriceCents)}</p>
+                                    </div>
+                                </div>
+                                <div className="mt-6 rounded-[1.5rem] border border-amber-300/20 bg-amber-300/10 p-5">
+                                    <p className="text-xs uppercase tracking-[0.2em] text-amber-100/80">Ativação comercial</p>
+                                    <p className="mt-2 text-2xl font-semibold text-white">14 dias grátis antes da primeira cobrança</p>
+                                    <p className="mt-3 text-sm leading-7 text-amber-50/85">
+                                        O tenant só nasce depois da assinatura do plano. Quando você ativa o teste, o sistema já registra a cobrança, cria o ambiente da organização e entrega acesso administrativo imediato.
+                                    </p>
+                                </div>
+                                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                                    <div className="rounded-[1.3rem] border border-white/10 bg-white/[0.03] p-4">
+                                        <Gem className="h-5 w-5 text-amber-200" />
+                                        <p className="mt-3 text-sm font-semibold text-white">Experiência premium</p>
+                                        <p className="mt-2 text-sm leading-6 text-stone-400">Jornada comercial, painel multi-tenant e super admin prontos para produto pago.</p>
+                                    </div>
+                                    <div className="rounded-[1.3rem] border border-white/10 bg-white/[0.03] p-4">
+                                        <CreditCard className="h-5 w-5 text-sky-200" />
+                                        <p className="mt-3 text-sm font-semibold text-white">Billing visível</p>
+                                        <p className="mt-2 text-sm leading-6 text-stone-400">Status do pagamento, trial, próxima cobrança e última quitação por tenant.</p>
+                                    </div>
+                                </div>
+                            </div>
                         </motion.div>
-                    )}
+                    </div>
                 </section>
 
-                <section className="mx-auto max-w-6xl px-4 pb-24">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, margin: "-80px" }}
-                        transition={{ duration: 0.5 }}
-                        className="text-center"
-                    >
-                        <h2 className="text-2xl font-semibold text-white sm:text-3xl">Tudo o que o programa entrega</h2>
-                        <p className="mx-auto mt-3 max-w-2xl text-slate-400">
-                            Uma suíte pensada para quem opera no físico: menos erro de preço, mais agilidade na fila e
-                            visão clara para quem organiza.
-                        </p>
-                    </motion.div>
-                    <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        {cards.map((c, i) => (
-                            <motion.div
-                                key={c.title}
-                                initial={{ opacity: 0, y: 16 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, margin: "-40px" }}
-                                transition={{ delay: i * 0.06, duration: 0.45 }}
-                                className="group rounded-2xl border border-white/[0.08] bg-white/[0.03] p-6 backdrop-blur-md transition hover:border-amber-500/20 hover:bg-white/[0.06]"
-                            >
-                                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20">
-                                    <c.icon className="h-5 w-5" aria-hidden />
+                <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                        {features.map((feature, index) => (
+                            <motion.div key={feature.title} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.45, delay: index * 0.06 }} className="rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-300/10 text-amber-200 ring-1 ring-amber-300/20">
+                                    <feature.icon className="h-5 w-5" />
                                 </div>
-                                <h3 className="mt-4 font-semibold text-white">{c.title}</h3>
-                                <p className="mt-2 text-sm leading-relaxed text-slate-400">{c.text}</p>
+                                <h3 className="mt-5 text-lg font-semibold text-white">{feature.title}</h3>
+                                <p className="mt-3 text-sm leading-7 text-stone-400">{feature.text}</p>
                             </motion.div>
                         ))}
                     </div>
                 </section>
 
-                <section
-                    id="cadastro"
-                    className="scroll-mt-24 border-t border-white/[0.06] bg-slate-950/50 py-20 backdrop-blur-sm"
-                >
-                    <div className="mx-auto grid max-w-6xl gap-12 px-4 lg:grid-cols-2 lg:items-start lg:gap-16">
-                        <motion.div
-                            initial={{ opacity: 0, x: -12 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/5 px-3 py-1 text-xs font-medium text-amber-200/90">
-                                <UserPlus className="h-3.5 w-3.5" aria-hidden />
-                                Cadastro Portal Garage
+                <section id="planos" className="scroll-mt-24 border-t border-white/10 bg-black/20 py-20">
+                    <div className="mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8 lg:items-start">
+                        <motion.div initial={{ opacity: 0, x: -18 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
+                            <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-amber-100">
+                                <UserPlus className="h-3.5 w-3.5" />
+                                Assinatura e ativação
                             </div>
-                            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                                Cadastre sua organização
-                            </h2>
-                            <p className="mt-4 text-slate-400 leading-relaxed">
-                                Ao concluir o cadastro, criamos automaticamente a organização (tenant) da sua associação
-                                ou equipe e vinculamos sua conta como administradora. Você já entra no painel para
-                                cadastrar o primeiro evento e os produtos.
+                            <h2 className="mt-5 text-4xl text-white sm:text-5xl font-[family:var(--font-display)]">Ative o Premium Full e já entre operando.</h2>
+                            <p className="mt-5 max-w-xl text-base leading-8 text-stone-300">
+                                Esta etapa substitui o cadastro simples. Você assina o plano, inicia o trial de 14 dias e já entra com seu tenant pronto para cadastrar eventos, produtos, preços e vendas.
                             </p>
-                            <ul className="mt-8 space-y-3 text-sm text-slate-300">
-                                <li className="flex gap-3">
-                                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-xs text-amber-400">
-                                        1
-                                    </span>
-                                    Preencha os dados da organização e crie sua senha.
-                                </li>
-                                <li className="flex gap-3">
-                                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-xs text-amber-400">
-                                        2
-                                    </span>
-                                    Ambiente exclusivo gerado na hora — dados isolados das demais associações.
-                                </li>
-                                <li className="flex gap-3">
-                                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-xs text-amber-400">
-                                        3
-                                    </span>
-                                    Acesse o painel, o modo captura e o PDV com a mesma conta.
-                                </li>
-                            </ul>
+                            <div className="mt-8 rounded-[1.8rem] border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
+                                <p className="text-xs uppercase tracking-[0.2em] text-stone-400">O que está incluso</p>
+                                <div className="mt-4 space-y-3">
+                                    {[
+                                        "Administração da organização com múltiplos eventos",
+                                        "Captura e consulta rápida no salão",
+                                        "PDV integrado com o mesmo estoque do cadastro",
+                                        "Super admin para controle de tenants, billing e usuários",
+                                    ].map((line) => (
+                                        <div key={line} className="flex gap-3 text-sm text-stone-200">
+                                            <Check className="mt-0.5 h-4 w-4 shrink-0 text-amber-200" />
+                                            <span>{line}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </motion.div>
-                        <motion.div
-                            initial={{ opacity: 0, x: 12 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.5 }}
-                            className="rounded-3xl border border-white/10 bg-white/[0.04] p-8 shadow-2xl shadow-black/40 backdrop-blur-xl"
-                        >
+
+                        <motion.div initial={{ opacity: 0, x: 18 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] p-6 shadow-[0_40px_120px_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:p-8">
                             {!isLoggedIn ? (
                                 <CadastroOrganizacaoForm />
                             ) : (
-                                <div className="py-8 text-center">
-                                    <p className="text-slate-300">Você já está com sessão ativa.</p>
-                                    <Link
-                                        href={isSuperAdmin ? "/super" : panelHref}
-                                        className="mt-6 inline-flex rounded-xl bg-amber-500 px-6 py-3 text-sm font-semibold text-slate-950"
-                                    >
-                                        Ir ao painel
+                                <div className="py-10 text-center">
+                                    <p className="text-stone-300">Você já está com sessão ativa.</p>
+                                    <Link href={isSuperAdmin ? "/super" : panelHref} className="mt-6 inline-flex rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-stone-50 px-7 py-3.5 text-sm font-semibold text-slate-950">
+                                        Ir para o painel
                                     </Link>
                                 </div>
                             )}
@@ -259,11 +197,8 @@ export default function HomeLanding({
                     </div>
                 </section>
 
-                <footer className="border-t border-white/[0.06] py-10 text-center text-sm text-slate-500">
-                    <p>
-                        &copy; {new Date().getFullYear()} Portal Garage <span className="mx-2 text-slate-600">|</span>{" "}
-                        v0.7.0
-                    </p>
+                <footer className="border-t border-white/10 py-10 text-center text-sm text-stone-500">
+                    <p>&copy; {new Date().getFullYear()} Portal Garage</p>
                 </footer>
             </div>
         </div>
