@@ -30,7 +30,12 @@ export function addDays(base: Date, days: number): Date {
 export function isTenantSubscriptionActive(snapshot: TenantBillingSnapshot, now = new Date()): boolean {
     if (snapshot.subscriptionStatus === "active") return true;
     if (snapshot.subscriptionStatus !== "trialing") return false;
-    return !!snapshot.trialEndsAt && snapshot.trialEndsAt.getTime() >= now.getTime();
+
+    // Legacy tenants created before billing rollout may not have a trial date yet.
+    // Keep them unblocked until finance reviews the record explicitly.
+    if (!snapshot.trialEndsAt) return true;
+
+    return snapshot.trialEndsAt.getTime() >= now.getTime();
 }
 
 export function getTenantBillingStatusMeta(
@@ -50,7 +55,7 @@ export function getTenantBillingStatusMeta(
         return {
             label: "Pagamento pendente",
             tone: "amber",
-            description: "Cobrança em atraso ou aguardando regularização.",
+            description: "Cobranca em atraso ou aguardando regularizacao.",
         };
     }
 
@@ -58,15 +63,15 @@ export function getTenantBillingStatusMeta(
         return {
             label: "Cancelado",
             tone: "rose",
-            description: "Assinatura cancelada e sem renovação automática.",
+            description: "Assinatura cancelada e sem renovacao automatica.",
         };
     }
 
     if (!trialEndsAt) {
         return {
-            label: "Trial sem data",
+            label: "Trial legado",
             tone: "sky",
-            description: "Período de teste em andamento, mas sem vencimento informado.",
+            description: "Tenant legado sem data de trial definida. Acesso mantido ate revisao financeira.",
         };
     }
 
@@ -74,19 +79,19 @@ export function getTenantBillingStatusMeta(
         return {
             label: "Trial expirado",
             tone: "orange",
-            description: "Teste grátis encerrado e aguardando ativação da cobrança.",
+            description: "Teste gratis encerrado e aguardando ativacao da cobranca.",
         };
     }
 
     return {
         label: "Trial ativo",
         tone: "sky",
-        description: "Período de teste grátis vigente.",
+        description: "Periodo de teste gratis vigente.",
     };
 }
 
 export function getTenantBlockedLoginMessage(snapshot: TenantBillingSnapshot): string | null {
     if (isTenantSubscriptionActive(snapshot)) return null;
     const meta = getTenantBillingStatusMeta(snapshot.subscriptionStatus, snapshot.trialEndsAt);
-    return `A assinatura deste tenant está em estado "${meta.label}". Fale com o administrador financeiro para regularizar o acesso.`;
+    return `A assinatura deste tenant esta em estado "${meta.label}". Fale com o administrador financeiro para regularizar o acesso.`;
 }

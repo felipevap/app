@@ -11,3 +11,10 @@ ALTER TABLE `Tenant`
 
 ALTER TABLE `User`
     ADD COLUMN `isActive` BOOLEAN NOT NULL DEFAULT true;
+
+UPDATE `Tenant`
+SET
+    `subscriptionStartedAt` = COALESCE(`subscriptionStartedAt`, `createdAt`),
+    `trialEndsAt` = COALESCE(`trialEndsAt`, DATE_ADD(COALESCE(`subscriptionStartedAt`, `createdAt`), INTERVAL 14 DAY)),
+    `nextBillingAt` = COALESCE(`nextBillingAt`, DATE_ADD(COALESCE(`subscriptionStartedAt`, `createdAt`), INTERVAL 14 DAY))
+WHERE `subscriptionStatus` = 'trialing';
