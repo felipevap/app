@@ -38,7 +38,8 @@ type ProductRow = {
 
 type ContractAcceptanceRow = {
     id: string;
-    phase: string;
+    templateName: string;
+    templateType: string;
     acceptedAt: string;
     renderedBody: string;
     signaturePng: string;
@@ -87,10 +88,10 @@ function StatusPill({ status }: { status: string }) {
     return <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${cls}`}>{status}</span>;
 }
 
-function phaseLabel(phase: string) {
-    if (phase === "onboarding") return "Adesão (primeiro acesso)";
-    if (phase === "pre_event") return "Pré-evento";
-    return phase;
+function contractLabel(type: string) {
+    if (type === "service") return "Contrato de prestação de serviço";
+    if (type === "inventory") return "Contrato de inventário";
+    return type;
 }
 
 export default function PortalDashboardClient() {
@@ -243,7 +244,7 @@ export default function PortalDashboardClient() {
                                 {contractAcceptances.map((c) => (
                                     <li key={c.id} className="rounded-xl border border-stone-100 bg-stone-50/80 p-4">
                                         <div className="flex flex-wrap items-center justify-between gap-2">
-                                            <h3 className="font-semibold text-stone-900">{phaseLabel(c.phase)}</h3>
+                                            <h3 className="font-semibold text-stone-900">{c.templateName || contractLabel(c.templateType)}</h3>
                                             <span className="text-xs text-stone-500">
                                                 {new Date(c.acceptedAt).toLocaleString("pt-BR")}
                                             </span>

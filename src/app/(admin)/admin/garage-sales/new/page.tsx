@@ -5,16 +5,25 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Toast from "@/components/Toast";
-import ContractSegmentsBuilder from "@/components/ContractSegmentsBuilder";
-import type { ContractSegment } from "@/lib/contract";
+import type { ContractParameter } from "@/lib/contract";
 
 type TenantOption = { id: string; name: string; slug: string };
+
+type ContractTemplate = {
+    id: string;
+    name: string;
+    type: "service" | "inventory";
+    parameters: ContractParameter[];
+};
 
 export default function NewGarageSalePage() {
     const router = useRouter();
     const { addGarageSale } = useGarageSales();
     const [tenantOptions, setTenantOptions] = useState<TenantOption[]>([]);
     const [tenantId, setTenantId] = useState("");
+    const [contractTemplates, setContractTemplates] = useState<ContractTemplate[]>([]);
+    const [selectedTemplateId, setSelectedTemplateId] = useState("");
+    const [filledParams, setFilledParams] = useState<Record<string, string>>({});
     const [formData, setFormData] = useState({
         nome: "",
         dataInicio: "",
@@ -30,8 +39,6 @@ export default function NewGarageSalePage() {
         commissionPercent: "20",
     });
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
-    const [contractSegments, setContractSegments] = useState<ContractSegment[]>([]);
-    const [contractFileName, setContractFileName] = useState<string | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -47,6 +54,18 @@ export default function NewGarageSalePage() {
             cancelled = true;
         };
     }, []);
+
+    useEffect(() => {
+        fetchContractTemplates();
+    }, []);
+
+    const fetchContractTemplates = async () => {
+        const res = await fetch("/api/admin/contract-templates");
+        if (res.ok) {
+            const data = await res.json();
+            setContractTemplates(data);
+        }
+    };
 
     async function loadTenantDefaultCommission(tid: string | null) {
         const q = tid ? `?tenantId=${encodeURIComponent(tid)}` : "";
@@ -120,6 +139,22 @@ export default function NewGarageSalePage() {
             return;
         }
 
+        if (!selectedTemplateId) {
+            showToast("Selecione um modelo de contrato.", "error");
+            return;
+        }
+
+        // Validate required params
+        const selectedTemplate = contractTemplates.find(t => t.id === selectedTemplateId);
+        if (selectedTemplate) {
+            for (const param of selectedTemplate.parameters) {
+                if (param.required && !filledParams[param.name]?.trim()) {
+                    showToast(`Parâmetro obrigatório: ${param.name}`, "error");
+                    return;
+                }
+            }
+        }
+
         try {
             const { commissionPercent: commissionStr, ...restForm } = formData;
             const parsed = parseFloat(commissionStr.replace(",", "."));
@@ -127,14 +162,8 @@ export default function NewGarageSalePage() {
                 ...restForm,
                 commissionPercent: Number.isFinite(parsed) ? parsed : 20,
                 ...(tenantOptions.length > 0 && tenantId ? { tenantId } : {}),
-                ...(contractSegments.length > 0
-                    ? {
-                          contractOnboarding: {
-                              sourceFileName: contractFileName,
-                              segments: contractSegments,
-                          },
-                      }
-                    : {}),
+                contractTemplateId: selectedTemplateId,
+                filledParams,
             });
             showToast("Evento criado com sucesso!", "success");
             setTimeout(() => {
@@ -373,15 +402,55 @@ export default function NewGarageSalePage() {
                             placeholder="Digite as regras específicas para este evento..."
                         />
                     </div>
-
                 </div>
 
-                <ContractSegmentsBuilder
-                    segments={contractSegments}
-                    onChange={setContractSegments}
-                    sourceFileName={contractFileName}
-                    onSourceFileName={setContractFileName}
-                />
+                <hr className="border-stone-200" />
+
+                <div className="space-y-4">
+                    <h2 className="text-xl font-semibold text-red-400">Contrato</h2>
+                    <div>
+                        <label className="block text-sm font-medium text-stone-700">Modelo de Contrato</label>
+                        <select
+                            value={selectedTemplateId}
+                            onChange={(e) => {
+                                setSelectedTemplateId(e.target.value);
+                                setFilledParams({});
+                            }}
+                            className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                            required
+                        >
+                            <option value="">Selecione um modelo...</option>
+                            {contractTemplates.map((template) => (
+                                <option key={template.id} value={template.id}>
+                                    {template.name} ({template.type === "service" ? "Serviço" : "Inventário"})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {selectedTemplateId && (() => {
+                        const template = contractTemplates.find(t => t.id === selectedTemplateId);
+                        return template ? (
+                            <div className="space-y-4">
+                                <h3 className="text-lg font-medium">Parâmetros do Contrato</h3>
+                                {template.parameters.map((param) => (
+                                    <div key={param.name}>
+                                        <label className="block text-sm font-medium text-stone-700">
+                                            {param.name} {param.required && <span className="text-red-500">*</span>}
+                                        </label>
+                                        <input
+                                            type={param.type === 'date' ? 'date' : param.type === 'number' ? 'number' : 'text'}
+                                            value={filledParams[param.name] || ''}
+                                            onChange={(e) => setFilledParams(prev => ({ ...prev, [param.name]: e.target.value }))}
+                                            className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                                            required={param.required}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : null;
+                    })()}
+                </div>
 
                 <div className="flex justify-end pt-4">
                     <button

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
-import type { ContractSegment } from '@/lib/contract';
 
 export interface GarageSale {
     id: string;
@@ -50,7 +49,8 @@ interface GarageSaleContextType {
         garageSale: Omit<GarageSale, 'id' | 'criadoEm'> & {
             tenantId?: string;
             commissionPercent?: number;
-            contractOnboarding?: { sourceFileName: string | null; segments: ContractSegment[] };
+            contractTemplateId?: string;
+            filledParams?: Record<string, string>;
         }
     ) => Promise<GarageSale>;
     updateGarageSale: (id: string, garageSale: Partial<GarageSale>) => Promise<void>;
@@ -113,11 +113,17 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode; initialAuthenti
         garageSale: Omit<GarageSale, 'id' | 'criadoEm'> & {
             tenantId?: string;
             commissionPercent?: number;
-            contractOnboarding?: { sourceFileName: string | null; segments: ContractSegment[] };
+            contractTemplateId?: string;
+            filledParams?: Record<string, string>;
         }
     ): Promise<GarageSale> => {
-        const { tenantId, contractOnboarding, ...rest } = garageSale;
-        const body = { ...rest, ...(tenantId ? { tenantId } : {}), ...(contractOnboarding ? { contractOnboarding } : {}) };
+        const { tenantId, contractTemplateId, filledParams, ...rest } = garageSale;
+        const body = {
+            ...rest,
+            ...(tenantId ? { tenantId } : {}),
+            ...(contractTemplateId ? { contractTemplateId } : {}),
+            ...(filledParams ? { filledParams } : {}),
+        };
         const res = await fetch('/api/garage-sales', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

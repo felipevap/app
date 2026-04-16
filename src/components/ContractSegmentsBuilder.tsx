@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
-import type { ContractSegment } from "@/lib/contract";
-import { CONTRACT_PARAM_OPTIONS } from "@/lib/contract";
+import { useMemo, useState, useEffect } from "react";
+import type { ContractParameter } from "@/lib/contract";
+import { parsePlaceholders } from "@/lib/contract";
 
 type Props = {
-    segments: ContractSegment[];
-    onChange: (s: ContractSegment[]) => void;
+    text: string;
+    parameters: ContractParameter[];
+    onChange: (text: string, parameters: ContractParameter[]) => void;
     sourceFileName: string | null;
     onSourceFileName: (name: string | null) => void;
     title?: string;
@@ -14,28 +15,55 @@ type Props = {
 };
 
 export default function ContractSegmentsBuilder({
-    segments,
+    text,
+    parameters,
     onChange,
     sourceFileName,
     onSourceFileName,
-    title = "Contrato parametrizável (primeiro acesso)",
-    description = "Envie um arquivo .txt. O texto será dividido em blocos (parágrafos separados por linha em branco). Marque os blocos que devem ser preenchidos automaticamente com dados do evento.",
+    title = "Modelo de contrato",
+    description = "Cole o texto do contrato. Use {{nome_parametro}} para indicar onde os parâmetros serão inseridos.",
 }: Props) {
-    const hasSegments = segments.length > 0;
+    const [paramInputs, setParamInputs] = useState<{ name: string; type: 'text' | 'date' | 'number'; required: boolean }[]>(parameters);
 
-    const paramSelect = useMemo(() => CONTRACT_PARAM_OPTIONS, []);
+    useEffect(() => {
+        setParamInputs(parameters);
+    }, [parameters]);
 
-    function updateRow(i: number, patch: Partial<ContractSegment>) {
-        const next = segments.map((row, j) => (j === i ? { ...row, ...patch } : row));
-        onChange(next);
-    }
+    const handleTextChange = (newText: string) => {
+        const detected = parsePlaceholders(newText);
+        const merged = detected.map((d) => {
+            const existing = paramInputs.find((p) => p.name === d.name);
+            return existing || d;
+        });
+        setParamInputs(merged);
+        onChange(newText, merged);
+    };
+
+    const handleParamChange = (index: number, patch: Partial<ContractParameter>) => {
+        const next = paramInputs.map((p, i) => i === index ? { ...p, ...patch } : p);
+        setParamInputs(next);
+        onChange(text, next);
+    };
+
+    const addParam = () => {
+        const newParam = { name: `param${paramInputs.length + 1}`, type: 'text' as const, required: true };
+        const next = [...paramInputs, newParam];
+        setParamInputs(next);
+        onChange(text, next);
+    };
+
+    const removeParam = (index: number) => {
+        const next = paramInputs.filter((_, i) => i !== index);
+        setParamInputs(next);
+        onChange(text, next);
+    };
 
     return (
         <div className="space-y-4 rounded-xl border border-violet-200 bg-violet-50/40 p-4">
             <h3 className="text-lg font-semibold text-violet-950">{title}</h3>
             <p className="text-sm text-violet-900/85">{description}</p>
             <div>
-                <label className="block text-sm font-medium text-stone-700">Arquivo .txt do contrato</label>
+                <label className="block text-sm font-medium text-stone-700">Arquivo .txt do contrato (opcional)</label>
                 <input
                     type="file"
                     accept=".txt,text/plain"
@@ -47,11 +75,7 @@ export default function ContractSegmentsBuilder({
                         const reader = new FileReader();
                         reader.onload = () => {
                             const t = typeof reader.result === "string" ? reader.result : "";
-                            const parts = t
-                                .split(/\n\s*\n/)
-                                .map((s) => s.trim())
-                                .filter(Boolean);
-                            onChange(parts.map((text) => ({ text, paramKey: null })));
+                            handleTextChange(t);
                         };
                         reader.readAsText(f, "UTF-8");
                     }}
@@ -61,52 +85,66 @@ export default function ContractSegmentsBuilder({
                 ) : null}
             </div>
 
-            {hasSegments ? (
-                <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
-                    {segments.map((seg, i) => (
-                        <div
-                            key={i}
-                            className="rounded-lg border border-stone-200 bg-white p-3 shadow-sm"
-                        >
-                            <div className="mb-2 flex flex-wrap items-center gap-3">
-                                <label className="flex items-center gap-2 text-sm text-stone-800">
-                                    <input
-                                        type="checkbox"
-                                        checked={seg.paramKey !== null}
-                                        onChange={(e) =>
-                                            updateRow(i, {
-                                                paramKey: e.target.checked ? "EVENT_NAME" : null,
-                                            })
-                                        }
-                                    />
-                                    Bloco parametrizável
-                                </label>
-                                {seg.paramKey !== null ? (
-                                    <select
-                                        value={seg.paramKey}
-                                        onChange={(e) => updateRow(i, { paramKey: e.target.value || null })}
-                                        className="rounded-md border border-stone-200 px-2 py-1 text-sm"
-                                    >
-                                        {paramSelect.map((o) => (
-                                            <option key={o.value} value={o.value}>
-                                                {o.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                ) : null}
-                            </div>
-                            <textarea
-                                value={seg.text}
-                                onChange={(e) => updateRow(i, { text: e.target.value })}
-                                rows={Math.min(8, Math.max(2, Math.ceil(seg.text.length / 80)))}
-                                className="w-full rounded-md border border-stone-200 p-2 text-sm text-stone-900"
+            <div>
+                <label className="block text-sm font-medium text-stone-700">Texto do contrato</label>
+                <textarea
+                    value={text}
+                    onChange={(e) => handleTextChange(e.target.value)}
+                    rows={10}
+                    className="mt-1 w-full rounded-md border border-stone-200 p-2 text-sm text-stone-900"
+                    placeholder="Cole o texto do contrato aqui. Use {{parametro}} para placeholders."
+                />
+            </div>
+
+            <div>
+                <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium text-stone-700">Parâmetros detectados</label>
+                    <button
+                        type="button"
+                        onClick={addParam}
+                        className="rounded-md bg-violet-600 px-3 py-1 text-sm text-white hover:bg-violet-700"
+                    >
+                        Adicionar parâmetro
+                    </button>
+                </div>
+                <div className="mt-2 space-y-2">
+                    {paramInputs.map((param, i) => (
+                        <div key={i} className="flex items-center gap-2 rounded-md border border-stone-200 bg-white p-2">
+                            <input
+                                type="text"
+                                value={param.name}
+                                onChange={(e) => handleParamChange(i, { name: e.target.value })}
+                                className="flex-1 rounded border px-2 py-1 text-sm"
+                                placeholder="Nome do parâmetro"
                             />
+                            <select
+                                value={param.type}
+                                onChange={(e) => handleParamChange(i, { type: e.target.value as 'text' | 'date' | 'number' })}
+                                className="rounded border px-2 py-1 text-sm"
+                            >
+                                <option value="text">Texto</option>
+                                <option value="date">Data</option>
+                                <option value="number">Número</option>
+                            </select>
+                            <label className="flex items-center gap-1 text-sm">
+                                <input
+                                    type="checkbox"
+                                    checked={param.required}
+                                    onChange={(e) => handleParamChange(i, { required: e.target.checked })}
+                                />
+                                Obrigatório
+                            </label>
+                            <button
+                                type="button"
+                                onClick={() => removeParam(i)}
+                                className="rounded bg-red-600 px-2 py-1 text-sm text-white hover:bg-red-700"
+                            >
+                                Remover
+                            </button>
                         </div>
                     ))}
                 </div>
-            ) : (
-                <p className="text-sm text-stone-500">Nenhum bloco carregado. Envie um .txt para montar o contrato.</p>
-            )}
+            </div>
         </div>
     );
 }

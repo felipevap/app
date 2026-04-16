@@ -22,12 +22,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         const [templates, acceptances] = await Promise.all([
             prisma.garageSaleContractTemplate.findMany({
                 where: { garageSaleId: id },
-                orderBy: { phase: "asc" },
+                orderBy: { createdAt: "asc" },
+                include: { template: { select: { id: true, name: true, type: true } } },
             }),
             prisma.garageSaleContractAcceptance.findMany({
                 where: { garageSaleId: id },
                 orderBy: { acceptedAt: "desc" },
-                include: { signer: { select: { id: true, email: true, name: true } } },
+                include: {
+                    signer: { select: { id: true, email: true, name: true } },
+                    template: { select: { id: true, name: true, type: true } },
+                },
             }),
         ]);
 
@@ -42,8 +46,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         return NextResponse.json({
             itemsRegistrationComplete: gs?.itemsRegistrationComplete ?? false,
             itemsRegistrationCompletedAt: gs?.itemsRegistrationCompletedAt ?? null,
-            templates,
-            acceptances,
+            templates: templates.map((template) => ({
+                id: template.template.id,
+                name: template.template.name,
+                type: template.template.type,
+                filledParams: template.filledParams,
+                createdAt: template.createdAt,
+            })),
+            acceptances: acceptances.map((acceptance) => ({
+                id: acceptance.id,
+                templateId: acceptance.template.id,
+                templateName: acceptance.template.name,
+                templateType: acceptance.template.type,
+                acceptedAt: acceptance.acceptedAt,
+                renderedBody: acceptance.renderedBody,
+                signaturePng: acceptance.signaturePng,
+                signer: acceptance.signer,
+            })),
         });
     } catch (e) {
         console.error("[garage-sales/contracts GET]", e);

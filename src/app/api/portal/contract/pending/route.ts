@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
         }
         return NextResponse.json({
             pending: true as const,
-            phase: payload.phase,
+            templateId: payload.templateId,
             renderedText: payload.renderedText,
             title: payload.title,
         });

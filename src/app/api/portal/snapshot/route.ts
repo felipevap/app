@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
             orderBy: { acceptedAt: "asc" },
             select: {
                 id: true,
-                phase: true,
+                template: { select: { name: true, type: true } },
                 acceptedAt: true,
                 renderedBody: true,
                 signaturePng: true,
@@ -79,7 +79,8 @@ export async function GET(req: NextRequest) {
             summary,
             contractAcceptances: contractAcceptances.map((c) => ({
                 id: c.id,
-                phase: c.phase,
+                templateName: c.template.name,
+                templateType: c.template.type,
                 acceptedAt: c.acceptedAt.toISOString(),
                 renderedBody: c.renderedBody,
                 signaturePng: c.signaturePng,

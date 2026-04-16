@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireStaffSession } from "@/lib/require-staff";
 import { garageSaleFindWhere } from "@/lib/tenant-scope";
-import { CONTRACT_PHASE_ONBOARDING, CONTRACT_PHASE_PRE_EVENT, normalizeSegments } from "@/lib/contract";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const session = await requireStaffSession(req);
@@ -19,23 +18,26 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         }
 
         const body = await req.json();
-        const phase = body.phase === CONTRACT_PHASE_PRE_EVENT ? CONTRACT_PHASE_PRE_EVENT : CONTRACT_PHASE_ONBOARDING;
-        const segments = normalizeSegments(body.segments);
-        if (!segments) {
-            return NextResponse.json({ error: "segments inválidos" }, { status: 400 });
+        const templateId = typeof body.templateId === "string" ? body.templateId : "";
+        const filledParams = typeof body.filledParams === "object" && body.filledParams !== null ? body.filledParams : {};
+
+        if (!templateId) {
+            return NextResponse.json({ error: "templateId obrigatório" }, { status: 400 });
         }
-        const sourceFileName =
-            typeof body.sourceFileName === "string" ? body.sourceFileName.slice(0, 512) : null;
+
+        const template = await prisma.contractTemplate.findUnique({ where: { id: templateId } });
+        if (!template || template.tenantId !== session.tenantId) {
+            return NextResponse.json({ error: "Modelo inválido" }, { status: 404 });
+        }
 
         const row = await prisma.garageSaleContractTemplate.upsert({
-            where: { garageSaleId_phase: { garageSaleId: id, phase } },
+            where: { garageSaleId_templateId: { garageSaleId: id, templateId } },
             create: {
                 garageSaleId: id,
-                phase,
-                sourceFileName,
-                segments,
+                templateId,
+                filledParams,
             },
-            update: { sourceFileName, segments },
+            update: { filledParams },
         });
 
         return NextResponse.json(row);

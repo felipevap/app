@@ -6,25 +6,18 @@ import Link from "next/link";
 import PortalGarageLogo from "@/components/PortalGarageLogo";
 
 type Props = {
-    phase: string;
+    templateId: string;
     renderedText: string;
     title: string;
 };
 
-export default function ContractSignClient({ phase, renderedText, title }: Props) {
-    const searchParams = useSearchParams();
-    const urlPhase = searchParams.get("phase");
+export default function ContractSignClient({ templateId, renderedText, title }: Props) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const drawing = useRef(false);
     const [busy, setBusy] = useState(false);
     const [err, setErr] = useState<string | null>(null);
     const [ok, setOk] = useState(false);
 
-    useEffect(() => {
-        if (urlPhase && urlPhase !== phase) {
-            window.location.replace(`/portal/aceite?phase=${encodeURIComponent(phase)}`);
-        }
-    }, [urlPhase, phase]);
 
     const pos = useCallback((e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
         const c = canvasRef.current;
@@ -99,7 +92,7 @@ export default function ContractSignClient({ phase, renderedText, title }: Props
             const res = await fetch("/api/portal/contract/accept", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ phase, signaturePng: dataUrl }),
+                body: JSON.stringify({ templateId, signaturePng: dataUrl }),
             });
             const j = (await res.json().catch(() => ({}))) as { error?: string };
             if (!res.ok) {

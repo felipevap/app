@@ -5,9 +5,6 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Toast from "@/components/Toast";
-import ContractSegmentsBuilder from "@/components/ContractSegmentsBuilder";
-import type { ContractSegment } from "@/lib/contract";
-import { normalizeSegments } from "@/lib/contract";
 
 export default function EditGarageSalePage() {
     const router = useRouter();
@@ -29,13 +26,12 @@ export default function EditGarageSalePage() {
         commissionPercent: "20",
     });
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
-    const [preEventSegments, setPreEventSegments] = useState<ContractSegment[]>([]);
-    const [preEventFileName, setPreEventFileName] = useState<string | null>(null);
     const [itemsComplete, setItemsComplete] = useState(false);
     const [itemsCompleteAt, setItemsCompleteAt] = useState<string | null>(null);
     type AccRow = {
         id: string;
-        phase: string;
+        templateName: string;
+        templateType: string;
         acceptedAt: string;
         renderedBody: string;
         signaturePng: string;
@@ -57,16 +53,12 @@ export default function EditGarageSalePage() {
             const j = (await res.json()) as {
                 itemsRegistrationComplete?: boolean;
                 itemsRegistrationCompletedAt?: string | null;
-                templates?: { phase: string; sourceFileName: string | null; segments: unknown }[];
+                templates?: { id: string; name: string; type: string; filledParams: Record<string, string> }[];
                 acceptances?: AccRow[];
             };
             setItemsComplete(!!j.itemsRegistrationComplete);
             setItemsCompleteAt(j.itemsRegistrationCompletedAt ?? null);
             setAcceptances(Array.isArray(j.acceptances) ? j.acceptances : []);
-            const pre = j.templates?.find((t) => t.phase === "pre_event");
-            const segs = pre?.segments ? normalizeSegments(pre.segments) : null;
-            setPreEventSegments(segs ?? []);
-            setPreEventFileName(pre?.sourceFileName ?? null);
         } finally {
             setContractsLoading(false);
         }
@@ -129,25 +121,18 @@ export default function EditGarageSalePage() {
         }
     };
 
-    async function savePreEventTemplate() {
-        if (!id || preEventSegments.length === 0) {
-            showToast("Carregue e monte o contrato pré-evento antes de salvar.", "error");
-            return;
-        }
+    async function saveContractTemplate(templateId: string, filledParams: Record<string, string>) {
+        if (!id) return;
         const res = await fetch(`/api/garage-sales/${id}/contract-template`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                phase: "pre_event",
-                sourceFileName: preEventFileName,
-                segments: preEventSegments,
-            }),
+            body: JSON.stringify({ templateId, filledParams }),
         });
         if (!res.ok) {
-            showToast("Falha ao salvar modelo do contrato pré-evento.", "error");
+            showToast("Falha ao salvar modelo do contrato.", "error");
             return;
         }
-        showToast("Contrato pré-evento salvo.", "success");
+        showToast("Contrato salvo.", "success");
         void loadContracts();
     }
 
@@ -173,10 +158,10 @@ export default function EditGarageSalePage() {
         void loadContracts();
     }
 
-    function phaseLabel(phase: string) {
-        if (phase === "onboarding") return "Adesão (primeiro acesso)";
-        if (phase === "pre_event") return "Pré-evento";
-        return phase;
+    function contractLabel(type: string) {
+        if (type === "service") return "Contrato de prestação de serviço";
+        if (type === "inventory") return "Contrato de inventário";
+        return type;
     }
 
     return (
@@ -417,22 +402,15 @@ export default function EditGarageSalePage() {
                 {contractsLoading ? (
                     <p className="text-sm text-stone-600">Carregando contratos…</p>
                 ) : (
-                    <ContractSegmentsBuilder
-                        title="Contrato parametrizável pré-evento"
-                        description="Mesmo fluxo do primeiro contrato: envie .txt por parágrafos e marque trechos parametrizáveis. O proprietário verá este texto para assinar depois que você marcar o cadastro de itens como concluído."
-                        segments={preEventSegments}
-                        onChange={setPreEventSegments}
-                        sourceFileName={preEventFileName}
-                        onSourceFileName={setPreEventFileName}
-                    />
+                    <div className="space-y-3">
+                        <p className="text-sm text-stone-600">
+                            Este evento pode usar um ou mais contratos existentes. O proprietário assinará o contrato de serviço primeiro, e o contrato de inventário depois que você confirmar o cadastro de itens.
+                        </p>
+                        {acceptances.length === 0 ? (
+                            <p className="text-sm text-stone-500">Nenhum contrato registrado ainda.</p>
+                        ) : null}
+                    </div>
                 )}
-                <button
-                    type="button"
-                    onClick={() => void savePreEventTemplate()}
-                    className="rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white hover:bg-violet-700"
-                >
-                    Salvar modelo do contrato pré-evento
-                </button>
             </section>
 
             <section className="mt-10 space-y-4 rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
@@ -447,7 +425,7 @@ export default function EditGarageSalePage() {
                         {acceptances.map((a) => (
                             <li key={a.id} className="rounded-xl border border-stone-100 bg-stone-50 p-4">
                                 <div className="flex flex-wrap justify-between gap-2">
-                                    <span className="font-semibold text-stone-900">{phaseLabel(a.phase)}</span>
+                                    <span className="font-semibold text-stone-900">{a.templateName || contractLabel(a.templateType)}</span>
                                     <span className="text-xs text-stone-500">
                                         {new Date(a.acceptedAt).toLocaleString("pt-BR")} · {a.signer.email}
                                     </span>

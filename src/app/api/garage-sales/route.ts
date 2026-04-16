@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { requireTenantSession } from "@/lib/require-tenant";
 import { requireStaffSession } from "@/lib/require-staff";
 import { garageSaleTenantWhere } from "@/lib/tenant-scope";
-import { CONTRACT_PHASE_ONBOARDING, normalizeSegments } from "@/lib/contract";
 import { parseCommissionPercentInput } from "@/lib/commission";
 
 const OWNER_EMAIL_IN_USE = "OWNER_EMAIL_IN_USE";
@@ -120,28 +119,22 @@ export async function POST(req: NextRequest) {
                 }
             }
 
-            const cob = body.contractOnboarding;
-            if (cob && typeof cob === "object") {
-                const segments = normalizeSegments((cob as { segments?: unknown }).segments);
-                if (segments) {
-                    const sourceFileName =
-                        typeof (cob as { sourceFileName?: unknown }).sourceFileName === "string"
-                            ? (cob as { sourceFileName: string }).sourceFileName.slice(0, 512)
-                            : null;
-                    await tx.garageSaleContractTemplate.upsert({
-                        where: {
-                            garageSaleId_phase: {
-                                garageSaleId: gs.id,
-                                phase: CONTRACT_PHASE_ONBOARDING,
-                            },
-                        },
-                        create: {
+            // New contract template logic
+            const { contractTemplateId, filledParams } = body;
+            if (contractTemplateId && typeof contractTemplateId === "string") {
+                const template = await tx.contractTemplate.findFirst({
+                    where: { id: contractTemplateId, tenantId },
+                });
+                if (!template) {
+                    throw new Error("Modelo de contrato inválido");
+                }
+                if (filledParams && typeof filledParams === "object") {
+                    await tx.garageSaleContractTemplate.create({
+                        data: {
                             garageSaleId: gs.id,
-                            phase: CONTRACT_PHASE_ONBOARDING,
-                            sourceFileName,
-                            segments,
+                            templateId: contractTemplateId,
+                            filledParams,
                         },
-                        update: { sourceFileName, segments },
                     });
                 }
             }

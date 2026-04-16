@@ -4,11 +4,7 @@ import { getSessionFromCookies } from "@/lib/session";
 import { getPortalContractSignPayload } from "@/lib/portal-contract-gate";
 import ContractSignClient from "./ContractSignClient";
 
-export default async function AceitePage({
-    searchParams,
-}: {
-    searchParams: Promise<{ phase?: string }>;
-}) {
+export default async function AceitePage() {
     const session = await getSessionFromCookies();
     if (!session || session.role !== "owner" || !session.ownerGarageSaleId) {
         redirect("/login");
@@ -16,10 +12,6 @@ export default async function AceitePage({
     const payload = await getPortalContractSignPayload(session);
     if (!payload) {
         redirect("/portal");
-    }
-    const sp = await searchParams;
-    if (sp.phase && sp.phase !== payload.phase) {
-        redirect(`/portal/aceite?phase=${encodeURIComponent(payload.phase)}`);
     }
     return (
         <Suspense
@@ -29,7 +21,7 @@ export default async function AceitePage({
                 </div>
             }
         >
-            <ContractSignClient phase={payload.phase} renderedText={payload.renderedText} title={payload.title} />
+            <ContractSignClient templateId={payload.templateId} renderedText={payload.renderedText} title={payload.title} />
         </Suspense>
     );
 }

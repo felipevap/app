@@ -9,8 +9,8 @@ export default async function PortalPage() {
         redirect("/login");
     }
     const gate = await getOwnerContractGate(session.ownerGarageSaleId);
-    if (gate.mustSignPhase) {
-        redirect(`/portal/aceite?phase=${gate.mustSignPhase}`);
+    if (gate.mustSignTemplateId) {
+        redirect("/portal/aceite");
     }
     return <PortalDashboardClient />;
 }

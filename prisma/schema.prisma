@@ -26,6 +26,25 @@ model Tenant {
   updatedAt                DateTime     @updatedAt
   users              User[]
   garageSales        GarageSale[]
+  contractTemplates  ContractTemplate[]
+}
+
+model ContractTemplate {
+  id         String   @id @default(uuid())
+  name       String
+  type       String   // "service" or "inventory"
+  text       String   @db.LongText
+  parameters Json     // array of {name: string, type: string, required: boolean}
+  createdBy  String
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  garageSaleContractTemplates GarageSaleContractTemplate[]
+  contractAcceptances         GarageSaleContractAcceptance[]
+
+  @@index([tenantId])
 }
 
 model User {
@@ -83,16 +102,16 @@ model GarageSale {
 }
 
 model GarageSaleContractTemplate {
-  id             String     @id @default(uuid())
-  garageSaleId   String
-  garageSale     GarageSale @relation(fields: [garageSaleId], references: [id], onDelete: Cascade)
-  phase          String
-  sourceFileName String?
-  segments       Json
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  id           String     @id @default(uuid())
+  garageSaleId String
+  garageSale   GarageSale @relation(fields: [garageSaleId], references: [id], onDelete: Cascade)
+  templateId   String
+  template     ContractTemplate @relation(fields: [templateId], references: [id])
+  filledParams Json       // object with param names as keys, values as filled values
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  @@unique([garageSaleId, phase])
+  @@unique([garageSaleId, templateId])
   @@index([garageSaleId])
 }
 
@@ -102,12 +121,13 @@ model GarageSaleContractAcceptance {
   garageSale   GarageSale @relation(fields: [garageSaleId], references: [id], onDelete: Cascade)
   signerUserId String
   signer       User       @relation(fields: [signerUserId], references: [id], onDelete: Cascade)
-  phase        String
+  templateId   String
+  template     ContractTemplate @relation(fields: [templateId], references: [id])
   renderedBody String     @db.LongText
   signaturePng String     @db.LongText
   acceptedAt   DateTime   @default(now())
 
-  @@unique([garageSaleId, phase, signerUserId])
+  @@unique([garageSaleId, templateId, signerUserId])
   @@index([garageSaleId])
 }
 
