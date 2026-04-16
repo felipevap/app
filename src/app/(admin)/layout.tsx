@@ -20,6 +20,7 @@ export default function AdminLayout({
         { name: "Eventos", href: "/admin/garage-sales", icon: "🏪" },
         { name: "Produtos", href: "/admin/products", icon: "📦" },
         { name: "Vendas", href: "/admin/sales", icon: "💰" },
+        { name: "Modelos de Contrato", href: "/admin/contract-templates", icon: "📄" },
         { name: "Configurações", href: "/admin/settings", icon: "⚙️" },
     ];
 
