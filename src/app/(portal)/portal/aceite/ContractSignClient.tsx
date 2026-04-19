@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import PortalGarageLogo from "@/components/PortalGarageLogo";
+import { sanitizeContractHtml } from "@/lib/sanitize-html";
 
 type Props = {
     templateId: string;
@@ -131,9 +131,10 @@ export default function ContractSignClient({ templateId, renderedText, title }: 
                 </p>
             </header>
 
-            <section className="mb-8 max-h-[40vh] overflow-y-auto rounded-2xl border border-stone-200 bg-white p-5 text-sm leading-relaxed text-stone-800 shadow-sm whitespace-pre-wrap">
-                {renderedText}
-            </section>
+            <section
+                className="mb-8 max-h-[40vh] overflow-y-auto rounded-2xl border border-stone-200 bg-white p-5 text-sm leading-relaxed text-stone-800 shadow-sm"
+                dangerouslySetInnerHTML={{ __html: sanitizeContractHtml(renderedText) }}
+            />
 
             <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
                 <p className="mb-2 text-sm font-medium text-stone-800">Assinatura do contratante</p>
