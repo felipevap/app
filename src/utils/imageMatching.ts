@@ -1,7 +1,6 @@
-// Removed unused import
 import { cosineSimilarity } from './mobileNetEmbedding';
 
-// Map COCO-SSD classes to our Product Categories (and keywords)
+// Map YOLO/COCO classes to our Product Categories (and keywords used for boosts).
 export const COCO_TO_CATEGORY_MAP: Record<string, string[]> = {
     // Furniture -> Móveis, Decoração
     'chair': ['Móveis', 'Decoração', 'Cadeira'],
@@ -85,19 +84,35 @@ export const COCO_TO_CATEGORY_MAP: Record<string, string[]> = {
     'handbag': ['Roupas', 'Outros', 'Bolsa'],
 };
 
+/**
+ * Minimum visual cosine similarity required before considering a product a
+ * potential match. Below this floor we treat it as noise (no match), even if
+ * category/keyword boosts would otherwise push it past the threshold.
+ */
+const MIN_VISUAL_SIMILARITY = 0.55;
+
+/**
+ * Match a captured image against the product catalog. Only products with a
+ * pre-computed embedding can produce a real match; if either the captured
+ * embedding or the stored embedding is missing we no longer assign a bogus
+ * fallback score — the product is simply not considered for that frame.
+ */
 export async function findMatchingProducts(
     capturedImageBase64: string,
     products: { id: string, imagens: string[], categoria?: string, tags?: string[], nome?: string, embedding?: number[] | null }[],
     limit = 5,
     detectedClass?: string,
-    minScore = 0.65
+    minScore = 0.68
 ): Promise<{ id: string, score: number }[]> {
 
-    // 1. MobileNet Embedding Match (Primary)
-    // We generated embedding for the CAPTURED image.
+    // Generate the captured image embedding once.
     const img = new Image();
     img.src = capturedImageBase64;
-    await new Promise((resolve) => { img.onload = resolve; });
+    await new Promise<void>((resolve) => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+    });
+    if (!img.complete || img.naturalWidth === 0) return [];
 
     let capturedEmbedding: number[] | null = null;
 
@@ -105,53 +120,47 @@ export async function findMatchingProducts(
         const { getMobileNetEmbedding } = await import('./mobileNetEmbedding');
         const tensorEmbedding = await getMobileNetEmbedding(img);
         if (tensorEmbedding) {
-            capturedEmbedding = await tensorEmbedding.array() as number[];
+            capturedEmbedding = (await tensorEmbedding.array()) as number[];
             tensorEmbedding.dispose();
         }
     } catch (e) {
         console.error("Failed to generate embedding for captured image", e);
     }
 
+    // Without a captured embedding we cannot make a reliable visual match.
+    if (!capturedEmbedding || capturedEmbedding.length !== 1024) return [];
+
     const matches: { id: string, score: number }[] = [];
     const targetCategories = detectedClass ? COCO_TO_CATEGORY_MAP[detectedClass] : null;
 
     for (const product of products) {
-        let visualScore = 0;
+        // Skip products without an indexable embedding — they cannot match visually.
+        if (!product.embedding || product.embedding.length !== 1024) continue;
 
-        // A. Embedding Score (Best)
-        if (capturedEmbedding && product.embedding && product.embedding.length === 1024) {
-            visualScore = cosineSimilarity(capturedEmbedding, product.embedding);
-        } else if (capturedEmbedding) {
-            visualScore = 0.36;
-        } else {
-            visualScore = 0.42;
-        }
+        const visualScore = cosineSimilarity(capturedEmbedding, product.embedding);
+        if (visualScore < MIN_VISUAL_SIMILARITY) continue;
 
         let finalScore = visualScore;
 
-        // 2. Apply Boosting based on detected class
+        // Apply small, conservative boosts when the YOLO class hints align.
         if (detectedClass && product.categoria) {
-            // Boost if category matches
             if (targetCategories?.includes(product.categoria)) {
-                finalScore += 0.1;
+                finalScore += 0.05;
             }
 
-            // Boost if detected class match Keywords
-            const keywords = targetCategories || [];
-            keywords.push(detectedClass);
+            const keywords = [...(targetCategories ?? []), detectedClass];
+            const productName = product.nome?.toLowerCase() ?? "";
+            const productTags = product.tags ?? [];
 
-            const productName = product.nome?.toLowerCase() || "";
-            const productTags = product.tags || [];
-
-            const hasKeywordMatch = keywords.some(kw =>
-                productName.includes(kw.toLowerCase()) ||
-                productTags.includes(kw.toLowerCase())
-            );
-
-            if (hasKeywordMatch) {
-                finalScore += 0.2;
-            }
+            const hasKeywordMatch = keywords.some((kw) => {
+                const k = kw.toLowerCase();
+                return productName.includes(k) || productTags.includes(k);
+            });
+            if (hasKeywordMatch) finalScore += 0.08;
         }
+
+        // Clamp so boosts never make an OK match look certain.
+        if (finalScore > 0.99) finalScore = 0.99;
 
         if (finalScore >= minScore) {
             matches.push({ id: product.id, score: finalScore });

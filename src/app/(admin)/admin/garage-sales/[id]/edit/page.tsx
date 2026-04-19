@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Toast from "@/components/Toast";
+import EventContractSelector from "@/components/EventContractSelector";
+import { sanitizeContractHtml } from "@/lib/sanitize-html";
 
 export default function EditGarageSalePage() {
     const router = useRouter();
@@ -39,6 +41,9 @@ export default function EditGarageSalePage() {
     };
     const [acceptances, setAcceptances] = useState<AccRow[]>([]);
     const [contractsLoading, setContractsLoading] = useState(true);
+    const [attachedTemplates, setAttachedTemplates] = useState<
+        { id: string; name: string; type: string; filledParams: Record<string, string> }[]
+    >([]);
 
     const showToast = (message: string, type: 'success' | 'error' | 'info') => {
         setToast({ message, type, isVisible: true });
@@ -59,6 +64,7 @@ export default function EditGarageSalePage() {
             setItemsComplete(!!j.itemsRegistrationComplete);
             setItemsCompleteAt(j.itemsRegistrationCompletedAt ?? null);
             setAcceptances(Array.isArray(j.acceptances) ? j.acceptances : []);
+            setAttachedTemplates(Array.isArray(j.templates) ? j.templates : []);
         } finally {
             setContractsLoading(false);
         }
@@ -120,21 +126,6 @@ export default function EditGarageSalePage() {
             showToast("Erro ao atualizar evento.", "error");
         }
     };
-
-    async function saveContractTemplate(templateId: string, filledParams: Record<string, string>) {
-        if (!id) return;
-        const res = await fetch(`/api/garage-sales/${id}/contract-template`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ templateId, filledParams }),
-        });
-        if (!res.ok) {
-            showToast("Falha ao salvar modelo do contrato.", "error");
-            return;
-        }
-        showToast("Contrato salvo.", "success");
-        void loadContracts();
-    }
 
     async function toggleItemsComplete() {
         if (!id) return;
@@ -402,13 +393,17 @@ export default function EditGarageSalePage() {
                 {contractsLoading ? (
                     <p className="text-sm text-stone-600">Carregando contratos…</p>
                 ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                         <p className="text-sm text-stone-600">
-                            Este evento pode usar um ou mais contratos existentes. O proprietário assinará o contrato de serviço primeiro, e o contrato de inventário depois que você confirmar o cadastro de itens.
+                            Selecione os contratos deste evento e preencha os parâmetros. O proprietário assinará o contrato de serviço primeiro; o de inventário ficará disponível depois que o cadastro de itens for confirmado.
                         </p>
-                        {acceptances.length === 0 ? (
-                            <p className="text-sm text-stone-500">Nenhum contrato registrado ainda.</p>
-                        ) : null}
+                        <EventContractSelector
+                            garageSaleId={id}
+                            attachedTemplates={attachedTemplates}
+                            onSaved={() => void loadContracts()}
+                            onError={(m) => showToast(m, "error")}
+                            onSuccess={(m) => showToast(m, "success")}
+                        />
                     </div>
                 )}
             </section>
@@ -430,7 +425,12 @@ export default function EditGarageSalePage() {
                                         {new Date(a.acceptedAt).toLocaleString("pt-BR")} · {a.signer.email}
                                     </span>
                                 </div>
-                                <p className="mt-2 whitespace-pre-wrap text-sm text-stone-800">{a.renderedBody}</p>
+                                <div
+                                    className="mt-2 text-sm text-stone-800"
+                                    dangerouslySetInnerHTML={{
+                                        __html: sanitizeContractHtml(a.renderedBody),
+                                    }}
+                                />
                                 <p className="mt-2 text-xs font-medium text-stone-500">Assinatura</p>
                                 <img
                                     src={a.signaturePng}

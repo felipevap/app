@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireStaffSession } from "@/lib/require-staff";
-import type { ContractParameter } from "@/lib/contract";
+import { validateContractInput } from "@/lib/contract-validation";
+import type { Prisma } from "@prisma/client";
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const session = await requireStaffSession(request);
@@ -9,10 +10,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     try {
         const { id } = await params;
-        const { name, type, text, parameters }: { name: string; type: "service" | "inventory"; text: string; parameters: ContractParameter[] } = await request.json();
-
-        if (!name || !type || !text) {
-            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        const raw = await request.json();
+        const parsed = validateContractInput(raw);
+        if (typeof parsed === "string") {
+            return NextResponse.json({ error: parsed }, { status: 400 });
         }
 
         const existing = await prisma.contractTemplate.findUnique({ where: { id } });
@@ -23,10 +24,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         const template = await prisma.contractTemplate.update({
             where: { id },
             data: {
-                name,
-                type,
-                text,
-                parameters: parameters as any,
+                name: parsed.name,
+                type: parsed.type,
+                text: parsed.text,
+                parameters: parsed.parameters as unknown as Prisma.InputJsonValue,
             },
         });
 
@@ -48,9 +49,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
             return NextResponse.json({ error: "Modelo não encontrado" }, { status: 404 });
         }
 
-        await prisma.contractTemplate.delete({
-            where: { id },
-        });
+        await prisma.contractTemplate.delete({ where: { id } });
 
         return NextResponse.json({ success: true });
     } catch (error) {
