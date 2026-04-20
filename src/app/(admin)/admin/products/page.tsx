@@ -15,7 +15,11 @@ function ProductsContent() {
     const [searchTerm, setSearchTerm] = useState("");
     const [filterCategoria, setFilterCategoria] = useState("");
     const [filterCondicao, setFilterCondicao] = useState("");
+    const [filterIndexing, setFilterIndexing] = useState<"" | "missing" | "indexed">("");
+    const [filterImages, setFilterImages] = useState<"" | "missing">("");
     const [showDeleted, setShowDeleted] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [bulkBusy, setBulkBusy] = useState(false);
 
     // Pagination State
     const [products, setProducts] = useState<Product[]>([]);
@@ -54,7 +58,9 @@ function ProductsContent() {
                 includeDeleted: showDeleted ? 'true' : 'false',
                 search: searchTerm,
                 category: filterCategoria,
-                condition: filterCondicao
+                condition: filterCondicao,
+                indexing: filterIndexing,
+                images: filterImages,
             });
 
             const res = await fetch(`/api/products?${params.toString()}`);
@@ -73,7 +79,7 @@ function ProductsContent() {
         } finally {
             setLoading(false);
         }
-    }, [selectedGarageSaleId, page, showDeleted, searchTerm, filterCategoria, filterCondicao]);
+    }, [selectedGarageSaleId, page, showDeleted, searchTerm, filterCategoria, filterCondicao, filterIndexing, filterImages]);
 
     // Trigger fetch on dependencies change
     useEffect(() => {
@@ -87,7 +93,48 @@ function ProductsContent() {
     // Filters reset page
     useEffect(() => {
         setPage(1);
-    }, [selectedGarageSaleId, searchTerm, filterCategoria, filterCondicao, showDeleted]);
+    }, [selectedGarageSaleId, searchTerm, filterCategoria, filterCondicao, showDeleted, filterIndexing, filterImages]);
+
+    // Clear selection whenever the visible list changes
+    useEffect(() => {
+        setSelectedIds(new Set());
+    }, [selectedGarageSaleId, page, showDeleted, searchTerm, filterCategoria, filterCondicao, filterIndexing, filterImages]);
+
+    const toggleSelect = (id: string) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const toggleSelectAllVisible = () => {
+        const visibleIds = products.map((p) => p.id);
+        const allSelected = visibleIds.every((id) => selectedIds.has(id));
+        setSelectedIds(allSelected ? new Set() : new Set(visibleIds));
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.size === 0) return;
+        const count = selectedIds.size;
+        if (!confirm(`Excluir ${count} produto${count > 1 ? 's' : ''} selecionado${count > 1 ? 's' : ''}?`)) return;
+        setBulkBusy(true);
+        try {
+            const ids = Array.from(selectedIds);
+            const results = await Promise.allSettled(ids.map((id) => deleteProduct(id)));
+            const failed = results.filter((r) => r.status === "rejected").length;
+            if (failed === 0) {
+                showToast(`${count} produto${count > 1 ? 's' : ''} excluído${count > 1 ? 's' : ''}.`, "success");
+            } else {
+                showToast(`${count - failed} excluídos, ${failed} falharam.`, "error");
+            }
+            setSelectedIds(new Set());
+            fetchProducts();
+        } finally {
+            setBulkBusy(false);
+        }
+    };
 
 
     const handleDelete = async (id: string, nome: string) => {
@@ -245,6 +292,27 @@ function ProductsContent() {
                                 ))}
                             </select>
                         </div>
+                        <div>
+                            <select
+                                value={filterIndexing}
+                                onChange={(e) => setFilterIndexing(e.target.value as "" | "missing" | "indexed")}
+                                className="w-full rounded-lg border border-stone-300 bg-white p-3 text-stone-900 focus:border-blue-500 focus:outline-none text-base"
+                            >
+                                <option value="">Indexação (todos)</option>
+                                <option value="missing">Sem embedding</option>
+                                <option value="indexed">Com embedding</option>
+                            </select>
+                        </div>
+                        <div>
+                            <select
+                                value={filterImages}
+                                onChange={(e) => setFilterImages(e.target.value as "" | "missing")}
+                                className="w-full rounded-lg border border-stone-300 bg-white p-3 text-stone-900 focus:border-blue-500 focus:outline-none text-base"
+                            >
+                                <option value="">Imagens (todos)</option>
+                                <option value="missing">Sem foto</option>
+                            </select>
+                        </div>
                     </div>
 
                     {loading ? (
@@ -274,13 +342,53 @@ function ProductsContent() {
                         </div>
                     ) : (
                         <>
+                            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3 shadow-sm">
+                                <label className="inline-flex items-center gap-2 text-sm text-stone-700 select-none cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={products.length > 0 && products.every((p) => selectedIds.has(p.id))}
+                                        onChange={toggleSelectAllVisible}
+                                        className="h-4 w-4 rounded border-stone-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    Selecionar tudo nesta página
+                                </label>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-sm text-stone-600">
+                                        {selectedIds.size} selecionado{selectedIds.size !== 1 ? 's' : ''} · {totalItems} no total
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={handleBulkDelete}
+                                        disabled={selectedIds.size === 0 || bulkBusy}
+                                        className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700 transition-colors hover:border-rose-300 hover:bg-rose-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        {bulkBusy ? 'Excluindo...' : `🗑️ Excluir selecionados`}
+                                    </button>
+                                </div>
+                            </div>
                             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                {products.map((product) => (
+                                {products.map((product) => {
+                                    const hasEmbedding = Array.isArray(product.embedding) && product.embedding.length === 1024;
+                                    const hasImages = Array.isArray(product.imagens) && product.imagens.length > 0;
+                                    return (
                                     <div
                                         key={product.id}
-                                        className={`group rounded-xl border bg-white shadow-sm overflow-hidden shadow-sm transition-all hover:shadow-lg ${product.deletedAt ? 'border-red-900 opacity-75' : 'border-stone-200 hover:border-stone-300'}`}
+                                        className={`group rounded-xl border bg-white shadow-sm overflow-hidden shadow-sm transition-all hover:shadow-lg ${product.deletedAt ? 'border-red-900 opacity-75' : selectedIds.has(product.id) ? 'border-blue-400 ring-2 ring-blue-200' : 'border-stone-200 hover:border-stone-300'}`}
                                     >
                                         <div className="relative h-48 bg-stone-100">
+                                            {!product.deletedAt && (
+                                                <label
+                                                    className="absolute top-2 left-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm cursor-pointer"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedIds.has(product.id)}
+                                                        onChange={() => toggleSelect(product.id)}
+                                                        className="h-4 w-4 rounded border-stone-300 text-blue-600 focus:ring-blue-500"
+                                                    />
+                                                </label>
+                                            )}
                                             {product.imagens.length > 0 ? (
                                                 <img
                                                     src={product.imagens[0]}
@@ -293,10 +401,22 @@ function ProductsContent() {
                                                 </div>
                                             )}
                                             {product.deletedAt && (
-                                                <div className="absolute top-2 left-2 rounded-full bg-red-600 px-2 py-1 text-xs font-bold text-white">
+                                                <div className="absolute bottom-2 left-2 rounded-full bg-red-600 px-2 py-1 text-xs font-bold text-white">
                                                     DELETADO
                                                 </div>
                                             )}
+                                            <div className="absolute bottom-2 right-2 flex gap-1">
+                                                {!hasImages && (
+                                                    <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white" title="Produto sem foto">
+                                                        📷 Sem foto
+                                                    </span>
+                                                )}
+                                                {!hasEmbedding && (
+                                                    <span className="rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-bold text-white" title="Produto não indexado — não aparece no reconhecimento AR">
+                                                        ⚠ Sem índice
+                                                    </span>
+                                                )}
+                                            </div>
                                             {product.imagens.length > 1 && (
                                                 <div className="absolute top-2 right-2 rounded-full bg-stone-900/75 px-2 py-1 text-xs text-white">
                                                     +{product.imagens.length - 1}
@@ -372,7 +492,8 @@ function ProductsContent() {
                                             </div>
                                         </div>
                                     </div>
-                                ))}
+                                    );
+                                })}
                             </div>
 
                             {/* Pagination Controls */}

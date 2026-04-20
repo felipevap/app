@@ -81,6 +81,8 @@ model GarageSale {
   cep               String?
   cpf               String?
   pix               String?
+  arScoreThreshold  Float     @default(0.72)
+  reservationTTLMinutes Int   @default(30)
   createdAt         DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?

@@ -20,7 +20,7 @@ interface AROverlay {
 }
 
 
-const RemainingTime = ({ createdAt }: { createdAt: string }) => {
+const RemainingTime = ({ createdAt, ttlMinutes = 30 }: { createdAt: string; ttlMinutes?: number }) => {
     const [timeLeft, setTimeLeft] = useState("");
     const [expired, setExpired] = useState(false);
 
@@ -28,7 +28,7 @@ const RemainingTime = ({ createdAt }: { createdAt: string }) => {
         const calculate = () => {
             const created = new Date(createdAt).getTime();
             const now = new Date().getTime();
-            const diff = created + 30 * 60 * 1000 - now; // 30 minutes
+            const diff = created + ttlMinutes * 60 * 1000 - now;
 
             if (diff <= 0) {
                 setTimeLeft("00:00");
@@ -43,7 +43,7 @@ const RemainingTime = ({ createdAt }: { createdAt: string }) => {
         calculate();
         const interval = setInterval(calculate, 1000);
         return () => clearInterval(interval);
-    }, [createdAt]);
+    }, [createdAt, ttlMinutes]);
 
     if (expired) return <span className="text-red-500 font-bold text-[10px]">EXPIRADO</span>;
     return <span className="text-yellow-400 font-bold font-mono text-xs">⏱ {timeLeft}</span>;
@@ -332,8 +332,15 @@ export default function CapturePage() {
 
     // Continuous AR recognition loop. Runs while the camera is idle (no
     // modal open, no captured image), scanning ~2x per second.
+    const selectedGarageSale = useMemo(
+        () => garageSales.find((gs) => gs.id === selectedGarageSaleId),
+        [garageSales, selectedGarageSaleId]
+    );
+    const arScoreThreshold = selectedGarageSale?.arScoreThreshold ?? 0.72;
+    const reservationTTLMinutes = selectedGarageSale?.reservationTTLMinutes ?? 30;
+
     useEffect(() => {
-        const AR_SCORE_THRESHOLD = 0.72; // cosine sim + small boost
+        const AR_SCORE_THRESHOLD = arScoreThreshold;
         const OVERLAY_PERSIST_MS = 1800; // keep an overlay while tracking briefly dips
         const overlayLastSeen = overlayLastSeenRef.current;
 
@@ -416,7 +423,7 @@ export default function CapturePage() {
 
         const interval = setInterval(scanFrame, 200);
         return () => clearInterval(interval);
-    }, [currentProducts, isScanning, foundProduct, arOverlays.length, isModelLoading]);
+    }, [currentProducts, isScanning, foundProduct, arOverlays.length, isModelLoading, arScoreThreshold]);
 
     // Helper to map video coordinates to screen coordinates (object-fit: cover)
     const getScreenCoords = (bbox: [number, number, number, number]) => {
@@ -1692,7 +1699,7 @@ export default function CapturePage() {
                                         <div key={order.id} className="bg-stone-100 rounded-xl p-4 border border-stone-300">
                                             <div className="flex justify-between items-start mb-2">
                                                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${order.isPaid ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                                    {order.isPaid ? 'PAGO' : <RemainingTime createdAt={order.createdAt} />}
+                                                    {order.isPaid ? 'PAGO' : <RemainingTime createdAt={order.createdAt} ttlMinutes={reservationTTLMinutes} />}
                                                 </span>
                                                 <span className="font-bold text-stone-900">{formatBRL(order.total)}</span>
                                             </div>

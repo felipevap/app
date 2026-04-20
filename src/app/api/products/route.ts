@@ -28,6 +28,8 @@ export async function GET(req: NextRequest) {
         const search = searchParams.get("search") || "";
         const category = searchParams.get("category") || "";
         const condition = searchParams.get("condition") || "";
+        const indexingFilter = searchParams.get("indexing") || ""; // "missing" | "indexed" | ""
+        const imagesFilter = searchParams.get("images") || ""; // "missing" | "present" | ""
 
         const garageSaleFilter: Record<string, unknown> = {
             ...garageSaleRelationFilter(session),
@@ -51,26 +53,36 @@ export async function GET(req: NextRequest) {
                     : {},
                 category ? { categoria: category } : {},
                 condition ? { condicao: condition } : {},
+                indexingFilter === "missing" ? { embedding: { equals: Prisma.JsonNull } } : {},
+                indexingFilter === "indexed" ? { NOT: { embedding: { equals: Prisma.JsonNull } } } : {},
+                imagesFilter === "missing" ? { imagens: { equals: [] } } : {},
             ],
         };
 
-        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-
-        await prisma.product.updateMany({
-            where: {
-                status: "reservado",
-                reservedAt: { lt: thirtyMinutesAgo },
-                garageSale: garageSaleRelationFilter(session),
-            },
-            data: {
-                status: "disponível",
-                reservedBy: null,
-                reservedByName: null,
-                reservedByEmail: null,
-                reservedByPhone: null,
-                reservedAt: null,
-            },
+        // Expire stale reservations using each event's configured TTL.
+        const scopedSales = await prisma.garageSale.findMany({
+            where: garageSaleRelationFilter(session),
+            select: { id: true, reservationTTLMinutes: true },
         });
+        const now = Date.now();
+        for (const gs of scopedSales) {
+            const cutoff = new Date(now - gs.reservationTTLMinutes * 60 * 1000);
+            await prisma.product.updateMany({
+                where: {
+                    status: "reservado",
+                    reservedAt: { lt: cutoff },
+                    garageSaleId: gs.id,
+                },
+                data: {
+                    status: "disponível",
+                    reservedBy: null,
+                    reservedByName: null,
+                    reservedByEmail: null,
+                    reservedByPhone: null,
+                    reservedAt: null,
+                },
+            });
+        }
 
         if (shouldPaginate) {
             const [products, total] = await prisma.$transaction([

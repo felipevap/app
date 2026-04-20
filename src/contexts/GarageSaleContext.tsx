@@ -20,6 +20,8 @@ export interface GarageSale {
     itemsRegistrationCompletedAt?: string | null;
     createdAt?: string;
     commissionPercent?: number;
+    arScoreThreshold?: number;
+    reservationTTLMinutes?: number;
 }
 
 export interface Product {

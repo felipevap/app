@@ -70,6 +70,22 @@ export default function AdminDashboard() {
     const totalSalesValue = filteredSales.reduce((sum, sale) => sum + sale.totalValue, 0);
     const activeProducts = filteredProducts.filter(p => p.status === 'disponível' && !p.deletedAt).length;
     const recentSales = filteredSales.slice(-5).reverse();
+    const averageTicket = filteredSales.length > 0 ? totalSalesValue / filteredSales.length : 0;
+    const productsWithoutEmbedding = filteredProducts.filter(
+        (p) => !p.deletedAt && (!Array.isArray(p.embedding) || p.embedding.length !== 1024)
+    ).length;
+    const productsWithoutImages = filteredProducts.filter(
+        (p) => !p.deletedAt && (!Array.isArray(p.imagens) || p.imagens.length === 0)
+    ).length;
+    const topCategoriesByProduct = filteredProducts.reduce<Record<string, number>>((acc, p) => {
+        if (p.deletedAt) return acc;
+        const key = p.categoria || "Outros";
+        acc[key] = (acc[key] ?? 0) + 1;
+        return acc;
+    }, {});
+    const topCategories = Object.entries(topCategoriesByProduct)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5);
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('pt-BR', {
@@ -127,8 +143,8 @@ export default function AdminDashboard() {
                 </select>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-6 shadow-sm">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-6">
                     <h3 className="text-sm font-medium text-stone-600">
                         Vendas Totais
                     </h3>
@@ -142,7 +158,19 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-6 shadow-sm">
+                <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-6">
+                    <h3 className="text-sm font-medium text-stone-600">
+                        Ticket Médio
+                    </h3>
+                    <div className="mt-2 flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-stone-900">
+                            {formatCurrency(averageTicket)}
+                        </span>
+                        <span className="text-sm text-purple-700">por venda</span>
+                    </div>
+                </div>
+
+                <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-6">
                     <h3 className="text-sm font-medium text-stone-600">
                         Produtos Ativos
                     </h3>
@@ -155,7 +183,59 @@ export default function AdminDashboard() {
                         </span>
                     </div>
                 </div>
+
+                <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-6">
+                    <h3 className="text-sm font-medium text-stone-600">
+                        Saúde do Catálogo
+                    </h3>
+                    <div className="mt-2 space-y-1">
+                        <div className="flex items-baseline justify-between">
+                            <span className="text-sm text-stone-700">Sem foto</span>
+                            <Link
+                                href={`/admin/products?garageSale=${selectedGarageSaleId === 'all' ? '' : selectedGarageSaleId}`}
+                                className={`text-2xl font-bold ${productsWithoutImages > 0 ? 'text-amber-600 hover:text-amber-700' : 'text-stone-400'}`}
+                            >
+                                {productsWithoutImages}
+                            </Link>
+                        </div>
+                        <div className="flex items-baseline justify-between">
+                            <span className="text-sm text-stone-700">Sem índice AR</span>
+                            <Link
+                                href={`/admin/products?garageSale=${selectedGarageSaleId === 'all' ? '' : selectedGarageSaleId}`}
+                                className={`text-2xl font-bold ${productsWithoutEmbedding > 0 ? 'text-orange-600 hover:text-orange-700' : 'text-stone-400'}`}
+                            >
+                                {productsWithoutEmbedding}
+                            </Link>
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            {topCategories.length > 0 && (
+                <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-6">
+                    <h2 className="text-xl font-bold text-stone-900 mb-4">Top categorias (ativos)</h2>
+                    <div className="space-y-3">
+                        {topCategories.map(([cat, count]) => {
+                            const max = topCategories[0][1] || 1;
+                            const pct = (count / max) * 100;
+                            return (
+                                <div key={cat} className="space-y-1">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-stone-800 font-medium">{cat}</span>
+                                        <span className="text-stone-600">{count} produto{count !== 1 ? 's' : ''}</span>
+                                    </div>
+                                    <div className="h-2 w-full bg-stone-100 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full transition-all duration-500"
+                                            style={{ width: `${pct}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* Sales by Garage Sale Chart */}
             <div className="rounded-xl border border-stone-200 bg-white shadow-sm p-6">

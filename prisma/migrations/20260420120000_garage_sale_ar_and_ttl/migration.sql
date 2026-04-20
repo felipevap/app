@@ -1,0 +1,2 @@
+ALTER TABLE `GarageSale` ADD COLUMN `arScoreThreshold` DOUBLE NOT NULL DEFAULT 0.72;
+ALTER TABLE `GarageSale` ADD COLUMN `reservationTTLMinutes` INT NOT NULL DEFAULT 30;
