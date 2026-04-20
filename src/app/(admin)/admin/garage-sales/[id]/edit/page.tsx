@@ -26,6 +26,8 @@ export default function EditGarageSalePage() {
         cpf: "",
         pix: "",
         commissionPercent: "20",
+        arScoreThreshold: "0.72",
+        reservationTTLMinutes: "30",
     });
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
     const [itemsComplete, setItemsComplete] = useState(false);
@@ -90,6 +92,16 @@ export default function EditGarageSalePage() {
                             ? garageSale.commissionPercent
                             : 20
                     ),
+                    arScoreThreshold: String(
+                        typeof garageSale.arScoreThreshold === "number"
+                            ? garageSale.arScoreThreshold
+                            : 0.72
+                    ),
+                    reservationTTLMinutes: String(
+                        typeof garageSale.reservationTTLMinutes === "number"
+                            ? garageSale.reservationTTLMinutes
+                            : 30
+                    ),
                 });
                 if (typeof garageSale.itemsRegistrationComplete === "boolean") {
                     setItemsComplete(garageSale.itemsRegistrationComplete);
@@ -112,11 +124,20 @@ export default function EditGarageSalePage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const { commissionPercent: commissionStr, ...rest } = formData;
-            const parsed = parseFloat(commissionStr.replace(",", "."));
+            const {
+                commissionPercent: commissionStr,
+                arScoreThreshold: arStr,
+                reservationTTLMinutes: ttlStr,
+                ...rest
+            } = formData;
+            const parsedCommission = parseFloat(commissionStr.replace(",", "."));
+            const parsedAr = parseFloat(arStr.replace(",", "."));
+            const parsedTTL = parseInt(ttlStr, 10);
             await updateGarageSale(id, {
                 ...rest,
-                commissionPercent: Number.isFinite(parsed) ? parsed : 20,
+                commissionPercent: Number.isFinite(parsedCommission) ? parsedCommission : 20,
+                arScoreThreshold: Number.isFinite(parsedAr) ? parsedAr : 0.72,
+                reservationTTLMinutes: Number.isFinite(parsedTTL) ? parsedTTL : 30,
             });
             showToast("Evento atualizado com sucesso!", "success");
             setTimeout(() => {
@@ -335,6 +356,42 @@ export default function EditGarageSalePage() {
                             />
                             <p className="mt-1 text-xs text-stone-500">
                                 Usada nos fechamentos do PDV e no portal do proprietário para este evento.
+                            </p>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-stone-700">
+                                Limiar de reconhecimento (AR)
+                            </label>
+                            <input
+                                type="number"
+                                min={0.55}
+                                max={0.95}
+                                step={0.01}
+                                name="arScoreThreshold"
+                                value={formData.arScoreThreshold}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                            />
+                            <p className="mt-1 text-xs text-stone-500">
+                                Entre 0.55 e 0.95. Valores mais baixos reconhecem mais produtos, mas podem causar confusões.
+                            </p>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-stone-700">
+                                TTL de reserva (minutos)
+                            </label>
+                            <input
+                                type="number"
+                                min={5}
+                                max={1440}
+                                step={1}
+                                name="reservationTTLMinutes"
+                                value={formData.reservationTTLMinutes}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                            />
+                            <p className="mt-1 text-xs text-stone-500">
+                                Tempo máximo antes de liberar o produto se a reserva não for paga.
                             </p>
                         </div>
                     </div>

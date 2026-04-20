@@ -4,6 +4,7 @@ import { getSessionFromCookies } from "@/lib/session";
 import { isTenantAdministrator } from "@/lib/panel-routes";
 import AdminLogoForm from "./AdminLogoForm";
 import CommissionPercentForm from "./CommissionPercentForm";
+import ReindexProductsForm from "./ReindexProductsForm";
 
 export default async function AdminSettingsPage() {
     const session = await getSessionFromCookies();
@@ -25,6 +26,7 @@ export default async function AdminSettingsPage() {
             {tenant ? (
                 <>
                     <CommissionPercentForm initialPercent={tenant.defaultCommissionPercent} />
+                    <ReindexProductsForm />
                     <AdminLogoForm initialDataUrl={tenant.adminLogoDataUrl} />
                 </>
             ) : (

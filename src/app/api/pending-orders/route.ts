@@ -9,42 +9,50 @@ export async function GET(req: NextRequest) {
 
     try {
         const { searchParams } = new URL(req.url);
-        const expirationTime = new Date(Date.now() - 30 * 60 * 1000);
+        const now = Date.now();
 
-        const expiredOrders = await prisma.pendingOrder.findMany({
-            where: {
-                status: "pending",
-                isPaid: false,
-                createdAt: { lt: expirationTime },
-                garageSale: garageSaleRelationFilter(session),
-            },
-            include: { items: true },
+        // Expire stale pending orders using each event's configured TTL.
+        const scopedSales = await prisma.garageSale.findMany({
+            where: garageSaleRelationFilter(session),
+            select: { id: true, reservationTTLMinutes: true },
         });
-
-        for (const order of expiredOrders) {
-            await prisma.$transaction(async (tx) => {
-                await tx.pendingOrder.update({
-                    where: { id: order.id },
-                    data: { status: "expired" },
-                });
-
-                for (const item of order.items) {
-                    await tx.product.updateMany({
-                        where: {
-                            id: item.productId,
-                            garageSale: garageSaleRelationFilter(session),
-                        },
-                        data: {
-                            status: "disponível",
-                            reservedBy: null,
-                            reservedByName: null,
-                            reservedByEmail: null,
-                            reservedByPhone: null,
-                            reservedAt: null,
-                        },
-                    });
-                }
+        for (const gs of scopedSales) {
+            const cutoff = new Date(now - gs.reservationTTLMinutes * 60 * 1000);
+            const expiredOrders = await prisma.pendingOrder.findMany({
+                where: {
+                    status: "pending",
+                    isPaid: false,
+                    createdAt: { lt: cutoff },
+                    garageSaleId: gs.id,
+                },
+                include: { items: true },
             });
+
+            for (const order of expiredOrders) {
+                await prisma.$transaction(async (tx) => {
+                    await tx.pendingOrder.update({
+                        where: { id: order.id },
+                        data: { status: "expired" },
+                    });
+
+                    for (const item of order.items) {
+                        await tx.product.updateMany({
+                            where: {
+                                id: item.productId,
+                                garageSaleId: gs.id,
+                            },
+                            data: {
+                                status: "disponível",
+                                reservedBy: null,
+                                reservedByName: null,
+                                reservedByEmail: null,
+                                reservedByPhone: null,
+                                reservedAt: null,
+                            },
+                        });
+                    }
+                });
+            }
         }
 
         const garageSaleId = searchParams.get("garageSaleId");

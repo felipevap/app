@@ -627,7 +627,14 @@ function NewProductContent() {
                 ...formData,
                 embedding,
             });
-            showToast('Produto cadastrado com sucesso!', 'success');
+            if (formData.imagens.length > 0 && !embedding) {
+                showToast(
+                    'Produto salvo, mas não foi possível indexar para AR. Tente substituir as fotos.',
+                    'info'
+                );
+            } else {
+                showToast('Produto cadastrado com sucesso!', 'success');
+            }
             setTimeout(() => {
                 router.push(`/admin/products?garageSale=${formData.garageSaleId}`);
             }, 1000);
@@ -814,6 +821,30 @@ function NewProductContent() {
                             </p>
                         </div>
                     )}
+
+                    <div
+                        className={`mt-3 rounded-xl border px-4 py-3 text-sm ${
+                            formData.imagens.length === 0
+                                ? "border-amber-200 bg-amber-50 text-amber-800"
+                                : formData.imagens.length < 2
+                                  ? "border-blue-200 bg-blue-50 text-blue-800"
+                                  : "border-emerald-200 bg-emerald-50 text-emerald-800"
+                        }`}
+                    >
+                        {formData.imagens.length === 0 ? (
+                            <>
+                                <strong>⚠ Sem imagens:</strong> o produto não será reconhecido pelo AR na tela do cliente. Adicione ao menos uma foto nítida.
+                            </>
+                        ) : formData.imagens.length < 2 ? (
+                            <>
+                                <strong>ℹ Indexável:</strong> o produto será reconhecido. Com 2 ou mais fotos de ângulos diferentes o reconhecimento fica mais robusto.
+                            </>
+                        ) : (
+                            <>
+                                <strong>✓ Indexação forte:</strong> {formData.imagens.length} fotos — ótima cobertura para reconhecimento AR.
+                            </>
+                        )}
+                    </div>
 
                     {(processingImage || isCropping) && (
                         <div className="mt-4 flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
