@@ -4,9 +4,12 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 
 export interface GarageSale {
     id: string;
+    slug?: string | null;
     nome: string;
     dataInicio: string;
     dataFim: string;
+    horarioInicio?: string | null;
+    horarioFim?: string | null;
     endereco: string;
     responsavel: string;
     email: string;

@@ -7,6 +7,7 @@ import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Toast from "@/components/Toast";
 import EventContractSelector from "@/components/EventContractSelector";
 import { sanitizeContractHtml } from "@/lib/sanitize-html";
+import { normalizeEventSlug } from "@/lib/slug";
 
 export default function EditGarageSalePage() {
     const router = useRouter();
@@ -16,8 +17,11 @@ export default function EditGarageSalePage() {
 
     const [formData, setFormData] = useState({
         nome: "",
+        slug: "",
         dataInicio: "",
         dataFim: "",
+        horarioInicio: "",
+        horarioFim: "",
         endereco: "",
         responsavel: "",
         email: "",
@@ -29,6 +33,7 @@ export default function EditGarageSalePage() {
         arScoreThreshold: "0.72",
         reservationTTLMinutes: "30",
     });
+    const [isSlugAvailable, setIsSlugAvailable] = useState<boolean | null>(null);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
     const [itemsComplete, setItemsComplete] = useState(false);
     const [itemsCompleteAt, setItemsCompleteAt] = useState<string | null>(null);
@@ -78,8 +83,11 @@ export default function EditGarageSalePage() {
             if (garageSale) {
                 setFormData({
                     nome: garageSale.nome,
+                    slug: garageSale.slug || "",
                     dataInicio: garageSale.dataInicio ? new Date(garageSale.dataInicio).toISOString().split('T')[0] : "",
                     dataFim: garageSale.dataFim ? new Date(garageSale.dataFim).toISOString().split('T')[0] : "",
+                    horarioInicio: garageSale.horarioInicio || "",
+                    horarioFim: garageSale.horarioFim || "",
                     endereco: garageSale.endereco,
                     responsavel: garageSale.responsavel || "",
                     email: garageSale.email || "",
@@ -114,6 +122,33 @@ export default function EditGarageSalePage() {
         void loadContracts();
     }, [loadContracts]);
 
+    useEffect(() => {
+        const slug = normalizeEventSlug(formData.slug);
+        if (!slug || !id) {
+            setIsSlugAvailable(null);
+            return;
+        }
+        let cancelled = false;
+        const timer = setTimeout(async () => {
+            const res = await fetch(
+                `/api/garage-sales/slug-availability?slug=${encodeURIComponent(slug)}&excludeId=${encodeURIComponent(id)}`,
+                { cache: "no-store" }
+            );
+            if (!res.ok || cancelled) return;
+            const payload = (await res.json()) as { available?: boolean; normalized?: string };
+            if (!cancelled) {
+                if (payload.normalized && payload.normalized !== formData.slug) {
+                    setFormData((prev) => ({ ...prev, slug: payload.normalized || prev.slug }));
+                }
+                setIsSlugAvailable(!!payload.available);
+            }
+        }, 300);
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [formData.slug, id]);
+
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => {
@@ -123,6 +158,14 @@ export default function EditGarageSalePage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!normalizeEventSlug(formData.slug)) {
+            showToast("Informe um slug válido para o link do evento.", "error");
+            return;
+        }
+        if (isSlugAvailable === false) {
+            showToast("Esse slug já está em uso. Escolha outro.", "error");
+            return;
+        }
         try {
             const {
                 commissionPercent: commissionStr,
@@ -208,6 +251,25 @@ export default function EditGarageSalePage() {
                                 required
                             />
                         </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-stone-700">Slug do portal</label>
+                            <input
+                                type="text"
+                                name="slug"
+                                value={formData.slug}
+                                onChange={(e) => {
+                                    const value = normalizeEventSlug(e.target.value);
+                                    setFormData((prev) => ({ ...prev, slug: value }));
+                                }}
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                required
+                            />
+                            <p className={`mt-1 text-xs ${isSlugAvailable === false ? "text-red-500" : "text-stone-500"}`}>
+                                Link do evento: /evento/{formData.slug || "seu-slug"}
+                                {isSlugAvailable === true ? " (disponível)" : ""}
+                                {isSlugAvailable === false ? " (indisponível)" : ""}
+                            </p>
+                        </div>
                         <div>
                             <label className="block text-sm font-medium text-stone-700">
                                 Data de Início
@@ -229,6 +291,28 @@ export default function EditGarageSalePage() {
                                 type="date"
                                 name="dataFim"
                                 value={formData.dataFim}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-stone-700">Horário de Início</label>
+                            <input
+                                type="time"
+                                name="horarioInicio"
+                                value={formData.horarioInicio}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-stone-700">Horário de Término</label>
+                            <input
+                                type="time"
+                                name="horarioFim"
+                                value={formData.horarioFim}
                                 onChange={handleChange}
                                 className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                 required

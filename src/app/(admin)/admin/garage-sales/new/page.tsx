@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Toast from "@/components/Toast";
 import type { ContractParameter } from "@/lib/contract";
+import { normalizeEventSlug } from "@/lib/slug";
 
 type TenantOption = { id: string; name: string; slug: string };
 
@@ -26,8 +27,11 @@ export default function NewGarageSalePage() {
     const [filledParams, setFilledParams] = useState<Record<string, string>>({});
     const [formData, setFormData] = useState({
         nome: "",
+        slug: "",
         dataInicio: "",
         dataFim: "",
+        horarioInicio: "",
+        horarioFim: "",
         endereco: "",
         responsavel: "",
         email: "",
@@ -38,16 +42,25 @@ export default function NewGarageSalePage() {
         pix: "",
         commissionPercent: "20",
     });
+    const [isSlugAvailable, setIsSlugAvailable] = useState<boolean | null>(null);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
 
     useEffect(() => {
         let cancelled = false;
         (async () => {
-            const res = await fetch("/api/tenants", { cache: "no-store" });
-            if (cancelled || !res.ok) return;
-            const data = (await res.json()) as TenantOption[];
-            if (Array.isArray(data) && !cancelled) {
-                setTenantOptions(data);
+            const [tenantRes, templateRes] = await Promise.all([
+                fetch("/api/tenants", { cache: "no-store" }),
+                fetch("/api/admin/contract-templates", { cache: "no-store" }),
+            ]);
+            if (!cancelled && tenantRes.ok) {
+                const data = (await tenantRes.json()) as TenantOption[];
+                if (Array.isArray(data)) {
+                    setTenantOptions(data);
+                }
+            }
+            if (!cancelled && templateRes.ok) {
+                const templates = await templateRes.json();
+                setContractTemplates(templates);
             }
         })();
         return () => {
@@ -56,16 +69,25 @@ export default function NewGarageSalePage() {
     }, []);
 
     useEffect(() => {
-        fetchContractTemplates();
-    }, []);
-
-    const fetchContractTemplates = async () => {
-        const res = await fetch("/api/admin/contract-templates");
-        if (res.ok) {
-            const data = await res.json();
-            setContractTemplates(data);
-        }
-    };
+        const slug = normalizeEventSlug(formData.slug);
+        if (!slug) return;
+        let cancelled = false;
+        const timer = setTimeout(async () => {
+            const res = await fetch(`/api/garage-sales/slug-availability?slug=${encodeURIComponent(slug)}`, { cache: "no-store" });
+            if (!res.ok || cancelled) return;
+            const payload = (await res.json()) as { available?: boolean; normalized?: string };
+            if (!cancelled) {
+                if (payload.normalized && payload.normalized !== formData.slug) {
+                    setFormData((prev) => ({ ...prev, slug: payload.normalized || prev.slug }));
+                }
+                setIsSlugAvailable(!!payload.available);
+            }
+        }, 300);
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [formData.slug]);
 
     async function loadTenantDefaultCommission(tid: string | null) {
         const q = tid ? `?tenantId=${encodeURIComponent(tid)}` : "";
@@ -136,6 +158,14 @@ export default function NewGarageSalePage() {
 
         if (tenantOptions.length > 0 && !tenantId) {
             showToast("Selecione a organização (tenant) do evento.", "error");
+            return;
+        }
+        if (!normalizeEventSlug(formData.slug)) {
+            showToast("Informe um slug válido para o link do evento.", "error");
+            return;
+        }
+        if (isSlugAvailable === false) {
+            showToast("Esse slug já está em uso. Escolha outro.", "error");
             return;
         }
 
@@ -225,11 +255,39 @@ export default function NewGarageSalePage() {
                                 type="text"
                                 name="nome"
                                 value={formData.nome}
-                                onChange={handleChange}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        nome: value,
+                                        slug: prev.slug || normalizeEventSlug(value),
+                                    }));
+                                }}
                                 className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                 placeholder="Garage Sale Verão 2026"
                                 required
                             />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-stone-700">Slug do portal</label>
+                            <input
+                                type="text"
+                                name="slug"
+                                value={formData.slug}
+                                onChange={(e) => {
+                                    const value = normalizeEventSlug(e.target.value);
+                                    setFormData((prev) => ({ ...prev, slug: value }));
+                                    if (!value) setIsSlugAvailable(null);
+                                }}
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                placeholder="garage-sale-verao-2026"
+                                required
+                            />
+                            <p className={`mt-1 text-xs ${isSlugAvailable === false ? "text-red-500" : "text-stone-500"}`}>
+                                Link do evento: /evento/{formData.slug || "seu-slug"}
+                                {isSlugAvailable === true ? " (disponível)" : ""}
+                                {isSlugAvailable === false ? " (indisponível)" : ""}
+                            </p>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-stone-700">
@@ -239,6 +297,28 @@ export default function NewGarageSalePage() {
                                 type="date"
                                 name="dataInicio"
                                 value={formData.dataInicio}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-stone-700">Horário de Início</label>
+                            <input
+                                type="time"
+                                name="horarioInicio"
+                                value={formData.horarioInicio}
+                                onChange={handleChange}
+                                className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-stone-700">Horário de Término</label>
+                            <input
+                                type="time"
+                                name="horarioFim"
+                                value={formData.horarioFim}
                                 onChange={handleChange}
                                 className="mt-1 block w-full rounded-lg border border-stone-200 bg-white p-3 text-stone-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                 required

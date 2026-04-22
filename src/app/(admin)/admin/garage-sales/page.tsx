@@ -121,6 +121,16 @@ export default function GarageSalesPage() {
                                         <p className="mt-1 text-sm text-stone-600">
                                             {formatDate(gs.dataInicio)} - {formatDate(gs.dataFim)}
                                         </p>
+                                        {gs.slug ? (
+                                            <a
+                                                href={`/evento/${gs.slug}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="mt-2 inline-block text-xs font-medium text-blue-600 hover:underline"
+                                            >
+                                                Abrir portal: /evento/{gs.slug}
+                                            </a>
+                                        ) : null}
                                     </div>
                                     <span className="rounded-full bg-blue-500/20 px-3 py-1 text-sm font-medium text-blue-400">
                                         {produtos.length} {produtos.length === 1 ? 'produto' : 'produtos'}
