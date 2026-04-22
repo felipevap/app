@@ -74,6 +74,42 @@ function escape(text: string): string {
         .replace(/>/g, "&gt;");
 }
 
+function decodeHtmlEntitiesInText(text: string): string {
+    let cur = text;
+    for (let i = 0; i < 5; i += 1) {
+        const next = cur
+            .replace(/&nbsp;/gi, " ")
+            .replace(/&#160;/gi, " ")
+            .replace(/&#x0*A0;/gi, " ")
+            .replace(/&amp;/gi, "&")
+            .replace(/&lt;/gi, "<")
+            .replace(/&gt;/gi, ">")
+            .replace(/&quot;/gi, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&#(\d+);/g, (_, n) => {
+                const code = Number(n);
+                if (!Number.isFinite(code) || code < 0 || code > 0x10ffff) return "";
+                try {
+                    return String.fromCodePoint(code);
+                } catch {
+                    return "";
+                }
+            })
+            .replace(/&#x([0-9a-f]+);/gi, (_, h) => {
+                const code = parseInt(h, 16);
+                if (!Number.isFinite(code) || code < 0 || code > 0x10ffff) return "";
+                try {
+                    return String.fromCodePoint(code);
+                } catch {
+                    return "";
+                }
+            });
+        if (next === cur) break;
+        cur = next;
+    }
+    return cur;
+}
+
 /**
  * Sanitize a user-supplied HTML fragment.
  * Runs in both server and browser environments (simple regex parser).
@@ -94,7 +130,7 @@ export function sanitizeContractHtml(input: string): string {
     let m: RegExpExecArray | null;
     while ((m = tagRe.exec(src)) !== null) {
         // Append text before the tag (escaped).
-        out += escape(src.slice(lastIndex, m.index));
+        out += escape(decodeHtmlEntitiesInText(src.slice(lastIndex, m.index)));
         lastIndex = tagRe.lastIndex;
 
         const full = m[0];
@@ -130,7 +166,7 @@ export function sanitizeContractHtml(input: string): string {
         out += isVoid ? `<${tag}${attrStr} />` : `<${tag}${attrStr}>`;
     }
 
-    out += escape(src.slice(lastIndex));
+    out += escape(decodeHtmlEntitiesInText(src.slice(lastIndex)));
     return out;
 }
 

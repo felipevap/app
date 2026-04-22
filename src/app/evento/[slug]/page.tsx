@@ -119,9 +119,6 @@ export default async function EventPortalPage({ params, searchParams }: EventPor
                                 <h1 className="text-2xl font-bold md:text-3xl">{garageSale.nome}</h1>
                             </div>
                         </div>
-                        <span className="rounded-full bg-stone-900 px-4 py-2 text-sm font-medium text-white">
-                            /evento/{garageSale.slug}
-                        </span>
                     </div>
                     <div className="grid gap-4 text-sm md:grid-cols-3">
                         <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
