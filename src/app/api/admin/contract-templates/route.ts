@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireStaffSession } from "@/lib/require-staff";
-import type { ContractParameter } from "@/lib/contract";
+import { validateContractInput } from "@/lib/contract-validation";
+import type { Prisma } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
     const session = await requireStaffSession(request);
@@ -24,18 +25,18 @@ export async function POST(request: NextRequest) {
     if (session instanceof NextResponse) return session;
 
     try {
-        const { name, type, text, parameters }: { name: string; type: "service" | "inventory"; text: string; parameters: ContractParameter[] } = await request.json();
-
-        if (!name || !type || !text) {
-            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        const raw = await request.json();
+        const parsed = validateContractInput(raw);
+        if (typeof parsed === "string") {
+            return NextResponse.json({ error: parsed }, { status: 400 });
         }
 
         const template = await prisma.contractTemplate.create({
             data: {
-                name,
-                type,
-                text,
-                parameters: parameters as any,
+                name: parsed.name,
+                type: parsed.type,
+                text: parsed.text,
+                parameters: parsed.parameters as unknown as Prisma.InputJsonValue,
                 createdBy: session.userId,
                 tenantId: session.tenantId!,
             },

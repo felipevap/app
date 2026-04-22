@@ -5,6 +5,10 @@ import { requireStaffSession } from "@/lib/require-staff";
 import { garageSaleFindWhere } from "@/lib/tenant-scope";
 import { parseCommissionPercentInput } from "@/lib/commission";
 import { isValidEventSlug, normalizeEventSlug } from "@/lib/slug";
+import {
+    parseArScoreThresholdInput,
+    parseReservationTTLInput,
+} from "@/lib/garage-sale-config";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const session = await requireTenantSession(req);
@@ -64,6 +68,18 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             body.commissionPercent = parseCommissionPercentInput(
                 body.commissionPercent,
                 owned.commissionPercent
+            );
+        }
+        if (Object.prototype.hasOwnProperty.call(body, "arScoreThreshold")) {
+            body.arScoreThreshold = parseArScoreThresholdInput(
+                body.arScoreThreshold,
+                owned.arScoreThreshold
+            );
+        }
+        if (Object.prototype.hasOwnProperty.call(body, "reservationTTLMinutes")) {
+            body.reservationTTLMinutes = parseReservationTTLInput(
+                body.reservationTTLMinutes,
+                owned.reservationTTLMinutes
             );
         }
 

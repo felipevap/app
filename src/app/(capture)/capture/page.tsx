@@ -20,7 +20,7 @@ interface AROverlay {
 }
 
 
-const RemainingTime = ({ createdAt }: { createdAt: string }) => {
+const RemainingTime = ({ createdAt, ttlMinutes = 30 }: { createdAt: string; ttlMinutes?: number }) => {
     const [timeLeft, setTimeLeft] = useState("");
     const [expired, setExpired] = useState(false);
 
@@ -28,7 +28,7 @@ const RemainingTime = ({ createdAt }: { createdAt: string }) => {
         const calculate = () => {
             const created = new Date(createdAt).getTime();
             const now = new Date().getTime();
-            const diff = created + 30 * 60 * 1000 - now; // 30 minutes
+            const diff = created + ttlMinutes * 60 * 1000 - now;
 
             if (diff <= 0) {
                 setTimeLeft("00:00");
@@ -43,7 +43,7 @@ const RemainingTime = ({ createdAt }: { createdAt: string }) => {
         calculate();
         const interval = setInterval(calculate, 1000);
         return () => clearInterval(interval);
-    }, [createdAt]);
+    }, [createdAt, ttlMinutes]);
 
     if (expired) return <span className="text-red-500 font-bold text-[10px]">EXPIRADO</span>;
     return <span className="text-yellow-400 font-bold font-mono text-xs">⏱ {timeLeft}</span>;
@@ -159,6 +159,7 @@ export default function CapturePage() {
     const [arOverlays, setArOverlays] = useState<AROverlay[]>([]);
     const lastScanTime = useRef(0);
     const isProcessingFrame = useRef(false);
+    const overlayLastSeenRef = useRef<Map<string, { bbox: [number, number, number, number]; product: Product; score: number; ts: number }>>(new Map());
 
     const [showNotFound, setShowNotFound] = useState(false);
     const [cart, setCart] = useState<any[]>([]);
@@ -263,6 +264,11 @@ export default function CapturePage() {
     }, [selectedGarageSaleId]);
 
     useEffect(() => {
+        overlayLastSeenRef.current.clear();
+        setArOverlays([]);
+    }, [selectedGarageSaleId]);
+
+    useEffect(() => {
         let cancelled = false;
         const processEmbeddings = async () => {
             const { getMobileNetEmbedding } = await import('@/utils/mobileNetEmbedding');
@@ -324,14 +330,26 @@ export default function CapturePage() {
         };
     }, [currentProducts, updateProduct]);
 
-    // Run Object Detection Loop
+    // Continuous AR recognition loop. Runs while the camera is idle (no
+    // modal open, no captured image), scanning ~2x per second.
+    const selectedGarageSale = useMemo(
+        () => garageSales.find((gs) => gs.id === selectedGarageSaleId),
+        [garageSales, selectedGarageSaleId]
+    );
+    const arScoreThreshold = selectedGarageSale?.arScoreThreshold ?? 0.72;
+    const reservationTTLMinutes = selectedGarageSale?.reservationTTLMinutes ?? 30;
+
     useEffect(() => {
+        const AR_SCORE_THRESHOLD = arScoreThreshold;
+        const OVERLAY_PERSIST_MS = 1800; // keep an overlay while tracking briefly dips
+        const overlayLastSeen = overlayLastSeenRef.current;
+
         const scanFrame = async () => {
             const now = Date.now();
-            if (now - lastScanTime.current < 800) return; // ~1.2Hz throttle
+            if (now - lastScanTime.current < 500) return; // ~2Hz throttle
             if (isProcessingFrame.current) return;
             if (!webcamRef.current || !webcamRef.current.video || webcamRef.current.video.readyState !== 4) return;
-            if (isScanning || foundProduct) {
+            if (isScanning || foundProduct || isModelLoading) {
                 if (arOverlays.length > 0) setArOverlays([]);
                 return;
             }
@@ -341,38 +359,60 @@ export default function CapturePage() {
                 const video = webcamRef.current.video;
                 const detections = await detectObjects(video);
 
-                if (detections.length === 0) {
-                    setArOverlays([]);
-                    return;
+                // Match any detections found on this frame.
+                for (const det of detections.slice(0, 3)) {
+                    const croppedSrc = cropImage(video, det.bbox, 0);
+                    if (!croppedSrc) continue;
+                    const matches = await findMatchingProducts(croppedSrc, currentProducts, 1, det.class, AR_SCORE_THRESHOLD);
+                    if (matches.length > 0 && matches[0].score >= AR_SCORE_THRESHOLD) {
+                        const product = currentProducts.find((p) => p.id === matches[0].id);
+                        if (product) {
+                            overlayLastSeen.set(product.id, {
+                                bbox: det.bbox as [number, number, number, number],
+                                product,
+                                score: matches[0].score,
+                                ts: Date.now(),
+                            });
+                        }
+                    }
                 }
 
-                const newOverlays: AROverlay[] = [];
-
-                // Process top 2 detections only
-                for (const det of detections.slice(0, 2)) {
-                    // Crop from video
-                    const croppedSrc = cropImage(video, det.bbox, 0);
-                    if (croppedSrc) {
-                        // Fast match: limit 1, use category boost
-                        const matches = await findMatchingProducts(croppedSrc, currentProducts, 1, det.class);
-
-                        // Threshold for AR display
-                        // Increased to 0.75 for high certainty as requested
-                        if (matches.length > 0 && matches[0].score > 0.75) {
-                            const product = currentProducts.find(p => p.id === matches[0].id);
+                // Fallback: if YOLO found nothing, still try matching the whole
+                // frame. Useful for items outside the 80 COCO classes (clothes,
+                // tools, specific home items) but with a good visual embedding.
+                if (detections.length === 0) {
+                    const fullSrc = cropImage(video, [0, 0, video.videoWidth, video.videoHeight], 0);
+                    if (fullSrc) {
+                        const matches = await findMatchingProducts(fullSrc, currentProducts, 1, undefined, AR_SCORE_THRESHOLD + 0.02);
+                        if (matches.length > 0) {
+                            const product = currentProducts.find((p) => p.id === matches[0].id);
                             if (product) {
-                                newOverlays.push({
-                                    id: product.id,
-                                    bbox: det.bbox as [number, number, number, number],
+                                overlayLastSeen.set(product.id, {
+                                    bbox: [
+                                        video.videoWidth * 0.2,
+                                        video.videoHeight * 0.15,
+                                        video.videoWidth * 0.6,
+                                        video.videoHeight * 0.7,
+                                    ],
                                     product,
-                                    score: matches[0].score
+                                    score: matches[0].score,
+                                    ts: Date.now(),
                                 });
                             }
                         }
                     }
                 }
-                setArOverlays(newOverlays);
 
+                // Drop entries that haven't been seen recently.
+                const tsCutoff = Date.now() - OVERLAY_PERSIST_MS;
+                for (const [k, v] of overlayLastSeen) {
+                    if (v.ts < tsCutoff) overlayLastSeen.delete(k);
+                }
+                const nextOverlays: AROverlay[] = Array.from(overlayLastSeen.values())
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, 2)
+                    .map((v) => ({ id: v.product.id, bbox: v.bbox, product: v.product, score: v.score }));
+                setArOverlays(nextOverlays);
             } catch (e) {
                 console.error("AR Scan error", e);
             } finally {
@@ -383,7 +423,7 @@ export default function CapturePage() {
 
         const interval = setInterval(scanFrame, 200);
         return () => clearInterval(interval);
-    }, [currentProducts, isScanning, foundProduct, arOverlays.length, isModelLoading]); // Dependencies
+    }, [currentProducts, isScanning, foundProduct, arOverlays.length, isModelLoading, arScoreThreshold]);
 
     // Helper to map video coordinates to screen coordinates (object-fit: cover)
     const getScreenCoords = (bbox: [number, number, number, number]) => {
@@ -1659,7 +1699,7 @@ export default function CapturePage() {
                                         <div key={order.id} className="bg-stone-100 rounded-xl p-4 border border-stone-300">
                                             <div className="flex justify-between items-start mb-2">
                                                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${order.isPaid ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                                    {order.isPaid ? 'PAGO' : <RemainingTime createdAt={order.createdAt} />}
+                                                    {order.isPaid ? 'PAGO' : <RemainingTime createdAt={order.createdAt} ttlMinutes={reservationTTLMinutes} />}
                                                 </span>
                                                 <span className="font-bold text-stone-900">{formatBRL(order.total)}</span>
                                             </div>

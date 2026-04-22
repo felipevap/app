@@ -128,6 +128,7 @@ function NewProductContent() {
     const [currentImageForSelection, setCurrentImageForSelection] = useState<string | null>(null);
     const [detections, setDetections] = useState<DetectionResult[]>([]);
     const [selectedDetectionClass, setSelectedDetectionClass] = useState<string | null>(null);
+    const [selectedDetectionScore, setSelectedDetectionScore] = useState<number>(0);
 
     // Interactive Cropping
     const imageRef = useRef<HTMLImageElement>(null);
@@ -245,9 +246,11 @@ function NewProductContent() {
                     h: first.bbox[3]
                 });
                 setSelectedDetectionClass(first.class);
+                setSelectedDetectionScore(first.score);
             } else {
                 // FALLBACK: Manual selection if no object detected
                 setSelectedDetectionClass(null); // No class detected
+                setSelectedDetectionScore(0);
 
                 // Default box: 80% with centered
                 const defaultW = img.width * 0.8;
@@ -371,6 +374,7 @@ function NewProductContent() {
                 h: clickedDetection.bbox[3]
             });
             setSelectedDetectionClass(clickedDetection.class);
+            setSelectedDetectionScore(clickedDetection.score);
         } else {
             // 2. Create a default box around the click
             const size = 200; // Default size in image pixels
@@ -381,6 +385,7 @@ function NewProductContent() {
                 h: size
             });
             setSelectedDetectionClass(null); // Manual box has no class initially
+            setSelectedDetectionScore(0);
         }
     };
 
@@ -428,23 +433,27 @@ function NewProductContent() {
                         imagens: [...prev.imagens, croppedUrl]
                     };
 
-                    // Auto-fill logic
-                    if (selectedDetectionClass) {
-                        const translatedName = COCO_TRANSLATIONS[selectedDetectionClass] || selectedDetectionClass;
-                        // Suggested category logic
+                    // Auto-fill only for high-confidence detections with a
+                    // specific category mapping. YOLO's 80 COCO classes miss
+                    // most garage-sale items, so low-confidence hits easily
+                    // assign the wrong product name.
+                    if (selectedDetectionClass && selectedDetectionScore >= 0.55) {
                         const suggestedCats = COCO_TO_CATEGORY_MAP[selectedDetectionClass];
                         const suggestedCategory = suggestedCats ? suggestedCats[0] : "Outros";
+                        const hasSpecificCategory = suggestedCategory !== "Outros";
 
-                        if (!prev.nome) updates.nome = translatedName;
-                        if (prev.categoria === "Outros") updates.categoria = suggestedCategory;
+                        if (hasSpecificCategory) {
+                            const translatedName = COCO_TRANSLATIONS[selectedDetectionClass] || selectedDetectionClass;
+                            if (!prev.nome) updates.nome = translatedName;
+                            if (prev.categoria === "Outros") updates.categoria = suggestedCategory;
 
-                        // Auto-generate description if empty
-                        if (!prev.descricao) {
-                            updates.descricao = generateDescription(
-                                updates.nome || prev.nome || translatedName,
-                                updates.categoria || prev.categoria || suggestedCategory,
-                                prev.condicao
-                            );
+                            if (!prev.descricao) {
+                                updates.descricao = generateDescription(
+                                    updates.nome || prev.nome || translatedName,
+                                    updates.categoria || prev.categoria || suggestedCategory,
+                                    prev.condicao
+                                );
+                            }
                         }
                     }
 
@@ -618,7 +627,14 @@ function NewProductContent() {
                 ...formData,
                 embedding,
             });
-            showToast('Produto cadastrado com sucesso!', 'success');
+            if (formData.imagens.length > 0 && !embedding) {
+                showToast(
+                    'Produto salvo, mas não foi possível indexar para AR. Tente substituir as fotos.',
+                    'info'
+                );
+            } else {
+                showToast('Produto cadastrado com sucesso!', 'success');
+            }
             setTimeout(() => {
                 router.push(`/admin/products?garageSale=${formData.garageSaleId}`);
             }, 1000);
@@ -805,6 +821,30 @@ function NewProductContent() {
                             </p>
                         </div>
                     )}
+
+                    <div
+                        className={`mt-3 rounded-xl border px-4 py-3 text-sm ${
+                            formData.imagens.length === 0
+                                ? "border-amber-200 bg-amber-50 text-amber-800"
+                                : formData.imagens.length < 2
+                                  ? "border-blue-200 bg-blue-50 text-blue-800"
+                                  : "border-emerald-200 bg-emerald-50 text-emerald-800"
+                        }`}
+                    >
+                        {formData.imagens.length === 0 ? (
+                            <>
+                                <strong>⚠ Sem imagens:</strong> o produto não será reconhecido pelo AR na tela do cliente. Adicione ao menos uma foto nítida.
+                            </>
+                        ) : formData.imagens.length < 2 ? (
+                            <>
+                                <strong>ℹ Indexável:</strong> o produto será reconhecido. Com 2 ou mais fotos de ângulos diferentes o reconhecimento fica mais robusto.
+                            </>
+                        ) : (
+                            <>
+                                <strong>✓ Indexação forte:</strong> {formData.imagens.length} fotos — ótima cobertura para reconhecimento AR.
+                            </>
+                        )}
+                    </div>
 
                     {(processingImage || isCropping) && (
                         <div className="mt-4 flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">

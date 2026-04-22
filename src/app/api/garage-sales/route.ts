@@ -6,6 +6,10 @@ import { requireStaffSession } from "@/lib/require-staff";
 import { garageSaleTenantWhere } from "@/lib/tenant-scope";
 import { parseCommissionPercentInput } from "@/lib/commission";
 import { isValidEventSlug, normalizeEventSlug, slugifyBase } from "@/lib/slug";
+import {
+    parseArScoreThresholdInput,
+    parseReservationTTLInput,
+} from "@/lib/garage-sale-config";
 
 const OWNER_EMAIL_IN_USE = "OWNER_EMAIL_IN_USE";
 
@@ -102,6 +106,8 @@ export async function POST(req: NextRequest) {
                     cpf: body.cpf,
                     pix: body.pix,
                     commissionPercent,
+                    arScoreThreshold: parseArScoreThresholdInput(body.arScoreThreshold),
+                    reservationTTLMinutes: parseReservationTTLInput(body.reservationTTLMinutes),
                     tenantId,
                 },
             });

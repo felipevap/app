@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import PortalGarageLogo from "@/components/PortalGarageLogo";
+import { sanitizeContractHtml } from "@/lib/sanitize-html";
 import {
     buildClosureReportHtml,
     computeClosureSummary,
@@ -249,9 +250,12 @@ export default function PortalDashboardClient() {
                                                 {new Date(c.acceptedAt).toLocaleString("pt-BR")}
                                             </span>
                                         </div>
-                                        <div className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-stone-800">
-                                            {c.renderedBody}
-                                        </div>
+                                        <div
+                                            className="mt-3 text-sm leading-relaxed text-stone-800"
+                                            dangerouslySetInnerHTML={{
+                                                __html: sanitizeContractHtml(c.renderedBody),
+                                            }}
+                                        />
                                         <div className="mt-4">
                                             <p className="text-xs font-medium text-stone-500">Assinatura</p>
                                             <img
