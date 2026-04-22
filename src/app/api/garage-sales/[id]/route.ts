@@ -5,6 +5,7 @@ import { requireStaffSession } from "@/lib/require-staff";
 import { garageSaleFindWhere } from "@/lib/tenant-scope";
 import { parseCommissionPercentInput } from "@/lib/commission";
 import { isValidEventSlug, normalizeEventSlug } from "@/lib/slug";
+import { Prisma } from "@prisma/client";
 import {
     parseArScoreThresholdInput,
     parseReservationTTLInput,
@@ -26,6 +27,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
         return NextResponse.json(garageSale);
     } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") {
+            return NextResponse.json({ error: "Banco desatualizado. Execute as migrações pendentes no ambiente." }, { status: 500 });
+        }
         console.error("Error fetching garage sale:", error);
         return NextResponse.json({ error: "Failed to fetch garage sale" }, { status: 500 });
     }
@@ -90,6 +94,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
         return NextResponse.json(garageSale);
     } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") {
+            return NextResponse.json({ error: "Banco desatualizado. Execute as migrações pendentes no ambiente." }, { status: 500 });
+        }
         console.error("Error updating garage sale:", error);
         return NextResponse.json({ error: "Failed to update garage sale" }, { status: 500 });
     }

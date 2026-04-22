@@ -9,6 +9,9 @@ export async function GET(request: NextRequest) {
     if (session instanceof NextResponse) return session;
 
     try {
+        if (session.superAdmin && !session.tenantId) {
+            return NextResponse.json([]);
+        }
         const templates = await prisma.contractTemplate.findMany({
             where: { tenantId: session.tenantId! },
             orderBy: { createdAt: "desc" },
@@ -25,6 +28,9 @@ export async function POST(request: NextRequest) {
     if (session instanceof NextResponse) return session;
 
     try {
+        if (session.superAdmin && !session.tenantId) {
+            return NextResponse.json({ error: "Selecione um tenant antes de criar modelo de contrato." }, { status: 400 });
+        }
         const raw = await request.json();
         const parsed = validateContractInput(raw);
         if (typeof parsed === "string") {

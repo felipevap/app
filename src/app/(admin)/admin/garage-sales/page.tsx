@@ -121,16 +121,6 @@ export default function GarageSalesPage() {
                                         <p className="mt-1 text-sm text-stone-600">
                                             {formatDate(gs.dataInicio)} - {formatDate(gs.dataFim)}
                                         </p>
-                                        {gs.slug ? (
-                                            <a
-                                                href={`/evento/${gs.slug}`}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="mt-2 inline-block text-xs font-medium text-blue-600 hover:underline"
-                                            >
-                                                Abrir portal: /evento/{gs.slug}
-                                            </a>
-                                        ) : null}
                                     </div>
                                     <span className="rounded-full bg-blue-500/20 px-3 py-1 text-sm font-medium text-blue-400">
                                         {produtos.length} {produtos.length === 1 ? 'produto' : 'produtos'}
@@ -173,6 +163,16 @@ export default function GarageSalesPage() {
                                             >
                                                 📦 Ver Produtos
                                             </Link>
+                                            {gs.slug ? (
+                                                <a
+                                                    href={`/evento/${gs.slug}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="flex-1 rounded-lg border border-emerald-700 bg-emerald-600 px-4 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-emerald-500"
+                                                >
+                                                    🌐 Página Pública
+                                                </a>
+                                            ) : null}
                                             <button
                                                 onClick={() => handleDelete(gs.id, gs.nome)}
                                                 className="rounded-lg border border-red-700 bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500"

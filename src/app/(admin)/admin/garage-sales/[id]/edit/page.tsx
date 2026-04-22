@@ -252,7 +252,7 @@ export default function EditGarageSalePage() {
                             />
                         </div>
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-stone-700">Slug do portal</label>
+                            <label className="block text-sm font-medium text-stone-700">Nome do evento</label>
                             <input
                                 type="text"
                                 name="slug"
@@ -265,6 +265,7 @@ export default function EditGarageSalePage() {
                                 required
                             />
                             <p className={`mt-1 text-xs ${isSlugAvailable === false ? "text-red-500" : "text-stone-500"}`}>
+                                Esse nome vira o link público automaticamente.
                                 Link do evento: /evento/{formData.slug || "seu-slug"}
                                 {isSlugAvailable === true ? " (disponível)" : ""}
                                 {isSlugAvailable === false ? " (indisponível)" : ""}

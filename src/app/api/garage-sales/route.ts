@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requireTenantSession } from "@/lib/require-tenant";
@@ -32,6 +33,9 @@ export async function GET(req: NextRequest) {
         });
         return NextResponse.json(garageSales);
     } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") {
+            return NextResponse.json({ error: "Banco desatualizado. Execute as migrações pendentes no ambiente." }, { status: 500 });
+        }
         console.error("Error fetching garage sales:", error);
         return NextResponse.json(
             {
@@ -169,6 +173,9 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(garageSale);
     } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") {
+            return NextResponse.json({ error: "Banco desatualizado. Execute as migrações pendentes no ambiente." }, { status: 500 });
+        }
         if (error instanceof Error && error.message === "SLUG_ALREADY_EXISTS") {
             return NextResponse.json({ error: "Este slug já está em uso por outro evento." }, { status: 409 });
         }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireStaffSession } from "@/lib/require-staff";
 import { garageSaleFindWhere } from "@/lib/tenant-scope";
@@ -65,6 +66,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             })),
         });
     } catch (e) {
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2022") {
+            return NextResponse.json({ error: "Banco desatualizado. Execute as migrações pendentes no ambiente." }, { status: 500 });
+        }
         console.error("[garage-sales/contracts GET]", e);
         return NextResponse.json({ error: "Falha ao carregar" }, { status: 500 });
     }
