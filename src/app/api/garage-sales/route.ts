@@ -11,6 +11,7 @@ import {
     parseArScoreThresholdInput,
     parseReservationTTLInput,
 } from "@/lib/garage-sale-config";
+import { garageSaleContractStatusInclude, garageSaleRowToApiPayload } from "@/lib/garage-sale-contract-pair-status";
 
 const OWNER_EMAIL_IN_USE = "OWNER_EMAIL_IN_USE";
 
@@ -30,8 +31,9 @@ export async function GET(req: NextRequest) {
         const garageSales = await prisma.garageSale.findMany({
             where,
             orderBy: { createdAt: "desc" },
+            include: garageSaleContractStatusInclude,
         });
-        return NextResponse.json(garageSales);
+        return NextResponse.json(garageSales.map((row) => garageSaleRowToApiPayload(row)));
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") {
             return NextResponse.json({ error: "Banco desatualizado. Execute as migrações pendentes no ambiente." }, { status: 500 });
@@ -171,7 +173,14 @@ export async function POST(req: NextRequest) {
             return gs;
         });
 
-        return NextResponse.json(garageSale);
+        const withContracts = await prisma.garageSale.findUnique({
+            where: { id: garageSale.id },
+            include: garageSaleContractStatusInclude,
+        });
+        if (!withContracts) {
+            return NextResponse.json(garageSale);
+        }
+        return NextResponse.json(garageSaleRowToApiPayload(withContracts));
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") {
             return NextResponse.json({ error: "Banco desatualizado. Execute as migrações pendentes no ambiente." }, { status: 500 });

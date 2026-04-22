@@ -4,6 +4,19 @@ import { useGarageSales } from "@/contexts/GarageSaleContext";
 import Link from "next/link";
 import { useState } from "react";
 import { formatDate } from "@/utils/formatters";
+import type { ContractPairStatus } from "@/lib/garage-sale-contract-pair-status";
+
+function contractTypeStatusText(pair: ContractPairStatus["service"]) {
+    if (!pair.configured) return "Sem modelo";
+    if (pair.signed) return "Assinado";
+    return "Pendente";
+}
+
+function contractTypeStatusClass(pair: ContractPairStatus["service"]) {
+    if (!pair.configured) return "text-stone-500";
+    if (pair.signed) return "font-semibold text-emerald-700";
+    return "font-semibold text-amber-700";
+}
 
 export default function GarageSalesPage() {
     const { garageSales, deleteGarageSale, updateGarageSale, getProductsByGarageSale, refreshData, loading } = useGarageSales();
@@ -140,6 +153,31 @@ export default function GarageSalesPage() {
                                         <span>📧</span>
                                         <span>{gs.email}</span>
                                     </div>
+                                    {gs.contractPairStatus ? (
+                                        <div className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2.5">
+                                            <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
+                                                Contratos (proprietário)
+                                            </p>
+                                            <dl className="mt-2 space-y-1.5 text-sm">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <dt className="text-stone-600">Prestação de serviço</dt>
+                                                    <dd
+                                                        className={`shrink-0 text-right ${contractTypeStatusClass(gs.contractPairStatus.service)}`}
+                                                    >
+                                                        {contractTypeStatusText(gs.contractPairStatus.service)}
+                                                    </dd>
+                                                </div>
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <dt className="text-stone-600">Inventário</dt>
+                                                    <dd
+                                                        className={`shrink-0 text-right ${contractTypeStatusClass(gs.contractPairStatus.inventory)}`}
+                                                    >
+                                                        {contractTypeStatusText(gs.contractPairStatus.inventory)}
+                                                    </dd>
+                                                </div>
+                                            </dl>
+                                        </div>
+                                    ) : null}
                                 </div>
 
                                 {gs.regras && (

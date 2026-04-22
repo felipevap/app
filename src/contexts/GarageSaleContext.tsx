@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
+import type { ContractPairStatus } from "@/lib/garage-sale-contract-pair-status";
 
 export interface GarageSale {
     id: string;
@@ -25,6 +26,7 @@ export interface GarageSale {
     commissionPercent?: number;
     arScoreThreshold?: number;
     reservationTTLMinutes?: number;
+    contractPairStatus?: ContractPairStatus;
 }
 
 export interface Product {

@@ -10,6 +10,7 @@ import {
     parseArScoreThresholdInput,
     parseReservationTTLInput,
 } from "@/lib/garage-sale-config";
+import { garageSaleContractStatusInclude, garageSaleRowToApiPayload } from "@/lib/garage-sale-contract-pair-status";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const session = await requireTenantSession(req);
@@ -19,13 +20,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         const { id: paramId } = await params;
         const garageSale = await prisma.garageSale.findFirst({
             where: garageSaleFindWhere(session, paramId),
+            include: garageSaleContractStatusInclude,
         });
 
         if (!garageSale) {
             return NextResponse.json({ error: "Garage sale not found" }, { status: 404 });
         }
 
-        return NextResponse.json(garageSale);
+        return NextResponse.json(garageSaleRowToApiPayload(garageSale));
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") {
             return NextResponse.json({ error: "Banco desatualizado. Execute as migrações pendentes no ambiente." }, { status: 500 });
@@ -87,12 +89,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             );
         }
 
-        const garageSale = await prisma.garageSale.update({
+        await prisma.garageSale.update({
             where: { id: paramId },
             data: body,
         });
 
-        return NextResponse.json(garageSale);
+        const refreshed = await prisma.garageSale.findFirst({
+            where: garageSaleFindWhere(session, paramId),
+            include: garageSaleContractStatusInclude,
+        });
+        if (!refreshed) {
+            return NextResponse.json({ error: "Garage sale not found" }, { status: 404 });
+        }
+
+        return NextResponse.json(garageSaleRowToApiPayload(refreshed));
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022") {
             return NextResponse.json({ error: "Banco desatualizado. Execute as migrações pendentes no ambiente." }, { status: 500 });
@@ -115,12 +125,20 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
             return NextResponse.json({ error: "Garage sale not found" }, { status: 404 });
         }
 
-        const garageSale = await prisma.garageSale.update({
+        await prisma.garageSale.update({
             where: { id: paramId },
             data: { deletedAt: new Date() },
         });
 
-        return NextResponse.json(garageSale);
+        const refreshed = await prisma.garageSale.findFirst({
+            where: garageSaleFindWhere(session, paramId),
+            include: garageSaleContractStatusInclude,
+        });
+        if (!refreshed) {
+            return NextResponse.json({ error: "Garage sale not found" }, { status: 404 });
+        }
+
+        return NextResponse.json(garageSaleRowToApiPayload(refreshed));
     } catch (error) {
         console.error("Error deleting garage sale:", error);
         return NextResponse.json({ error: "Failed to delete garage sale" }, { status: 500 });

@@ -55,7 +55,7 @@ export default function Toast({ message, type, onClose, duration = 3000, action,
                 initial={{ opacity: 0, y: 50, scale: 0.3 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.2 } }}
-                className={`fixed top-4 right-4 z-50 flex flex-col w-full max-w-sm overflow-hidden bg-white rounded-lg shadow-md border-l-4 ${type === 'success' ? 'border-green-500' : type === 'error' ? 'border-red-500' : 'border-blue-500'}`}
+                className={`fixed top-20 right-4 z-50 flex flex-col w-full max-w-sm overflow-hidden bg-white rounded-lg shadow-md border-l-4 ${type === 'success' ? 'border-green-500' : type === 'error' ? 'border-red-500' : 'border-blue-500'}`}
             >
                 <div className="flex items-center">
                     <div className={`flex items-center justify-center w-12 bg-gray-50 flex-shrink-0 py-4 ${type === 'success' ? 'text-green-500' : type === 'error' ? 'text-red-500' : 'text-blue-500'}`}>
