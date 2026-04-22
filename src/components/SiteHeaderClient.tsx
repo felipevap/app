@@ -45,9 +45,14 @@ export default function SiteHeaderClient({ loggedIn, isSuperAdmin, isImpersonati
                                 Super Admin
                             </Link>
                         ) : (
-                            <Link href={panelHref} className="text-sm font-medium text-slate-300 transition-colors hover:text-white">
-                                Painel
-                            </Link>
+                            <>
+                                <Link href={panelHref} className="text-sm font-medium text-slate-300 transition-colors hover:text-white">
+                                    Painel
+                                </Link>
+                                <Link href="/download" className="hidden text-sm font-medium text-slate-400 transition-colors hover:text-white sm:inline">
+                                    App Windows / macOS
+                                </Link>
+                            </>
                         ))}
                     <button type="button" onClick={() => void logout()} className="rounded-full border border-red-500/30 bg-red-950/40 px-3 py-2 text-sm font-medium text-red-200 transition-colors hover:bg-red-950/60 sm:px-4">
                         Sair

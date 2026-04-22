@@ -181,6 +181,10 @@ export default function HomeLanding({ isLoggedIn }: Props) {
                 <footer className="border-t border-white/10 py-10 text-center text-sm text-stone-500">
                     <p>&copy; {new Date().getFullYear()} Portal Garage</p>
                     <nav className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs">
+                        <Link href="/download" className="hover:text-stone-200">
+                            App Windows e macOS
+                        </Link>
+                        <span aria-hidden>·</span>
                         <Link href="/politica-privacidade" className="hover:text-stone-200">
                             Política de Privacidade
                         </Link>

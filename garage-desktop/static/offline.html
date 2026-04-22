@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal Garage — offline</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 2rem; max-width: 40rem; }
+    h1 { font-size: 1.25rem; }
+    p { line-height: 1.5; color: #94a3b8; }
+    button { margin-top: 1rem; padding: 0.6rem 1rem; border-radius: 0.5rem; border: none; background: #f59e0b; color: #0f172a; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #status { margin-top: 1rem; font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+  <h1>Modo offline</h1>
+  <p>Sem conexão com a internet. O PDV completo no navegador continua disponível em <strong>/pos</strong> quando estiver online.</p>
+  <p>As vendas registadas por integrações futuras do app desktop entram numa fila local; use <strong>Sincronizar fila agora</strong> no menu quando voltar a rede.</p>
+  <button type="button" id="syncBtn">Tentar sincronizar agora</button>
+  <p id="status"></p>
+  <script>
+    const btn = document.getElementById("syncBtn");
+    const status = document.getElementById("status");
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      status.textContent = "";
+      try {
+        const online = await window.portalGarageDesktop.isOnline();
+        if (!online) {
+          status.textContent = "Ainda offline. Ligue à internet.";
+          btn.disabled = false;
+          return;
+        }
+        const r = await window.portalGarageDesktop.syncOutbox();
+        status.textContent = r.ok ? ("Sincronizado: " + (r.synced ?? 0) + " item(ns).") : JSON.stringify(r);
+      } catch (e) {
+        status.textContent = String(e);
+      }
+      btn.disabled = false;
+    });
+  </script>
+</body>
+</html>

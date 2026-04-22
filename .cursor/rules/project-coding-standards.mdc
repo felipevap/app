@@ -1,0 +1,78 @@
+---
+description: Portal Garage — coding standards, architecture, and safety for this repo
+globs:
+  - "src/**/*.{ts,tsx}"
+  - "prisma/**/*"
+  - "scripts/**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Portal Garage — project coding standards
+
+## Stack and scope
+
+- **Runtime:** Next.js App Router (16+), React 19, TypeScript **strict** (`tsconfig.json`).
+- **Data:** Prisma + **MySQL**; run migrations under `prisma/migrations/`; use `prisma generate` after schema changes.
+- **UI:** Tailwind CSS v4, Framer Motion, `lucide-react` where icons are needed.
+- **Imports:** use the `@/` alias (`@/*` → `./src/*`); prefer path alias over deep relative `../../../` chains.
+
+## File and folder conventions
+
+- **Routes and layouts:** `src/app/` — group routes with `(segment)` folders when it helps layout sharing; keep `page.tsx`, `layout.tsx`, and `route.ts` colocated with the route they serve.
+- **API handlers:** `src/app/api/**/route.ts` — export named HTTP methods (`GET`, `POST`, `PATCH`, `DELETE`, etc.) only; return `NextResponse` with explicit status codes for errors.
+- **Shared server logic:** `src/lib/` — auth/session guards, Prisma helpers, tenant scoping, validation, billing.
+- **React components:** `src/components/` — reusable UI; route-specific UI may live next to its `page.tsx` when it is not reused.
+- **Client-only hooks/context:** `src/contexts/` or colocated `"use client"` modules as the project already does.
+- **Utilities (pure helpers):** `src/utils/` — formatting, embeddings, image helpers; keep side effects out unless the module name makes that clear.
+
+## TypeScript and style
+
+- Prefer **explicit types** on exported functions, API payloads, and Prisma-related shapes; avoid `any`; use `unknown` plus narrowing when input is untrusted.
+- Use `interface` or `type` consistently with surrounding files in the same directory.
+- Match the dominant quote style of the file you edit; do not reformat unrelated lines.
+- **Do not add comments in application code** unless the user asks for documentation in code.
+- Prefer early returns and small functions over nested conditionals in route handlers and auth gates.
+
+## Next.js App Router
+
+- Default to **Server Components**; add `"use client"` only when the module needs browser-only APIs, React state, or event handlers in that file tree.
+- For API routes that must not be statically cached, follow existing patterns (e.g. `export const dynamic = "force-dynamic"` and `revalidate = 0` where already used for session-backed handlers).
+- Use `NextRequest` / `NextResponse` from `next/server`; validate `searchParams` and JSON bodies before use.
+
+## Security and multi-tenancy
+
+- **Always** enforce session + role through existing helpers (`requireTenantSession`, `requireStaffSession`, `requireOwner`, super-admin checks, etc.) at the start of handlers; if a helper returns `NextResponse`, return it immediately.
+- Scope **all** data access to the current tenant using established utilities (`garageSaleFindWhere`, `garageSaleRelationFilter`, and related `src/lib/tenant-scope` patterns). Never trust IDs from the client without verifying tenant ownership in the same query or transaction.
+- **Secrets:** only `process.env.*` for configuration; never commit secrets or paste them into source.
+- **HTML from users or rich text:** use existing sanitization utilities (e.g. `src/lib/sanitize-html.ts`) where applicable; do not render raw HTML from untrusted strings.
+- **Passwords:** use `bcryptjs` (or existing project helpers) consistently; never log password material.
+
+## Prisma and database
+
+- Use the shared Prisma client from `@/lib/prisma` (singleton pattern already in the repo).
+- Prefer **parameterized** Prisma queries; avoid string-building SQL. Use transactions when multiple writes must succeed or fail together.
+- Schema changes: edit `schema.prisma`, create a migration, and ensure the migration SQL is safe for production (additive-first when possible).
+
+## Performance
+
+- Avoid N+1 queries: use `include` / `select` deliberately; for list endpoints, select only fields the UI needs.
+- Prefer server-side data fetching for pages where it fits the existing pattern; lazy-load heavy client-only modules when they are not needed on first paint.
+- Keep Framer Motion usage scoped; do not animate large lists without virtualization or intentional simplification.
+
+## UI and accessibility
+
+- Use semantic HTML (`button` for actions, `a` for navigation, headings in order).
+- Provide **accessible names** for icon-only controls (`aria-label` or visible text).
+- Respect reduced motion where easy (`prefers-reduced-motion` or Framer Motion options) when adding non-trivial motion.
+
+## Testing and verification
+
+- After substantive changes, run **`npm run lint`** and **`npm run build`** (or the user’s CI-equivalent) and fix failures before claiming the work is done.
+- For features that touch auth, tenant scope, or payments/billing, manually verify the full flow in the browser when feasible.
+
+## What not to do
+
+- Do not introduce new global state libraries without an explicit product decision.
+- Do not bypass tenant/session checks “temporarily.”
+- Do not add dependencies unless necessary; prefer built-in APIs and existing packages.
+- Avoid drive-by refactors unrelated to the requested task.

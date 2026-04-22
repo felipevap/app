@@ -69,7 +69,7 @@ interface GarageSaleContextType {
     restoreProduct: (id: string) => Promise<void>;
     getProduct: (id: string) => Product | undefined;
     getProductsByGarageSale: (garageSaleId: string) => Product[];
-    createSale: (sale: any) => Promise<any>;
+    createSale: (sale: Record<string, unknown>) => Promise<unknown>;
     refreshData: (options?: { includeDeleted?: boolean; silent?: boolean }) => Promise<Product[] | undefined>;
 }
 
@@ -245,16 +245,22 @@ export const GarageSaleProvider: React.FC<{ children: ReactNode; initialAuthenti
         return products.filter(p => p.garageSaleId === garageSaleId);
     }, [products]);
 
-    const createSale = useCallback(async (sale: any) => {
+    const createSale = useCallback(async (sale: Record<string, unknown>) => {
+        const clientSyncId =
+            typeof sale.clientSyncId === "string" && sale.clientSyncId.length > 0
+                ? sale.clientSyncId
+                : typeof crypto !== "undefined" && "randomUUID" in crypto
+                  ? crypto.randomUUID()
+                  : `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
         const res = await fetch('/api/sales', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(sale)
+            body: JSON.stringify({ ...sale, clientSyncId }),
         });
 
         if (!res.ok) throw new Error('Failed to create sale');
 
-        const newSale = await res.json();
+        const newSale: unknown = await res.json();
         await fetchData();
         return newSale;
     }, [fetchData]);

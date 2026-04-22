@@ -164,13 +164,14 @@ model Product {
 }
 
 model Sale {
-  id          Int       @id @default(autoincrement())
-  totalValue  Float
-  date        DateTime  @default(now())
-  buyerName   String?
-  buyerPhone  String?
-  buyerEmail  String?
-  createdAt   DateTime  @default(now())
+  id           Int       @id @default(autoincrement())
+  totalValue   Float
+  date         DateTime  @default(now())
+  buyerName    String?
+  buyerPhone   String?
+  buyerEmail   String?
+  createdAt    DateTime  @default(now())
+  clientSyncId String?   @unique @db.VarChar(191)
 
   garageSaleId String?
   garageSale   GarageSale? @relation(fields: [garageSaleId], references: [id])

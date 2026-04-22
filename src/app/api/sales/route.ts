@@ -46,7 +46,17 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json();
-        const { items, payments, totalValue, buyerName, buyerPhone, buyerEmail, garageSaleId } = body;
+        const { items, payments, totalValue, buyerName, buyerPhone, buyerEmail, garageSaleId, clientSyncId } = body;
+
+        if (typeof clientSyncId === "string" && clientSyncId.length > 0) {
+            const existing = await prisma.sale.findUnique({
+                where: { clientSyncId },
+                include: { items: true, payments: true },
+            });
+            if (existing) {
+                return NextResponse.json(existing);
+            }
+        }
 
         if (garageSaleId) {
             const gs = await prisma.garageSale.findFirst({
@@ -90,6 +100,9 @@ export async function POST(req: NextRequest) {
                     buyerPhone,
                     buyerEmail,
                     garageSaleId,
+                    ...(typeof clientSyncId === "string" && clientSyncId.length > 0
+                        ? { clientSyncId }
+                        : {}),
                     items: {
                         create: items.map(
                             (item: {

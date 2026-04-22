@@ -613,7 +613,7 @@ export default function POSPage() {
                 setEditingSale(null);
             } else {
                 // Create new sale
-                const newSale = await createSale(saleData);
+                const newSale = (await createSale(saleData as Record<string, unknown>)) as Sale;
                 if (processingOrderId) {
                     await fetch(`/api/pending-orders?id=${processingOrderId}`, {
                         method: 'PUT',
