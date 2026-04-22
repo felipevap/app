@@ -21,7 +21,7 @@ function SubmitButton() {
 }
 
 const items = [
-    "Multi-tenant com isolamento total entre organizações",
+    "Multiempresa com isolamento total entre organizações",
     "Cadastro de produtos, checagem com câmera e PDV no mesmo fluxo",
     "Painel do organizador, visão operacional e gestão centralizada",
 ];
@@ -43,7 +43,7 @@ export default function CadastroOrganizacaoForm() {
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-100/80">Plano único</p>
                         <h3 className="mt-2 text-2xl font-semibold text-white">{PREMIUM_FULL_PLAN.name}</h3>
-                        <p className="mt-2 text-sm text-amber-50/85">14 dias grátis para operar seu primeiro tenant com o pacote completo.</p>
+                        <p className="mt-2 text-sm text-amber-50/85">14 dias grátis para operar sua primeira empresa com o pacote completo.</p>
                     </div>
                     <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-right">
                         <p className="text-xs uppercase tracking-[0.2em] text-amber-100/70">Depois do trial</p>
@@ -94,7 +94,7 @@ export default function CadastroOrganizacaoForm() {
             <div className="rounded-[1.2rem] border border-white/10 bg-black/20 px-4 py-4 text-sm text-stone-300">
                 <div className="flex items-center gap-2 text-stone-100">
                     <LockKeyhole className="h-4 w-4 text-amber-200" />
-                    Seu tenant já nasce com trial, plano e email de cobrança configurados.
+                    Sua empresa já nasce com trial, plano e email de cobrança configurados.
                 </div>
             </div>
 

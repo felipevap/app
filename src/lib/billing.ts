@@ -1,7 +1,7 @@
 export const PREMIUM_FULL_PLAN = {
     code: "premium-full",
     name: "Premium Full",
-    monthlyPriceCents: 19_700,
+    monthlyPriceCents: 12_999,
     trialDays: 14,
 } as const;
 

@@ -4,6 +4,7 @@ import { requireTenantSession } from "@/lib/require-tenant";
 import { requireStaffSession } from "@/lib/require-staff";
 import { garageSaleFindWhere } from "@/lib/tenant-scope";
 import { parseCommissionPercentInput } from "@/lib/commission";
+import { isValidEventSlug, normalizeEventSlug } from "@/lib/slug";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const session = await requireTenantSession(req);
@@ -41,6 +42,24 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
         const body = await req.json();
         delete body.tenantId;
+        if (Object.prototype.hasOwnProperty.call(body, "slug")) {
+            const normalizedSlug = normalizeEventSlug(String(body.slug || ""));
+            if (!isValidEventSlug(normalizedSlug)) {
+                return NextResponse.json({ error: "Slug inválido. Use apenas letras, números e hífens." }, { status: 400 });
+            }
+            const slugInUse = await prisma.garageSale.findFirst({
+                where: {
+                    slug: normalizedSlug,
+                    id: { not: paramId },
+                    deletedAt: null,
+                },
+                select: { id: true },
+            });
+            if (slugInUse) {
+                return NextResponse.json({ error: "Este slug já está em uso por outro evento." }, { status: 409 });
+            }
+            body.slug = normalizedSlug;
+        }
         if (Object.prototype.hasOwnProperty.call(body, "commissionPercent")) {
             body.commissionPercent = parseCommissionPercentInput(
                 body.commissionPercent,

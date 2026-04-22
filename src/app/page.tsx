@@ -1,5 +1,4 @@
 import { getSessionFromCookies } from "@/lib/session";
-import { getPanelHref, isTenantAdministrator } from "@/lib/panel-routes";
 import HomeLanding from "@/components/home/HomeLanding";
 
 export default async function Home() {
@@ -7,9 +6,6 @@ export default async function Home() {
     return (
         <HomeLanding
             isLoggedIn={!!session}
-            isSuperAdmin={session?.superAdmin ?? false}
-            panelHref={getPanelHref(session)}
-            showTenantAdminShortcuts={isTenantAdministrator(session)}
         />
     );
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Check, CreditCard, Gem, Package, ScanBarcode, ShieldCheck, Sparkles, Store, UserPlus } from "lucide-react";
+import { ArrowRight, Check, Package, ScanBarcode, ShieldCheck, Sparkles, Store, UserPlus } from "lucide-react";
 import PortalGarageLogo from "@/components/PortalGarageLogo";
 import HomeAnimatedBackdrop from "@/components/home/HomeAnimatedBackdrop";
 import CadastroOrganizacaoForm from "@/components/home/CadastroOrganizacaoForm";
@@ -10,9 +10,6 @@ import { formatCurrencyBRLFromCents, PREMIUM_FULL_PLAN } from "@/lib/billing";
 
 type Props = {
     isLoggedIn: boolean;
-    isSuperAdmin: boolean;
-    panelHref: string;
-    showTenantAdminShortcuts: boolean;
 };
 
 const fadeUp = {
@@ -25,19 +22,19 @@ const fadeUp = {
 };
 
 const features = [
-    { icon: Store, title: "Operação por tenant", text: "Cada organização com ambiente isolado, usuários próprios, eventos separados e visão limpa para o time." },
+    { icon: Store, title: "Operação por empresa", text: "Cada empresa opera com ambiente isolado, usuários próprios, eventos separados e visão limpa para o time." },
     { icon: Package, title: "Estoque vivo", text: "Catálogo de produtos com fotos, preços, disponibilidade e base única para cadastro, checagem e venda." },
     { icon: ScanBarcode, title: "Checagem no evento", text: "Consulta rápida com câmera para reduzir fila, dúvida de preço e retrabalho da equipe no salão." },
-    { icon: ShieldCheck, title: "Controle premium", text: "Painel do organizador, gestão administrativa e super admin para controlar toda a operação paga." },
+    { icon: ShieldCheck, title: "Controle premium", text: "Painel do organizador, gestão administrativa e super admin para controlar toda a operação comercial." },
 ];
 
 const benefits = [
     "14 dias grátis para validar o processo inteiro com sua equipe",
     "Plano único Premium Full com tudo liberado desde o primeiro login",
-    "Tenant criado já com cobrança, trial e acesso administrativo configurados",
+    "Empresa criada já com cobrança, trial e acesso administrativo configurados",
 ];
 
-export default function HomeLanding({ isLoggedIn, isSuperAdmin, panelHref, showTenantAdminShortcuts }: Props) {
+export default function HomeLanding({ isLoggedIn }: Props) {
     return (
         <div className="relative min-h-[calc(100dvh-4rem)] overflow-hidden bg-[#070b11] text-stone-100">
             <HomeAnimatedBackdrop />
@@ -61,7 +58,7 @@ export default function HomeLanding({ isLoggedIn, isSuperAdmin, panelHref, showT
                             </motion.h1>
 
                             <motion.p custom={3} initial="hidden" animate="visible" variants={fadeUp} className="mt-6 max-w-2xl text-lg leading-8 text-stone-300">
-                                O Portal Garage nasceu para associações, equipes e operações de bazar que precisam controlar produtos, checagem de preços e vendas em um fluxo premium, multi-tenant e pronto para monetização.
+                                O Portal Garage foi feito para associações e equipes que precisam vender com organização: catálogo, checagem no salão e PDV em uma jornada premium, multiempresa e pronta para escalar.
                             </motion.p>
 
                             <motion.div custom={4} initial="hidden" animate="visible" variants={fadeUp} className="mt-8 flex flex-wrap gap-3">
@@ -76,8 +73,8 @@ export default function HomeLanding({ isLoggedIn, isSuperAdmin, panelHref, showT
                                         </Link>
                                     </>
                                 ) : (
-                                    <Link href={isSuperAdmin ? "/super" : panelHref} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-stone-50 px-7 py-3.5 text-sm font-semibold text-slate-950 shadow-[0_18px_50px_rgba(251,191,36,0.3)] transition hover:brightness-105">
-                                        {isSuperAdmin ? "Ir para o Super Admin" : "Ir para o painel"}
+                                    <Link href="/administracao" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-stone-50 px-7 py-3.5 text-sm font-semibold text-slate-950 shadow-[0_18px_50px_rgba(251,191,36,0.3)] transition hover:brightness-105">
+                                        Ir para minha página
                                     </Link>
                                 )}
                             </motion.div>
@@ -93,13 +90,6 @@ export default function HomeLanding({ isLoggedIn, isSuperAdmin, panelHref, showT
                                 ))}
                             </motion.div>
 
-                            {isLoggedIn && showTenantAdminShortcuts && (
-                                <motion.div custom={6} initial="hidden" animate="visible" variants={fadeUp} className="mt-8 flex flex-wrap gap-3">
-                                    <Link href="/admin" className="rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-white hover:bg-white/10">Organizador</Link>
-                                    <Link href="/capture" className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-5 py-2.5 text-sm font-medium text-emerald-100 hover:bg-emerald-500/15">Checagem</Link>
-                                    <Link href="/pos" className="rounded-full border border-rose-400/20 bg-rose-500/10 px-5 py-2.5 text-sm font-medium text-rose-100 hover:bg-rose-500/15">PDV</Link>
-                                </motion.div>
-                            )}
                         </div>
 
                         <motion.div custom={4} initial="hidden" animate="visible" variants={fadeUp} className="relative">
@@ -119,20 +109,11 @@ export default function HomeLanding({ isLoggedIn, isSuperAdmin, panelHref, showT
                                     <p className="text-xs uppercase tracking-[0.2em] text-amber-100/80">Ativação comercial</p>
                                     <p className="mt-2 text-2xl font-semibold text-white">14 dias grátis antes da primeira cobrança</p>
                                     <p className="mt-3 text-sm leading-7 text-amber-50/85">
-                                        O tenant só nasce depois da assinatura do plano. Quando você ativa o teste, o sistema já registra a cobrança, cria o ambiente da organização e entrega acesso administrativo imediato.
+                                        A empresa é ativada após a assinatura. Ao iniciar o teste, o sistema já registra a cobrança, cria o ambiente da organização e libera acesso administrativo imediato.
                                     </p>
                                 </div>
-                                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                                    <div className="rounded-[1.3rem] border border-white/10 bg-white/[0.03] p-4">
-                                        <Gem className="h-5 w-5 text-amber-200" />
-                                        <p className="mt-3 text-sm font-semibold text-white">Experiência premium</p>
-                                        <p className="mt-2 text-sm leading-6 text-stone-400">Jornada comercial, painel multi-tenant e super admin prontos para produto pago.</p>
-                                    </div>
-                                    <div className="rounded-[1.3rem] border border-white/10 bg-white/[0.03] p-4">
-                                        <CreditCard className="h-5 w-5 text-sky-200" />
-                                        <p className="mt-3 text-sm font-semibold text-white">Billing visível</p>
-                                        <p className="mt-2 text-sm leading-6 text-stone-400">Status do pagamento, trial, próxima cobrança e última quitação por tenant.</p>
-                                    </div>
+                                <div className="mt-6 rounded-[1.3rem] border border-white/10 bg-white/[0.03] p-4 text-sm leading-6 text-stone-300">
+                                    Jornada comercial premium com gestão centralizada da empresa, controle de assinatura, trial e histórico financeiro em um único lugar.
                                 </div>
                             </div>
                         </motion.div>
@@ -162,7 +143,7 @@ export default function HomeLanding({ isLoggedIn, isSuperAdmin, panelHref, showT
                             </div>
                             <h2 className="mt-5 text-4xl text-white sm:text-5xl font-[family:var(--font-display)]">Ative o Premium Full e já entre operando.</h2>
                             <p className="mt-5 max-w-xl text-base leading-8 text-stone-300">
-                                Esta etapa substitui o cadastro simples. Você assina o plano, inicia o trial de 14 dias e já entra com seu tenant pronto para cadastrar eventos, produtos, preços e vendas.
+                                Esta etapa substitui o cadastro simples. Você assina o plano, inicia o trial de 14 dias e já entra com sua empresa pronta para cadastrar eventos, produtos, preços e vendas.
                             </p>
                             <div className="mt-8 rounded-[1.8rem] border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
                                 <p className="text-xs uppercase tracking-[0.2em] text-stone-400">O que está incluso</p>
@@ -171,7 +152,7 @@ export default function HomeLanding({ isLoggedIn, isSuperAdmin, panelHref, showT
                                         "Administração da organização com múltiplos eventos",
                                         "Captura e consulta rápida no salão",
                                         "PDV integrado com o mesmo estoque do cadastro",
-                                        "Super admin para controle de tenants, billing e usuários",
+                                        "Super admin para controle de empresas, billing e usuários",
                                     ].map((line) => (
                                         <div key={line} className="flex gap-3 text-sm text-stone-200">
                                             <Check className="mt-0.5 h-4 w-4 shrink-0 text-amber-200" />
@@ -188,8 +169,8 @@ export default function HomeLanding({ isLoggedIn, isSuperAdmin, panelHref, showT
                             ) : (
                                 <div className="py-10 text-center">
                                     <p className="text-stone-300">Você já está com sessão ativa.</p>
-                                    <Link href={isSuperAdmin ? "/super" : panelHref} className="mt-6 inline-flex rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-stone-50 px-7 py-3.5 text-sm font-semibold text-slate-950">
-                                        Ir para o painel
+                                    <Link href="/administracao" className="mt-6 inline-flex rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-stone-50 px-7 py-3.5 text-sm font-semibold text-slate-950">
+                                        Ir para minha página
                                     </Link>
                                 </div>
                             )}

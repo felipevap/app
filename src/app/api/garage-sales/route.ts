@@ -5,6 +5,7 @@ import { requireTenantSession } from "@/lib/require-tenant";
 import { requireStaffSession } from "@/lib/require-staff";
 import { garageSaleTenantWhere } from "@/lib/tenant-scope";
 import { parseCommissionPercentInput } from "@/lib/commission";
+import { isValidEventSlug, normalizeEventSlug, slugifyBase } from "@/lib/slug";
 
 const OWNER_EMAIL_IN_USE = "OWNER_EMAIL_IN_USE";
 
@@ -45,6 +46,10 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const { nome, dataInicio, dataFim, endereco, responsavel, email, regras } = body;
+        const normalizedSlug = normalizeEventSlug(typeof body.slug === "string" && body.slug.trim() ? body.slug : slugifyBase(nome ?? ""));
+        if (!isValidEventSlug(normalizedSlug)) {
+            return NextResponse.json({ error: "Slug inválido. Use apenas letras, números e hífens." }, { status: 400 });
+        }
 
         let tenantId = session.tenantId;
         if (session.superAdmin) {
@@ -70,11 +75,25 @@ export async function POST(req: NextRequest) {
             const tenantDefault = tenantRow?.defaultCommissionPercent ?? 20;
             const commissionPercent = parseCommissionPercentInput(body.commissionPercent, tenantDefault);
 
+            const existingBySlug = await tx.garageSale.findFirst({
+                where: {
+                    slug: normalizedSlug,
+                    deletedAt: null,
+                },
+                select: { id: true },
+            });
+            if (existingBySlug) {
+                throw new Error("SLUG_ALREADY_EXISTS");
+            }
+
             const gs = await tx.garageSale.create({
                 data: {
+                    slug: normalizedSlug,
                     nome,
                     dataInicio: new Date(dataInicio),
                     dataFim: dataFim ? new Date(dataFim) : null,
+                    horarioInicio: body.horarioInicio || null,
+                    horarioFim: body.horarioFim || null,
                     endereco,
                     responsavel,
                     email,
@@ -144,6 +163,9 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(garageSale);
     } catch (error) {
+        if (error instanceof Error && error.message === "SLUG_ALREADY_EXISTS") {
+            return NextResponse.json({ error: "Este slug já está em uso por outro evento." }, { status: 409 });
+        }
         if (error instanceof Error && error.message === OWNER_EMAIL_IN_USE) {
             return NextResponse.json(
                 { error: "Este e-mail já é proprietário de outro evento. Use outro e-mail." },

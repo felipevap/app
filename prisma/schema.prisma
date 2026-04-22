@@ -69,9 +69,12 @@ model User {
 
 model GarageSale {
   id                String    @id @default(uuid())
+  slug              String?   @unique
   nome              String
   dataInicio        DateTime
   dataFim           DateTime?
+  horarioInicio     String?
+  horarioFim        String?
   endereco          String
   responsavel       String?
   email             String?
