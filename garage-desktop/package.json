@@ -2,6 +2,7 @@
   "name": "portal-garage-desktop",
   "version": "0.1.0",
   "private": true,
+  "author": "Portal Garage",
   "description": "Portal Garage — app desktop para Windows e macOS (login no site, PDV offline).",
   "main": "main.cjs",
   "scripts": {

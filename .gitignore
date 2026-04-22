@@ -40,3 +40,7 @@ next-env.d.ts
 
 garage-desktop/node_modules
 garage-desktop/dist
+
+public/desktop/*.exe
+public/desktop/*.dmg
+public/desktop/*.zip

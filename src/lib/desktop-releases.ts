@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 export type DesktopReleasesPayload = {
     version: string;
     updatedAt?: string;
@@ -8,17 +11,29 @@ export type DesktopReleasesPayload = {
     notes?: string;
 };
 
+function loadPublicDesktopReleases(): DesktopReleasesPayload | null {
+    try {
+        const p = path.join(process.cwd(), "public", "desktop", "releases.json");
+        if (!fs.existsSync(p)) return null;
+        return JSON.parse(fs.readFileSync(p, "utf8")) as DesktopReleasesPayload;
+    } catch {
+        return null;
+    }
+}
+
 export function parseDesktopReleasesFromEnv(): DesktopReleasesPayload {
     const raw = process.env.DESKTOP_RELEASES_JSON;
-    if (!raw?.trim()) {
-        return {
-            version: "0.0.0",
-            notes: "Defina DESKTOP_RELEASES_JSON no servidor com JSON: version, windowsUrl, macUrl, updatedAt, notes (opcional), windowsSha256, macSha256.",
-        };
+    if (raw?.trim()) {
+        try {
+            return JSON.parse(raw) as DesktopReleasesPayload;
+        } catch {
+            return { version: "0.0.0", notes: "DESKTOP_RELEASES_JSON inválido." };
+        }
     }
-    try {
-        return JSON.parse(raw) as DesktopReleasesPayload;
-    } catch {
-        return { version: "0.0.0", notes: "DESKTOP_RELEASES_JSON inválido." };
-    }
+    const local = loadPublicDesktopReleases();
+    if (local) return local;
+    return {
+        version: "—",
+        notes: "Crie public/desktop/releases.json ou defina DESKTOP_RELEASES_JSON. Para Windows: npm run desktop:dist:win e copie o .exe para public/desktop/PortalGarage-Setup-0.1.0.exe.",
+    };
 }

@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "db:seed-super-admin": "npx tsx scripts/seed-super-admin.ts"
+    "db:seed-super-admin": "npx tsx scripts/seed-super-admin.ts",
+    "db:migrate": "prisma migrate deploy",
+    "desktop:install": "npm install --prefix garage-desktop",
+    "desktop:dist:win": "npm run dist:win --prefix garage-desktop",
+    "desktop:dist:mac": "npm run dist:mac --prefix garage-desktop"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
