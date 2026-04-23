@@ -22,3 +22,25 @@ body {
   font-family: var(--font-geist-sans), sans-serif;
   overflow-x: hidden;
 }
+
+.contract-param {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: baseline;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0.06em 0.32em;
+  margin: 0 0.05em;
+  border-radius: 0.22em;
+  border: 1px solid rgba(124, 58, 237, 0.32);
+  background-color: rgba(124, 58, 237, 0.1);
+  font-size: inherit;
+  font-weight: inherit;
+  font-style: inherit;
+  color: inherit;
+  text-decoration: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  font-family: inherit;
+  text-align: inherit;
+}

@@ -438,15 +438,6 @@ export default function ContractBuilder({
 
                     <style>{`
                         .contract-editor .contract-param {
-                            display: inline-block;
-                            padding: 1px 8px;
-                            margin: 0 2px;
-                            border-radius: 9999px;
-                            background: linear-gradient(135deg, #ede9fe, #dbeafe);
-                            border: 1px solid #a78bfa;
-                            color: #4c1d95;
-                            font-size: 0.85em;
-                            font-weight: 600;
                             user-select: none;
                             cursor: default;
                         }
