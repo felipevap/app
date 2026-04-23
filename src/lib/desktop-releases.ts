@@ -34,6 +34,6 @@ export function parseDesktopReleasesFromEnv(): DesktopReleasesPayload {
     if (local) return local;
     return {
         version: "—",
-        notes: "Crie public/desktop/releases.json ou defina DESKTOP_RELEASES_JSON. Para Windows: npm run desktop:dist:win e copie o .exe para public/desktop/PortalGarage-Setup-0.1.0.exe.",
+        notes: "Crie public/desktop/releases.json ou defina DESKTOP_RELEASES_JSON. Para Windows: npm run desktop:dist:win e copie o .exe para public/desktop/PortalGarage-Setup-0.1.3.exe.",
     };
 }

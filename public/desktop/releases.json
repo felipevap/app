@@ -1,7 +1,7 @@
 {
-  "version": "0.1.0",
+  "version": "0.1.3",
   "updatedAt": "2026-04-22",
-  "windowsUrl": "/desktop/PortalGarage-Setup-0.1.0.exe",
+  "windowsUrl": "/desktop/PortalGarage-Setup-0.1.3.exe",
   "macUrl": null,
-  "notes": "Windows: ficheiro gerado localmente (veja .gitignore). macOS: num Mac corra npm run desktop:dist:mac, suba o .dmg e defina macUrl aqui ou use DESKTOP_RELEASES_JSON em producao."
+  "notes": "0.1.3: com sessão guardada abre painel (/administracao e redirects do site); sem sessão /login. Windows: copie o .exe para public/desktop/ ou use DESKTOP_RELEASES_JSON em produção."
 }

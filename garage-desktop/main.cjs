@@ -1,13 +1,34 @@
-const { app, BrowserWindow, Menu, shell, ipcMain, net } = require("electron");
+const { app, BrowserWindow, Menu, shell, ipcMain, net, session } = require("electron");
 const path = require("path");
 const fs = require("fs");
 
 const PARTITION = "persist:portal-garage-desktop";
 const OUTBOX = "outbox.json";
+const USER_BASE_URL_FILE = "app-base-url.txt";
+const DEFAULT_APP_BASE = "https://portalgarage.com.br";
+
+function userBaseUrlPath() {
+    return path.join(app.getPath("userData"), USER_BASE_URL_FILE);
+}
+
+function readUserBaseUrl() {
+    try {
+        const t = fs.readFileSync(userBaseUrlPath(), "utf8").trim();
+        if (t && (t.startsWith("http://") || t.startsWith("https://"))) {
+            return t.replace(/\/$/, "");
+        }
+    } catch {
+        /* no file */
+    }
+    return null;
+}
 
 function appBase() {
-    const u = process.env.PORTAL_GARAGE_APP_URL || "http://localhost:3000";
-    return u.replace(/\/$/, "");
+    const fromFile = readUserBaseUrl();
+    if (fromFile) return fromFile;
+    const u = process.env.PORTAL_GARAGE_APP_URL;
+    if (u && String(u).trim()) return String(u).trim().replace(/\/$/, "");
+    return DEFAULT_APP_BASE;
 }
 
 function outboxPath() {
@@ -36,8 +57,9 @@ function appendOutbox(entry) {
 
 async function getSessionCookieHeader(win) {
     const ses = win.webContents.session;
-    const url = appBase() + "/";
-    const list = await ses.cookies.get({ url });
+    const base = appBase();
+    if (!base) return "";
+    const list = await ses.cookies.get({ url: base + "/" });
     const gg = list.find((c) => c.name === "gg_session");
     if (!gg) return "";
     return `gg_session=${encodeURIComponent(gg.value)}`;
@@ -53,13 +75,14 @@ async function syncOutbox(win) {
 
     const remaining = [];
     let synced = 0;
+    const base = appBase();
     for (const row of q) {
         if (row.type !== "sale") {
             remaining.push(row);
             continue;
         }
         try {
-            const res = await fetch(`${appBase()}/api/sales`, {
+            const res = await fetch(`${base}/api/sales`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -81,9 +104,42 @@ async function syncOutbox(win) {
 }
 
 let mainWindow = null;
+let loadFailedOnce = false;
 
-function createWindow() {
+function loadConfigurePage() {
+    if (!mainWindow) return;
+    loadFailedOnce = false;
+    mainWindow.loadFile(path.join(__dirname, "static", "configure.html"));
+}
+
+async function resolveStartPath() {
+    const base = appBase();
+    try {
+        const ses = session.fromPartition(PARTITION);
+        const list = await ses.cookies.get({ url: `${base}/` });
+        const gg = list.find((c) => c.name === "gg_session");
+        if (gg?.value) return "/administracao";
+    } catch {
+        /* ignore */
+    }
+    return "/login";
+}
+
+function loadLoginPage() {
+    if (!mainWindow) return;
+    loadFailedOnce = false;
+    mainWindow.loadURL(`${appBase()}/login`);
+}
+
+function loadErrorPage() {
+    if (!mainWindow) return;
+    loadFailedOnce = true;
+    mainWindow.loadFile(path.join(__dirname, "static", "load-error.html"));
+}
+
+async function createWindow() {
     mainWindow = new BrowserWindow({
+        title: "Portal Garage",
         width: 1280,
         height: 840,
         minWidth: 900,
@@ -96,8 +152,17 @@ function createWindow() {
         },
     });
 
-    const startUrl = `${appBase()}/login`;
-    mainWindow.loadURL(startUrl);
+    const base = appBase();
+    const startPath = await resolveStartPath();
+    mainWindow.loadURL(`${base}${startPath}`);
+
+    mainWindow.webContents.on("did-fail-load", (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+        if (!isMainFrame) return;
+        if (validatedURL.startsWith("file:")) return;
+        if (errorCode === -3) return;
+        if (loadFailedOnce) return;
+        loadErrorPage();
+    });
 
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
         shell.openExternal(url);
@@ -106,9 +171,11 @@ function createWindow() {
 
     mainWindow.webContents.on("did-navigate", (_e, url) => {
         try {
-            const base = new URL(appBase());
+            const base = appBase();
+            if (!base) return;
+            const bo = new URL(base);
             const u = new URL(url);
-            if (u.origin !== base.origin) return;
+            if (u.origin !== bo.origin) return;
             const p = u.pathname;
             if (
                 p === "/administracao" ||
@@ -129,9 +196,17 @@ function createWindow() {
             label: "Arquivo",
             submenu: [
                 {
+                    label: "Definir URL do site…",
+                    click: () => {
+                        loadConfigurePage();
+                    },
+                },
+                { type: "separator" },
+                {
                     label: "Abrir PDV (navegador)",
                     click: () => {
-                        if (mainWindow) mainWindow.loadURL(`${appBase()}/pos`);
+                        const b = appBase();
+                        if (mainWindow && b) mainWindow.loadURL(`${b}/pos`);
                     },
                 },
                 { type: "separator" },
@@ -151,13 +226,14 @@ function createWindow() {
                 {
                     label: "Início / Login",
                     click: () => {
-                        if (mainWindow) mainWindow.loadURL(`${appBase()}/login`);
+                        loadLoginPage();
                     },
                 },
                 {
                     label: "Painel",
                     click: () => {
-                        if (mainWindow) mainWindow.loadURL(`${appBase()}/administracao`);
+                        const b = appBase();
+                        if (mainWindow && b) mainWindow.loadURL(`${b}/administracao`);
                     },
                 },
             ],
@@ -201,6 +277,22 @@ function createWindow() {
 
 ipcMain.handle("app:get-base-url", () => appBase());
 ipcMain.handle("app:is-online", () => net.isOnline());
+ipcMain.handle("config:set-base-url", (_e, url) => {
+    const trimmed = String(url || "").trim().replace(/\/$/, "");
+    if (!trimmed || (!trimmed.startsWith("http://") && !trimmed.startsWith("https://"))) {
+        return { ok: false, error: "invalid" };
+    }
+    try {
+        fs.writeFileSync(userBaseUrlPath(), trimmed + "\n", "utf8");
+        return { ok: true };
+    } catch {
+        return { ok: false, error: "write" };
+    }
+});
+ipcMain.handle("app:open-login", () => {
+    loadLoginPage();
+    return { ok: true };
+});
 ipcMain.handle("outbox:enqueue-sale", (_e, payload) => {
     appendOutbox({ type: "sale", payload });
     return { ok: true };
@@ -212,9 +304,9 @@ ipcMain.handle("outbox:sync", async (e) => {
 });
 
 app.whenReady().then(() => {
-    createWindow();
+    void createWindow();
     app.on("activate", () => {
-        if (BrowserWindow.getAllWindows().length === 0) createWindow();
+        if (BrowserWindow.getAllWindows().length === 0) void createWindow();
     });
 });
 

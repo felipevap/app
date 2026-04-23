@@ -29,6 +29,6 @@ if (-not $env:PORTAL_GARAGE_APP_URL) {
 npm run desktop:dist:win
 
 Write-Host ""
-Write-Host "Artefactos em: garage-desktop\dist\"
+Write-Host "Artefactos em: garage-desktop\out-build\"
 Write-Host "No Mac, na pasta do projeto: export PORTAL_GARAGE_APP_URL=https://SEU_DOMINIO && npm run desktop:dist:mac"
 Write-Host "Depois suba os ficheiros para o CDN e defina DESKTOP_RELEASES_JSON no .env / Vercel com windowsUrl e macUrl."

@@ -7,6 +7,10 @@ Cliente Electron que abre primeiro o **login** do Portal Garage na URL configura
 - Node.js 20+
 - Conta e deploy do site Next em produção (HTTPS recomendado para cookies `Secure`).
 
+## URL do site
+
+Por omissão a app abre **`https://portalgarage.com.br`**. No arranque, se existir cookie de sessão **`gg_session`** no perfil persistente, abre **`/administracao`** (o middleware do site encaminha super admin para `/super` e dono para `/portal`). Sem sessão, abre **`/login`**. Para outro ambiente: **`PORTAL_GARAGE_APP_URL`**, **`app-base-url.txt`** na pasta de dados, ou **Arquivo → Definir URL do site…**.
+
 ## Desenvolvimento
 
 ```bash
@@ -31,7 +35,7 @@ npm start
 | **macOS** | `npm run dist:mac` | Gera `.dmg` e `.zip`. Execute em macOS ou num runner CI macOS (Apple notarization opcional). |
 | Ambas | `npm run dist:all` | Exige ambiente capaz de compilar para os dois alvos (em geral usa-se CI com matriz win + mac). |
 
-Artefactos ficam em `garage-desktop/dist/`.
+Artefactos ficam em `garage-desktop/out-build/`.
 
 ## Variáveis de ambiente no build / execução
 

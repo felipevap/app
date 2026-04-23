@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal Garage — URL do site</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 2rem; max-width: 32rem; margin-inline: auto; }
+    h1 { font-size: 1.25rem; margin-top: 0; }
+    p { color: #94a3b8; line-height: 1.5; font-size: 0.95rem; }
+    label { display: block; margin-top: 1rem; font-size: 0.875rem; color: #cbd5e1; }
+    input { width: 100%; box-sizing: border-box; margin-top: 0.35rem; padding: 0.65rem 0.75rem; border-radius: 0.5rem; border: 1px solid #334155; background: #1e293b; color: #f8fafc; font-size: 1rem; }
+    button { margin-top: 1.25rem; padding: 0.65rem 1.25rem; border-radius: 0.5rem; border: none; background: #f59e0b; color: #0f172a; font-weight: 600; cursor: pointer; font-size: 1rem; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #msg { margin-top: 1rem; font-size: 0.875rem; color: #fca5a5; min-height: 1.25rem; }
+  </style>
+</head>
+<body>
+  <h1>Configurar endereço do Portal</h1>
+  <p>O aplicativo precisa saber onde o seu site está publicado (por exemplo na Hostinger, Vercel ou outro). Use <strong>https://</strong> com o domínio real, sem barra no fim.</p>
+  <label for="url">URL base do site</label>
+  <input id="url" type="url" placeholder="https://seudominio.com" autocomplete="url" />
+  <div id="msg"></div>
+  <button type="button" id="btn">Guardar e abrir login</button>
+  <script>
+    window.addEventListener("DOMContentLoaded", async () => {
+      try {
+        const b = await window.portalGarageDesktop.getBaseUrl();
+        if (b) document.getElementById("url").value = b;
+      } catch {
+        /* ignore */
+      }
+    });
+    const btn = document.getElementById("btn");
+    const urlEl = document.getElementById("url");
+    const msg = document.getElementById("msg");
+    btn.addEventListener("click", async () => {
+      msg.textContent = "";
+      btn.disabled = true;
+      try {
+        const u = urlEl.value.trim();
+        const r = await window.portalGarageDesktop.setBaseUrl(u);
+        if (!r.ok) {
+          msg.textContent = r.error === "invalid" ? "Introduza um URL válido (http:// ou https://)." : "Não foi possível guardar.";
+          btn.disabled = false;
+          return;
+        }
+        await window.portalGarageDesktop.openLogin();
+      } catch (e) {
+        msg.textContent = String(e);
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
