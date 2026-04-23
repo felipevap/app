@@ -22,23 +22,12 @@ const FONT_SIZES = [
     { label: "Muito grande", value: "28px" },
 ];
 
-/**
- * Rich-text editor for contract templates. The user writes the clause text in
- * the editor and drags parameter pills from the sidebar into the text — no
- * manual `{{...}}` syntax required.
- *
- * Parameters are stored in the HTML as:
- *   <span class="contract-param" data-param="foo">{{foo}}</span>
- *
- * The `{{foo}}` text inside the span keeps backward compatibility with the
- * server-side `renderContractBody` regex.
- */
 export default function ContractBuilder({
     html,
     parameters,
     onChange,
     title = "Modelo de contrato",
-    description = "Escreva o texto do contrato e arraste os parâmetros da barra lateral para dentro do texto. Você pode formatar o texto, mudar o tamanho da fonte e editar livremente.",
+    description = 'Edite o contrato como em um editor de texto: negrito, alinhamento, listas e tamanho da fonte. Arraste parâmetros para o texto ou clique em "inserir" — o parâmetro entra na posição do cursor (ou onde você estava editando por último).',
 }: Props) {
     const editorRef = useRef<HTMLDivElement>(null);
     const lastEditorRangeRef = useRef<Range | null>(null);
@@ -46,8 +35,6 @@ export default function ContractBuilder({
     const [draftError, setDraftError] = useState<string | null>(null);
     const [isEditorFocused, setIsEditorFocused] = useState(false);
 
-    // Keep the editor DOM in sync with the controlled `html` prop. We avoid
-    // reassigning innerHTML on every keystroke to keep the caret stable.
     useEffect(() => {
         const el = editorRef.current;
         if (!el) return;
@@ -56,27 +43,27 @@ export default function ContractBuilder({
         }
     }, [html]);
 
-    useEffect(() => {
-        const onSelectionChange = () => {
-            const el = editorRef.current;
-            if (!el) return;
-            const sel = window.getSelection();
-            if (!sel || sel.rangeCount === 0) return;
-            const range = sel.getRangeAt(0);
-            if (el.contains(range.commonAncestorContainer)) {
-                lastEditorRangeRef.current = range.cloneRange();
-            }
-        };
-        document.addEventListener("selectionchange", onSelectionChange);
-        return () => document.removeEventListener("selectionchange", onSelectionChange);
+    const captureSelection = useCallback(() => {
+        const el = editorRef.current;
+        if (!el) return;
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+        const range = sel.getRangeAt(0);
+        if (el.contains(range.commonAncestorContainer)) {
+            lastEditorRangeRef.current = range.cloneRange();
+        }
     }, []);
+
+    useEffect(() => {
+        document.addEventListener("selectionchange", captureSelection);
+        return () => document.removeEventListener("selectionchange", captureSelection);
+    }, [captureSelection]);
 
     const emit = useCallback(() => {
         const el = editorRef.current;
         if (!el) return;
         const nextHtml = el.innerHTML;
         const detected = parsePlaceholders(nextHtml);
-        // Keep user-chosen type/required settings for existing params.
         const merged: ContractParameter[] = detected.map((d) => {
             const prior = parameters.find((p) => p.name === d.name);
             return prior ?? d;
@@ -87,30 +74,68 @@ export default function ContractBuilder({
     const insertChipAtSelection = (name: string) => {
         const el = editorRef.current;
         if (!el) return;
-        const chipHtml = `<span class="contract-param" data-param="${name}" contenteditable="false">{{${name}}}</span>&nbsp;`;
         el.focus();
-        const sel = window.getSelection();
-        const insertAtLiveSelection = () => {
-            if (!sel || sel.rangeCount === 0) return false;
-            const range = sel.getRangeAt(0);
+
+        const insertWithRange = (range: Range): boolean => {
             if (!el.contains(range.commonAncestorContainer)) return false;
-            document.execCommand("insertHTML", false, chipHtml);
+            const chip = document.createElement("span");
+            chip.className = "contract-param";
+            chip.setAttribute("data-param", name);
+            chip.setAttribute("contenteditable", "false");
+            chip.textContent = `{{${name}}}`;
+            const trail = document.createTextNode("\u00A0");
+            range.deleteContents();
+            range.insertNode(chip);
+            range.setStartAfter(chip);
+            range.collapse(true);
+            range.insertNode(trail);
+            range.setStartAfter(trail);
+            range.collapse(true);
+            const sel = window.getSelection();
+            sel?.removeAllRanges();
+            sel?.addRange(range);
+            lastEditorRangeRef.current = range.cloneRange();
             return true;
         };
-        if (!insertAtLiveSelection()) {
-            const saved = lastEditorRangeRef.current;
-            if (saved) {
-                try {
-                    sel?.removeAllRanges();
-                    sel?.addRange(saved);
-                    if (insertAtLiveSelection()) {
-                        emit();
-                        return;
-                    }
-                } catch {}
+
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+            const live = sel.getRangeAt(0);
+            if (insertWithRange(live.cloneRange())) {
+                emit();
+                return;
             }
-            el.insertAdjacentHTML("beforeend", chipHtml);
         }
+        const saved = lastEditorRangeRef.current;
+        if (saved) {
+            try {
+                const r = saved.cloneRange();
+                if (insertWithRange(r)) {
+                    emit();
+                    return;
+                }
+            } catch {}
+        }
+        const end = document.createRange();
+        end.selectNodeContents(el);
+        end.collapse(false);
+        if (insertWithRange(end)) {
+            emit();
+            return;
+        }
+        const chip = document.createElement("span");
+        chip.className = "contract-param";
+        chip.setAttribute("data-param", name);
+        chip.setAttribute("contenteditable", "false");
+        chip.textContent = `{{${name}}}`;
+        el.appendChild(chip);
+        el.appendChild(document.createTextNode("\u00A0"));
+        const after = document.createRange();
+        after.setStartAfter(el.lastChild!);
+        after.collapse(true);
+        window.getSelection()?.removeAllRanges();
+        window.getSelection()?.addRange(after);
+        lastEditorRangeRef.current = after.cloneRange();
         emit();
     };
 
@@ -118,7 +143,6 @@ export default function ContractBuilder({
         const name = e.dataTransfer.getData(MIME);
         if (!name) return;
         e.preventDefault();
-        // Place caret at drop position so the chip lands where the cursor was.
         const doc = document;
         let range: Range | null = null;
         const getCaret = (doc as unknown as {
@@ -160,7 +184,6 @@ export default function ContractBuilder({
         const el = editorRef.current;
         if (!el) return;
         el.focus();
-        // Wrap selection in <span style="font-size: ...">.
         const sel = window.getSelection();
         if (!sel || sel.rangeCount === 0) return;
         const range = sel.getRangeAt(0);
@@ -177,7 +200,6 @@ export default function ContractBuilder({
             sel.addRange(after);
             emit();
         } catch {
-            // Selection crossed non-extractable boundaries; ignore.
         }
     };
 
@@ -205,7 +227,6 @@ export default function ContractBuilder({
     const removeParameter = (idx: number) => {
         const target = parameters[idx];
         if (!target) return;
-        // Also strip any chip instances from the editor HTML.
         const stripped = html.replace(
             new RegExp(
                 `<span[^>]*data-param="${target.name}"[^>]*>\\s*\\{\\{${target.name}\\}\\}\\s*</span>`,
@@ -232,7 +253,6 @@ export default function ContractBuilder({
                             .replace(/\n/g, "<br/>")}</p>`
                 )
                 .join("");
-            // Convert existing `{{name}}` occurrences into visible chips.
             const detected = parsePlaceholders(converted);
             let withChips = converted;
             for (const p of detected) {
@@ -275,7 +295,14 @@ export default function ContractBuilder({
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_280px]">
                 <div>
-                    <div className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-sm shadow-sm">
+                    <div
+                        className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-sm shadow-sm"
+                        onMouseDown={(e) => {
+                            if ((e.target as HTMLElement).closest("button")) {
+                                e.preventDefault();
+                            }
+                        }}
+                    >
                         <button
                             type="button"
                             onClick={() => exec("bold")}
@@ -336,6 +363,61 @@ export default function ContractBuilder({
                         >
                             1. Lista
                         </button>
+                        <span className="h-5 w-px bg-stone-200" aria-hidden />
+                        <button
+                            type="button"
+                            onClick={() => exec("justifyLeft")}
+                            className="rounded px-2 py-1 hover:bg-stone-100"
+                            title="Alinhar à esquerda"
+                            aria-label="Alinhar à esquerda"
+                        >
+                            Esq
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => exec("justifyCenter")}
+                            className="rounded px-2 py-1 hover:bg-stone-100"
+                            title="Centralizar"
+                            aria-label="Centralizar"
+                        >
+                            Centro
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => exec("justifyRight")}
+                            className="rounded px-2 py-1 hover:bg-stone-100"
+                            title="Alinhar à direita"
+                            aria-label="Alinhar à direita"
+                        >
+                            Dir
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => exec("justifyFull")}
+                            className="rounded px-2 py-1 hover:bg-stone-100"
+                            title="Justificar"
+                            aria-label="Justificar"
+                        >
+                            Just
+                        </button>
+                        <span className="h-5 w-px bg-stone-200" aria-hidden />
+                        <button
+                            type="button"
+                            onClick={() => exec("strikeThrough")}
+                            className="rounded px-2 py-1 line-through hover:bg-stone-100"
+                            title="Riscado"
+                        >
+                            R
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => exec("removeFormat")}
+                            className="rounded px-2 py-1 hover:bg-stone-100"
+                            title="Limpar formatação da seleção"
+                        >
+                            Limpar
+                        </button>
+                        <span className="h-5 w-px bg-stone-200" aria-hidden />
                         <button
                             type="button"
                             onClick={() => exec("formatBlock", "<h3>")}
@@ -381,13 +463,22 @@ export default function ContractBuilder({
                             aria-multiline="true"
                             contentEditable
                             suppressContentEditableWarning
-                            data-placeholder="Escreva o conteúdo do contrato aqui e arraste os parâmetros da barra lateral…"
-                            onInput={emit}
-                            onBlur={() => {
-                                setIsEditorFocused(false);
+                            data-placeholder='Escreva o contrato aqui. Use a barra de ferramentas para formato e alinhamento. Parâmetros: arraste da lista ou clique em "inserir" na posição do cursor.'
+                            onInput={() => {
+                                captureSelection();
                                 emit();
                             }}
-                            onFocus={() => setIsEditorFocused(true)}
+                            onMouseUp={captureSelection}
+                            onKeyUp={captureSelection}
+                            onBlur={() => {
+                                setIsEditorFocused(false);
+                                captureSelection();
+                                emit();
+                            }}
+                            onFocus={() => {
+                                setIsEditorFocused(true);
+                                captureSelection();
+                            }}
                             onDrop={handleDrop}
                             onDragOver={handleDragOver}
                             className={`min-h-[280px] rounded-lg border bg-white p-4 text-sm leading-relaxed text-stone-900 shadow-sm transition focus:outline-none ${
@@ -398,14 +489,18 @@ export default function ContractBuilder({
                         />
                     </div>
                     <p className="mt-1 text-xs text-stone-500">
-                        Dica: selecione um trecho e aplique um tamanho de fonte. Arraste um parâmetro (à direita) para dentro do texto para inseri-lo.
+                        {
+                            'Dica: clique no editor para posicionar o cursor antes de "inserir" um parâmetro. A seleção é memorizada ao digitar ou ao sair do campo.'
+                        }
                     </p>
                 </div>
 
                 <aside className="rounded-lg border border-stone-200 bg-white p-3 shadow-sm">
                     <h4 className="text-sm font-semibold text-stone-800">Parâmetros</h4>
                     <p className="mt-1 text-xs text-stone-500">
-                        Crie um parâmetro abaixo, depois arraste-o para o texto.
+                        {
+                            'Crie um parâmetro abaixo; arraste para o texto ou use "inserir" com o cursor no ponto desejado.'
+                        }
                     </p>
 
                     <div className="mt-3 space-y-2">
