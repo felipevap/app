@@ -937,11 +937,11 @@ export default function POSPage() {
                 <div className="w-8"></div>
             </header>
 
-            <main className="flex flex-grow overflow-hidden relative">
+            <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
                 {currentView === 'sales' && (
-                    <div className="flex h-[calc(100vh-80px)] w-full gap-4 p-4 overflow-hidden">
-                        <div className={`flex flex-col gap-4 overflow-hidden transition-all duration-300 ${isHistoryOpen ? 'w-full lg:w-2/3' : 'w-full'}`}>
-                            <div className="rounded-xl border border-orange-200 bg-orange-50 shadow-sm p-2 flex flex-col max-h-[180px]">
+                    <div className="flex min-h-0 w-full flex-1 flex-row gap-4 overflow-hidden p-4">
+                        <div className={`flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden transition-all duration-300 ${isHistoryOpen ? 'w-full lg:w-2/3' : 'w-full'}`}>
+                            <div className="flex max-h-[180px] shrink-0 flex-col rounded-xl border border-orange-200 bg-orange-50 p-2 shadow-sm">
                                 <div className="flex justify-between items-center mb-2 flex-shrink-0">
                                     <h3 className="font-bold text-orange-800 flex items-center gap-2 text-sm">
                                         <span className="text-lg">📱</span> Pedidos App ({filteredPendingOrders.length})
@@ -994,8 +994,8 @@ export default function POSPage() {
                                     </div>
                                 )}
                             </div>
-                            <div className="flex flex-grow flex-col rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                                <div className="flex items-center justify-between border-b bg-gray-50 p-2 rounded-t-xl mb-1">
+                            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+                                <div className="flex shrink-0 items-center justify-between border-b bg-gray-50 p-2 rounded-t-xl mb-1">
                                     <h2 className="font-bold text-gray-700">{isCheckoutMode ? 'Pagamento' : 'Novo Pedido'}</h2>
                                     <div className="flex items-center gap-2">
                                         <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded border border-yellow-200">
@@ -1042,7 +1042,7 @@ export default function POSPage() {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 gap-2 border-b bg-blue-50 p-4 text-sm md:grid-cols-4">
+                                <div className="grid shrink-0 grid-cols-1 gap-2 border-b bg-blue-50 p-4 text-sm md:grid-cols-4">
                                     <input
                                         value={currentSale.buyerName}
                                         onChange={e => setCurrentSale({ ...currentSale, buyerName: e.target.value })}
@@ -1063,7 +1063,7 @@ export default function POSPage() {
                                     />
                                 </div>
 
-                                <div className="min-h-[100px] flex-grow overflow-y-auto bg-white p-4">
+                                <div className="min-h-0 flex-1 overflow-y-auto bg-white p-4">
                                     {currentSale.items!.length === 0 ? (
                                         <div className="mt-8 text-center text-gray-400">Cesta vazia</div>
                                     ) : (
@@ -1100,7 +1100,7 @@ export default function POSPage() {
                                     )}
                                 </div>
                                 {editingSale && (
-                                    <div className="bg-white px-4 pb-2">
+                                    <div className="shrink-0 bg-white px-4 pb-2">
                                         <button
                                             onClick={cancelEdit}
                                             className="w-full rounded bg-gray-200 py-2 text-gray-800 font-bold hover:bg-gray-300 transition-colors flex items-center justify-center gap-2"
@@ -1110,7 +1110,7 @@ export default function POSPage() {
                                     </div>
                                 )}
 
-                                <div className="border-t bg-gray-50 p-2">
+                                <div className="shrink-0 border-t bg-gray-50 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
                                     {!isCheckoutMode ? (
                                         <>
                                             <div className="mb-4 flex flex-wrap gap-2 relative items-end">
@@ -1311,8 +1311,8 @@ export default function POSPage() {
                         </div>
 
                         {currentView === 'sales' && isHistoryOpen && (
-                            <div className="fixed inset-y-0 right-0 z-40 w-80 translate-x-0 border-l border-gray-200 bg-white p-4 shadow-2xl transition-transform lg:relative lg:inset-auto lg:z-0 lg:w-1/3 lg:translate-x-0 lg:rounded-xl lg:border lg:shadow-sm">
-                                <div className="flex h-full flex-col overflow-hidden">
+                            <div className="fixed inset-y-0 right-0 z-40 flex w-[min(100%,20rem)] max-w-full translate-x-0 flex-col border-l border-gray-200 bg-white p-4 shadow-2xl transition-transform lg:relative lg:inset-auto lg:z-0 lg:h-auto lg:min-h-0 lg:w-1/3 lg:max-w-none lg:shrink-0 lg:translate-x-0 lg:rounded-xl lg:border lg:shadow-sm">
+                                <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:h-full">
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="font-bold text-gray-700">Histórico de Vendas</h3>
                                         <button onClick={() => setIsHistoryOpen(false)} className="lg:hidden p-1 text-gray-400 hover:text-gray-600">
@@ -1379,7 +1379,7 @@ export default function POSPage() {
                 )}
 
                 {currentView === 'products' && (
-                    <div className="h-full w-full overflow-y-auto p-4">
+                    <div className="min-h-0 w-full flex-1 overflow-y-auto p-4">
                         <div className="mx-auto max-w-6xl">
                             <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                                 <h2 className="mb-4 text-lg font-bold text-gray-700">Filtros</h2>
@@ -1509,7 +1509,7 @@ export default function POSPage() {
                 )}
 
                 {currentView === 'report' && (
-                    <div className="h-full w-full overflow-y-auto p-4">
+                    <div className="min-h-0 w-full flex-1 overflow-y-auto p-4">
                         <div className="mx-auto max-w-2xl rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
                             <h2 className="mb-6 text-center text-2xl font-bold text-gray-800">Relatório de Fechamento</h2>
 
