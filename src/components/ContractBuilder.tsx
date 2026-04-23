@@ -41,6 +41,7 @@ export default function ContractBuilder({
     description = "Escreva o texto do contrato e arraste os parâmetros da barra lateral para dentro do texto. Você pode formatar o texto, mudar o tamanho da fonte e editar livremente.",
 }: Props) {
     const editorRef = useRef<HTMLDivElement>(null);
+    const lastEditorRangeRef = useRef<Range | null>(null);
     const [draft, setDraft] = useState<ContractParameter>({ name: "", type: "text", required: true });
     const [draftError, setDraftError] = useState<string | null>(null);
     const [isEditorFocused, setIsEditorFocused] = useState(false);
@@ -54,6 +55,21 @@ export default function ContractBuilder({
             el.innerHTML = sanitizeContractHtml(html) || "";
         }
     }, [html]);
+
+    useEffect(() => {
+        const onSelectionChange = () => {
+            const el = editorRef.current;
+            if (!el) return;
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return;
+            const range = sel.getRangeAt(0);
+            if (el.contains(range.commonAncestorContainer)) {
+                lastEditorRangeRef.current = range.cloneRange();
+            }
+        };
+        document.addEventListener("selectionchange", onSelectionChange);
+        return () => document.removeEventListener("selectionchange", onSelectionChange);
+    }, []);
 
     const emit = useCallback(() => {
         const el = editorRef.current;
@@ -74,10 +90,25 @@ export default function ContractBuilder({
         const chipHtml = `<span class="contract-param" data-param="${name}" contenteditable="false">{{${name}}}</span>&nbsp;`;
         el.focus();
         const sel = window.getSelection();
-        if (sel && sel.rangeCount > 0 && el.contains(sel.anchorNode)) {
+        const insertAtLiveSelection = () => {
+            if (!sel || sel.rangeCount === 0) return false;
+            const range = sel.getRangeAt(0);
+            if (!el.contains(range.commonAncestorContainer)) return false;
             document.execCommand("insertHTML", false, chipHtml);
-        } else {
-            // Append at end if no selection in the editor.
+            return true;
+        };
+        if (!insertAtLiveSelection()) {
+            const saved = lastEditorRangeRef.current;
+            if (saved) {
+                try {
+                    sel?.removeAllRanges();
+                    sel?.addRange(saved);
+                    if (insertAtLiveSelection()) {
+                        emit();
+                        return;
+                    }
+                } catch {}
+            }
             el.insertAdjacentHTML("beforeend", chipHtml);
         }
         emit();
@@ -479,6 +510,7 @@ export default function ContractBuilder({
                                     </label>
                                     <button
                                         type="button"
+                                        onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => insertChipAtSelection(p.name)}
                                         className="ml-auto rounded bg-white px-2 py-0.5 text-[11px] font-semibold text-violet-700 ring-1 ring-violet-200 hover:bg-violet-100"
                                     >
