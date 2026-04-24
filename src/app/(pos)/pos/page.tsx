@@ -939,8 +939,8 @@ export default function POSPage() {
 
             <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
                 {currentView === 'sales' && (
-                    <div className="flex min-h-0 w-full flex-1 flex-row gap-4 overflow-hidden p-4">
-                        <div className={`flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-hidden transition-all duration-300 ${isHistoryOpen ? 'w-full lg:w-2/3' : 'w-full'}`}>
+                    <div className="flex min-h-0 w-full flex-1 flex-col gap-4 overflow-hidden p-4 lg:flex-row">
+                        <div className={`flex min-h-0 min-w-0 w-full flex-1 flex-col gap-4 overflow-hidden transition-all duration-300 ${isHistoryOpen ? 'lg:w-2/3' : ''}`}>
                             <div className="flex max-h-[180px] shrink-0 flex-col rounded-xl border border-orange-200 bg-orange-50 p-2 shadow-sm">
                                 <div className="flex justify-between items-center mb-2 flex-shrink-0">
                                     <h3 className="font-bold text-orange-800 flex items-center gap-2 text-sm">
@@ -1311,7 +1311,7 @@ export default function POSPage() {
                         </div>
 
                         {currentView === 'sales' && isHistoryOpen && (
-                            <div className="fixed inset-y-0 right-0 z-40 flex w-[min(100%,20rem)] max-w-full translate-x-0 flex-col border-l border-gray-200 bg-white p-4 shadow-2xl transition-transform lg:relative lg:inset-auto lg:z-0 lg:h-auto lg:min-h-0 lg:w-1/3 lg:max-w-none lg:shrink-0 lg:translate-x-0 lg:rounded-xl lg:border lg:shadow-sm">
+                            <div className="flex max-h-[min(42vh,24rem)] w-full shrink-0 flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm lg:max-h-none lg:h-full lg:min-h-0 lg:w-1/3 lg:shrink-0">
                                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:h-full">
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="font-bold text-gray-700">Histórico de Vendas</h3>
