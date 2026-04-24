@@ -26,8 +26,7 @@ export default function AdminLayout({
 
     return (
         <div className="flex h-[calc(100dvh-4rem)] min-h-0 bg-stone-100 text-stone-900 overflow-hidden">
-            {/* Mobile Header */}
-            <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-stone-200 z-40 flex items-center justify-between px-4 shadow-sm">
+            <div className="md:hidden fixed top-16 left-0 right-0 z-[99] flex h-16 items-center justify-between border-b border-stone-200 bg-white px-4 shadow-sm">
                 <Link
                     href="/"
                     className="flex min-w-0 items-center gap-2 text-lg font-bold tracking-tight text-stone-900 outline-offset-4 focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-600"
@@ -36,6 +35,9 @@ export default function AdminLayout({
                     <span className="truncate">Portal Garage</span>
                 </Link>
                 <button
+                    type="button"
+                    aria-expanded={isMobileMenuOpen}
+                    aria-label={isMobileMenuOpen ? "Fechar menu" : "Abrir menu"}
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     className="p-2 text-stone-500 hover:text-stone-900"
                 >
@@ -45,23 +47,19 @@ export default function AdminLayout({
                 </button>
             </div>
 
-            {/* Backdrop for mobile */}
             {isMobileMenuOpen && (
                 <div
-                    className="fixed inset-0 bg-stone-900/20 z-40 md:hidden"
+                    className="fixed top-32 right-0 bottom-0 left-0 z-[90] bg-stone-900/20 md:hidden"
                     onClick={() => setIsMobileMenuOpen(false)}
+                    aria-hidden
                 />
             )}
 
-            {/* Sidebar */}
             <aside
                 className={`
-                    fixed md:relative z-50 h-full
-                    ${isSidebarOpen ? "w-64" : "w-20"} 
-                    bg-white border-r border-stone-200 shadow-sm
-                    transition-all duration-300 transform 
-                    ${isMobileMenuOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0"}
-                    flex flex-col
+                    fixed z-[95] flex h-[calc(100dvh-8rem)] flex-col border-r border-stone-200 bg-white shadow-sm transition-transform duration-300 max-md:top-32 md:relative md:top-auto md:z-50 md:h-full
+                    ${isSidebarOpen ? "w-64" : "w-20"}
+                    ${isMobileMenuOpen ? "w-64 translate-x-0" : "-translate-x-full md:translate-x-0"}
                 `}
             >
                 <div className="hidden md:flex items-center justify-between gap-2 p-4">
@@ -79,7 +77,7 @@ export default function AdminLayout({
                     </button>
                 </div>
 
-                <nav className="flex-1 space-y-2 p-2 mt-16 md:mt-0 overflow-y-auto">
+                <nav className="mt-0 flex-1 space-y-2 overflow-y-auto p-2 md:mt-0">
                     {navItems.map((item) => {
                         const isActive = pathname === item.href;
                         return (
@@ -115,12 +113,11 @@ export default function AdminLayout({
                         {(isSidebarOpen || isMobileMenuOpen) && <span>Sair</span>}
                     </Link>
                 </div>
-            </aside >
+            </aside>
 
-            {/* Main Content */}
-            <main className="flex-1 overflow-auto bg-stone-50 p-4 md:p-8 pt-20 md:pt-8 w-full">
+            <main className="w-full flex-1 overflow-auto bg-stone-50 p-4 pt-16 md:p-8 md:pt-8">
                 {children}
             </main>
-        </div >
+        </div>
     );
 }
